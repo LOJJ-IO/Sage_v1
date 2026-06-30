@@ -10,6 +10,7 @@ export default function Home() {
   const [leftWidth, setLeftWidth] = useState(DEFAULT_SIDE_WIDTH);
   const [rightWidth, setRightWidth] = useState(DEFAULT_SIDE_WIDTH);
   const [isLeftVisible, setIsLeftVisible] = useState(true);
+  const [isRightVisible, setIsRightVisible] = useState(true);
 
   const startResize = useCallback(
     (side: "left" | "right") => {
@@ -18,7 +19,8 @@ export default function Home() {
         const pointerPercent = (event.clientX / viewportWidth) * 100;
 
         if (side === "left") {
-          const maxLeftWidth = 100 - rightWidth - MIN_MIDDLE_WIDTH;
+          const visibleRightWidth = isRightVisible ? rightWidth : 0;
+          const maxLeftWidth = 100 - visibleRightWidth - MIN_MIDDLE_WIDTH;
           setLeftWidth(
             Math.min(Math.max(pointerPercent, MIN_SIDE_WIDTH), maxLeftWidth),
           );
@@ -41,10 +43,11 @@ export default function Home() {
       window.addEventListener("pointermove", handlePointerMove);
       window.addEventListener("pointerup", stopResize);
     },
-    [isLeftVisible, leftWidth, rightWidth],
+    [isLeftVisible, isRightVisible, leftWidth, rightWidth],
   );
 
   const leftColumnWidth = isLeftVisible ? `${leftWidth}%` : "0px";
+  const rightColumnWidth = isRightVisible ? `${rightWidth}%` : "0px";
 
   return (
     <main className="flex min-h-screen flex-col bg-white text-black">
@@ -65,12 +68,28 @@ export default function Home() {
             }`}
           />
         </button>
+        <button
+          aria-label={
+            isRightVisible ? "Hide right side panel" : "Show right side panel"
+          }
+          className="absolute right-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-neutral-600 transition-colors hover:bg-neutral-200 hover:text-neutral-950"
+          onClick={() => setIsRightVisible((visible) => !visible)}
+          type="button"
+        >
+          <span
+            className={`codicon ${
+              isRightVisible
+                ? "codicon-layout-sidebar-right-off"
+                : "codicon-layout-sidebar-right"
+            }`}
+          />
+        </button>
       </header>
 
       <div
         className="grid min-h-0 flex-1"
         style={{
-          gridTemplateColumns: `${leftColumnWidth} 0.125rem minmax(0, 1fr) 0.125rem ${rightWidth}%`,
+          gridTemplateColumns: `${leftColumnWidth} 0.125rem minmax(0, 1fr) 0.125rem ${rightColumnWidth}`,
         }}
       >
         <section className="h-full bg-neutral-100" />
@@ -92,7 +111,10 @@ export default function Home() {
           <button
             aria-label="Resize right column"
             className="group absolute left-1/2 top-0 z-10 flex h-full w-4 -translate-x-1/2 cursor-col-resize touch-none justify-center bg-transparent transition-colors hover:bg-neutral-200/20"
-            onPointerDown={() => startResize("right")}
+            onPointerDown={() => {
+              setIsRightVisible(true);
+              startResize("right");
+            }}
             type="button"
           >
             <span className="h-full w-0.5 bg-neutral-300 transition-colors group-hover:bg-neutral-500" />
