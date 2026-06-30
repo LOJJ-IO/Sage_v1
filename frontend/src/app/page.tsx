@@ -61,7 +61,7 @@ export default function Home() {
           type="button"
         >
           <span
-            className={`codicon ${
+            className={`codicon [-webkit-text-stroke:0.35px_currentColor] ${
               isLeftVisible
                 ? "codicon-layout-sidebar-left-off"
                 : "codicon-layout-sidebar-left"
@@ -77,7 +77,7 @@ export default function Home() {
           type="button"
         >
           <span
-            className={`codicon ${
+            className={`codicon [-webkit-text-stroke:0.35px_currentColor] ${
               isRightVisible
                 ? "codicon-layout-sidebar-right-off"
                 : "codicon-layout-sidebar-right"
