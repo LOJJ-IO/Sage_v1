@@ -1,65 +1,107 @@
-import Image from "next/image";
+"use client";
+
+import { useCallback, useState } from "react";
+
+const MIN_SIDE_WIDTH = 12;
+const MIN_MIDDLE_WIDTH = 16;
+const DEFAULT_SIDE_WIDTH = 30;
 
 export default function Home() {
+  const [leftWidth, setLeftWidth] = useState(DEFAULT_SIDE_WIDTH);
+  const [rightWidth, setRightWidth] = useState(DEFAULT_SIDE_WIDTH);
+  const [isLeftVisible, setIsLeftVisible] = useState(true);
+
+  const startResize = useCallback(
+    (side: "left" | "right") => {
+      const handlePointerMove = (event: PointerEvent) => {
+        const viewportWidth = window.innerWidth;
+        const pointerPercent = (event.clientX / viewportWidth) * 100;
+
+        if (side === "left") {
+          const maxLeftWidth = 100 - rightWidth - MIN_MIDDLE_WIDTH;
+          setLeftWidth(
+            Math.min(Math.max(pointerPercent, MIN_SIDE_WIDTH), maxLeftWidth),
+          );
+          return;
+        }
+
+        const rightPercent = 100 - pointerPercent;
+        const visibleLeftWidth = isLeftVisible ? leftWidth : 0;
+        const maxRightWidth = 100 - visibleLeftWidth - MIN_MIDDLE_WIDTH;
+        setRightWidth(
+          Math.min(Math.max(rightPercent, MIN_SIDE_WIDTH), maxRightWidth),
+        );
+      };
+
+      const stopResize = () => {
+        window.removeEventListener("pointermove", handlePointerMove);
+        window.removeEventListener("pointerup", stopResize);
+      };
+
+      window.addEventListener("pointermove", handlePointerMove);
+      window.addEventListener("pointerup", stopResize);
+    },
+    [isLeftVisible, leftWidth, rightWidth],
+  );
+
+  const leftColumnWidth = isLeftVisible ? `${leftWidth}%` : "0px";
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="flex min-h-screen flex-col bg-white text-black">
+      <header className="relative h-14 border-b border-neutral-200 bg-white">
+        <button
+          aria-label={
+            isLeftVisible ? "Hide left side panel" : "Show left side panel"
+          }
+          className="absolute left-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-neutral-600 transition-colors hover:bg-neutral-200 hover:text-neutral-950"
+          onClick={() => setIsLeftVisible((visible) => !visible)}
+          type="button"
+        >
+          <span
+            className={`codicon ${
+              isLeftVisible
+                ? "codicon-layout-sidebar-left-off"
+                : "codicon-layout-sidebar-left"
+            }`}
+          />
+        </button>
+      </header>
+
+      <div
+        className="grid min-h-0 flex-1"
+        style={{
+          gridTemplateColumns: `${leftColumnWidth} 0.125rem minmax(0, 1fr) 0.125rem ${rightWidth}%`,
+        }}
+      >
+        <section className="h-full bg-neutral-100" />
+        <div className="relative h-full">
+          <button
+            aria-label="Resize left column"
+            className="group absolute left-1/2 top-0 z-10 flex h-full w-4 -translate-x-1/2 cursor-col-resize touch-none justify-center bg-transparent transition-colors hover:bg-neutral-200/20"
+            onPointerDown={() => {
+              setIsLeftVisible(true);
+              startResize("left");
+            }}
+            type="button"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <span className="h-full w-0.5 bg-neutral-300 transition-colors group-hover:bg-neutral-500" />
+          </button>
         </div>
-      </main>
-    </div>
+        <section className="h-full bg-white" />
+        <div className="relative h-full">
+          <button
+            aria-label="Resize right column"
+            className="group absolute left-1/2 top-0 z-10 flex h-full w-4 -translate-x-1/2 cursor-col-resize touch-none justify-center bg-transparent transition-colors hover:bg-neutral-200/20"
+            onPointerDown={() => startResize("right")}
+            type="button"
+          >
+            <span className="h-full w-0.5 bg-neutral-300 transition-colors group-hover:bg-neutral-500" />
+          </button>
+        </div>
+        <section className="h-full bg-neutral-100" />
+      </div>
+    </main>
   );
 }
+
+
