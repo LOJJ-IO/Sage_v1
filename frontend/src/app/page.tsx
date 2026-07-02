@@ -5,7 +5,6 @@ import {
   IconFileUpload,
   IconFilter2Spark,
   IconFilter2Up,
-  IconPin,
 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { useCallback, useState } from "react";
@@ -33,20 +32,25 @@ function TablerIcon({
 
 function FilePinIcon() {
   return (
-    <span className="relative inline-flex size-[17px] items-center justify-center">
-      <IconFile
-        aria-hidden="true"
-        className="text-current"
-        size={TABLER_ICON_SIZE}
-        stroke={TABLER_ICON_STROKE}
-      />
-      <IconPin
-        aria-hidden="true"
-        className="absolute -bottom-0.5 -right-0.5 text-current"
-        size={9}
-        stroke={TABLER_ICON_STROKE}
-      />
-    </span>
+    <svg
+      aria-hidden="true"
+      className="text-current"
+      fill="none"
+      height={TABLER_ICON_SIZE}
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={TABLER_ICON_STROKE}
+      viewBox="0 0 24 24"
+      width={TABLER_ICON_SIZE}
+    >
+      <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+      <path d="M7 21h3.25" />
+      <path d="M7 21v-14a2 2 0 0 1 2 -2h5l5 5v2.5" />
+      <path d="M17.25 14.75l-2.75 2.75-1.75 1-1 1 4.25 4.25 1-1 1.75-2.75 2.75-2.75" />
+      <path d="M13.75 18.75l-2.75 2.75" />
+      <path d="M17.25 14l2.75 2.75" />
+    </svg>
   );
 }
 
