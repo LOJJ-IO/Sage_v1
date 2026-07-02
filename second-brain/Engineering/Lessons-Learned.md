@@ -1,0 +1,46 @@
+---
+type: lessons
+status: active
+tags: [area/frontend]
+created: 2026-07-01
+updated: 2026-06-30
+related: ["[[Engineering/Bugs]]", "[[Troubleshooting]]", "[[UI-UX-Guidelines]]"]
+---
+
+# Lessons Learned
+
+Append-only log of non-obvious gotchas.
+
+## Format
+```
+### YYYY-MM-DD — short title
+What happened / what was surprising.
+Why it happened.
+What to do differently.
+```
+
+## Entries
+
+### 2026-06-30 — Resize hit area vs 2px grid track
+Putting `w-4` on a button inside a `0.125rem` grid column doesn't create a usable drag target — the column constrains layout width even if the button visually overflows.
+**Fix:** keep grid track at 2px; absolutely position the `w-4` button centered over the track (`left-1/2 -translate-x-1/2`). See [[Reusable-Patterns#Resizable panel divider]].
+
+### 2026-06-30 — Invalid Tailwind width class `w-3.3`
+`w-3.3` is not a valid Tailwind class — resize hit area silently didn't apply.
+**Fix:** use standard scale classes (`w-3`, `w-4`).
+
+### 2026-06-30 — `min-h-screen` on columns below a header
+Adding a top header + column sections with `min-h-screen` makes total height `header + 100vh`, causing unwanted page scroll.
+**Fix:** outer shell owns `min-h-screen flex-col`; panel row gets `flex-1 min-h-0`; inner sections use `h-full` / `flex-1`, not `min-h-screen`.
+
+### 2026-06-30 — Mixing px and % panel widths
+Collapsing a panel to a fixed pixel width while computing middle width as `100 - left% - right%` breaks when units mix.
+**Fix:** use CSS Grid with `1fr` for middle, or track visibility separately (`0px` when hidden, saved `%` when shown). See [[FEAT-app-shell-layout#Toggle behavior (visibility vs width)]].
+
+### 2026-06-30 — Tooltip sizing drift
+First tooltip implementation used `text-sm` + heavy padding — looked nothing like VS Code compact tooltips.
+**Fix:** `text-[12px]`, `px-2.5 py-1.5`, `leading-none`, `shadow-md`. Sidebar toggles use side placement, not bottom. See [[UI-UX-Guidelines#Tooltips]].
+
+### 2026-06-30 — One file is fine early; extract on boundaries
+It's normal for `page.tsx` to hold the whole shell while exploring UI. Additive programming ≠ never split files — it means don't bake in rigid assumptions before you know the shape.
+**Extract when:** responsibilities stabilize (header, resize hook, panel layout), not at an arbitrary line count. See [[Current-Context#Code organization philosophy]].
