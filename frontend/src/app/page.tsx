@@ -1,11 +1,11 @@
 "use client";
 
 import {
+  IconArrowsSort,
   IconEyeQuestion,
   IconFile,
-  IconFilter2Spark,
-  IconFilter2Up,
   IconUpload,
+  IconWand,
 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { useCallback, useState } from "react";
@@ -123,9 +123,16 @@ export default function Home() {
 
   const leftColumnWidth = isLeftVisible ? `${leftWidth}%` : "0px";
   const rightColumnWidth = isRightVisible ? `${rightWidth}%` : "0px";
+  const gridTemplateColumns = [
+    leftColumnWidth,
+    isLeftVisible ? "0.125rem" : "0px",
+    "minmax(0, 1fr)",
+    isRightVisible ? "0.125rem" : "0px",
+    rightColumnWidth,
+  ].join(" ");
 
   return (
-    <main className="flex min-h-screen flex-col bg-white text-black">
+    <main className="flex h-full flex-col overflow-hidden bg-white text-black">
       <header className="relative h-12 border-b border-neutral-200 bg-white">
         <div className="absolute left-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
           <HeaderIconButton
@@ -162,16 +169,14 @@ export default function Home() {
       </header>
 
       <div
-        className="grid min-h-0 flex-1"
-        style={{
-          gridTemplateColumns: `${leftColumnWidth} 0.125rem minmax(0, 1fr) 0.125rem ${rightColumnWidth}`,
-        }}
+        className="grid min-h-0 min-w-0 flex-1 overflow-hidden"
+        style={{ gridTemplateColumns }}
       >
         <section className="flex h-full min-w-0 flex-col overflow-hidden bg-neutral-100">
           <header className="flex h-12 shrink-0 items-center justify-center border-b border-neutral-200 bg-neutral-100">
             <div className="flex items-center gap-1">
               <HeaderIconButton
-                icon={<TablerIcon icon={IconFilter2Up} />}
+                icon={<TablerIcon icon={IconArrowsSort} />}
                 label="Sort"
               />
               <HeaderIconButton
@@ -179,7 +184,7 @@ export default function Home() {
                 label="New folder"
               />
               <HeaderIconButton
-                icon={<TablerIcon icon={IconFilter2Spark} />}
+                icon={<TablerIcon icon={IconWand} />}
                 label="Auto-Sort"
               />
               <HeaderIconButton
@@ -196,33 +201,37 @@ export default function Home() {
           <div className="min-h-0 flex-1" />
         </section>
         <div className="relative h-full">
-          <button
-            aria-label="Resize left column"
-            className="group absolute left-1/2 top-0 z-10 flex h-full w-4 -translate-x-1/2 cursor-col-resize touch-none justify-center bg-transparent transition-colors hover:bg-neutral-200/20"
-            onPointerDown={() => {
-              setIsLeftVisible(true);
-              startResize("left");
-            }}
-            type="button"
-          >
-            <span className="h-full w-0.5 bg-neutral-300 transition-colors group-hover:bg-neutral-500" />
-          </button>
+          {isLeftVisible ? (
+            <button
+              aria-label="Resize left column"
+              className="group absolute left-1/2 top-0 z-10 flex h-full w-4 -translate-x-1/2 cursor-col-resize touch-none justify-center bg-transparent transition-colors hover:bg-neutral-200/20"
+              onPointerDown={() => {
+                setIsLeftVisible(true);
+                startResize("left");
+              }}
+              type="button"
+            >
+              <span className="h-full w-0.5 bg-neutral-300 transition-colors group-hover:bg-neutral-500" />
+            </button>
+          ) : null}
         </div>
-        <section className="h-full bg-white" />
+        <section className="h-full min-w-0 overflow-hidden bg-white" />
         <div className="relative h-full">
-          <button
-            aria-label="Resize right column"
-            className="group absolute left-1/2 top-0 z-10 flex h-full w-4 -translate-x-1/2 cursor-col-resize touch-none justify-center bg-transparent transition-colors hover:bg-neutral-200/20"
-            onPointerDown={() => {
-              setIsRightVisible(true);
-              startResize("right");
-            }}
-            type="button"
-          >
-            <span className="h-full w-0.5 bg-neutral-300 transition-colors group-hover:bg-neutral-500" />
-          </button>
+          {isRightVisible ? (
+            <button
+              aria-label="Resize right column"
+              className="group absolute left-1/2 top-0 z-10 flex h-full w-4 -translate-x-1/2 cursor-col-resize touch-none justify-center bg-transparent transition-colors hover:bg-neutral-200/20"
+              onPointerDown={() => {
+                setIsRightVisible(true);
+                startResize("right");
+              }}
+              type="button"
+            >
+              <span className="h-full w-0.5 bg-neutral-300 transition-colors group-hover:bg-neutral-500" />
+            </button>
+          ) : null}
         </div>
-        <section className="h-full bg-neutral-100" />
+        <section className="h-full min-w-0 overflow-hidden bg-neutral-100" />
       </div>
     </main>
   );
