@@ -4,6 +4,8 @@ import {
   IconArrowsSort,
   IconEyeQuestion,
   IconFile,
+  IconFolder,
+  IconMessageCircle,
   IconMicrophone,
   IconMoon,
   IconSend,
@@ -13,6 +15,15 @@ import {
 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 
 const MIN_SIDE_WIDTH = 12;
 const MIN_MIDDLE_WIDTH = 16;
@@ -32,6 +43,46 @@ function TablerIcon({
       size={ICON_SIZE}
       stroke={ICON_STROKE}
     />
+  );
+}
+
+function FilesEmptyState() {
+  return (
+    <Empty className="h-full border-none px-4">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <IconFolder aria-hidden="true" stroke={2} />
+        </EmptyMedia>
+        <EmptyTitle>No files yet</EmptyTitle>
+        <EmptyDescription>
+          Upload documents to populate your file tree and keep everything in one
+          place.
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <Button size="sm" type="button">
+          <IconUpload aria-hidden="true" />
+          Upload files
+        </Button>
+      </EmptyContent>
+    </Empty>
+  );
+}
+
+function SageEmptyState() {
+  return (
+    <Empty className="h-full border-none px-4">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <IconMessageCircle aria-hidden="true" stroke={2} />
+        </EmptyMedia>
+        <EmptyTitle>Ask Sage</EmptyTitle>
+        <EmptyDescription>
+          Send a message below to get started. Ask about SOPs, pricing,
+          processes, and more. Sage helps you find answers across your docs.
+        </EmptyDescription>
+      </EmptyHeader>
+    </Empty>
   );
 }
 
@@ -245,7 +296,9 @@ export default function Home() {
               />
             </div>
           </header>
-          <div className="min-h-0 flex-1" />
+          <div className="min-h-0 flex-1 overflow-auto p-2">
+            <FilesEmptyState />
+          </div>
         </section>
         <div className="relative h-full">
           {isLeftVisible ? (
@@ -279,7 +332,9 @@ export default function Home() {
           ) : null}
         </div>
         <section className="flex h-full min-w-0 flex-col overflow-hidden bg-neutral-100 dark:bg-neutral-900">
-          <div className="min-h-0 flex-1" />
+          <div className="min-h-0 flex-1 overflow-auto p-2">
+            <SageEmptyState />
+          </div>
           <RightPanelChatInput />
         </section>
       </div>
