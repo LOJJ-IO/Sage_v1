@@ -74,17 +74,15 @@ Codicons get a subtle stroke so they match Tabler weight:
 className="codicon ... [-webkit-text-stroke:0.35px_currentColor]"
 ```
 
-Tabler icons in headers use:
+Tabler icons in headers use the `TablerIcon` helper:
 ```tsx
-size={17}
-stroke={2.2}
-className="text-current"
+const ICON_SIZE = 20;
+const ICON_STROKE = 2.6;
+
+<Icon size={ICON_SIZE} stroke={ICON_STROKE} className="text-current" />
 ```
 
-Constants in `page.tsx`: `TABLER_ICON_SIZE = 17`, `TABLER_ICON_STROKE = 2.2`.
-
-### Custom composite: file + pin (auto-reveal)
-Tabler `IconFile` with `IconPin` absolutely positioned at bottom-right (`size={9}`), wrapped in `relative size-[17px]`.
+Constants in `page.tsx`: `ICON_SIZE = 20`, `ICON_STROKE = 2.6`. Codicons in the same toolbar use `style={{ fontSize: ICON_SIZE }}`.
 
 ## `HeaderIconButton` pattern
 
@@ -94,7 +92,7 @@ All header icon buttons (global + left panel internal) use this component.
 
 ### Button
 ```tsx
-className="group relative flex size-8 items-center justify-center rounded-md text-neutral-600 transition-colors hover:bg-neutral-200 hover:text-neutral-950"
+className="group relative flex size-8 items-center justify-center rounded-md text-neutral-600 transition-colors hover:bg-neutral-200 hover:text-neutral-950 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
 ```
 
 Accepts either:

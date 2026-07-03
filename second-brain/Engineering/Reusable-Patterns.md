@@ -3,8 +3,8 @@ type: pattern
 status: active
 tags: [area/frontend]
 created: 2026-07-01
-updated: 2026-06-30
-related: ["[[Coding-Standards]]", "[[UI-UX-Guidelines]]", "[[FEAT-app-shell-layout]]"]
+updated: 2026-07-03
+related: ["[[Coding-Standards]]", "[[UI-UX-Guidelines]]", "[[FEAT-app-shell-layout]]", "[[Lessons-Learned]]"]
 ---
 
 # Reusable Patterns
@@ -36,7 +36,37 @@ const [isLeftVisible, setIsLeftVisible] = useState(true); // visibility only
 </div>
 ```
 **Why:** grid column stays 2px (visual boundary aligned); `w-4` button overflows for easier grabbing.
+**Collapsed panel:** set divider grid track to `0px` and **don't render** the resize handle — otherwise the 16px hit area overflows and causes viewport scrollbars. See [[Lessons-Learned#2026-07-03 — Global scrollbars when collapsing side panels]].
 **Don't use when:** putting `w-4` directly as the grid track width — hit area won't work correctly.
+
+### Viewport-locked app shell
+**Use when:** building a full-height editor-style layout that must never scroll the document body.
+**Example:** `frontend/src/app/layout.tsx` + `frontend/src/app/page.tsx`.
+**Shape:**
+```tsx
+// layout.tsx
+<html className="h-full">
+  <body className="flex h-full flex-col overflow-hidden">{children}</body>
+</html>
+
+// page.tsx
+<main className="flex h-full flex-col overflow-hidden ...">
+  <header className="h-12 shrink-0 ..." />
+  <div className="grid min-h-0 min-w-0 flex-1 overflow-hidden" />
+</main>
+```
+**Why:** prevents `min-h-screen` + header from exceeding viewport and stops resize-handle overflow from creating global scrollbars.
+**Don't use when:** the page is meant to scroll as a normal document (marketing pages, long forms).
+
+### Header icon-group separator
+**Use when:** visually separating sidebar toggles from nav/action icons in the global header.
+**Example:** `frontend/src/app/page.tsx` — left group (after left collapse) and right group (after dark-mode toggle).
+**Shape:**
+```tsx
+<div className="mx-2 h-5 w-px bg-neutral-200 dark:bg-neutral-700" />
+```
+**Why:** matches VS Code toolbar grouping; same token on both sides keeps light/dark consistent.
+**Don't use when:** icons are already in distinct visual clusters with enough spacing.
 
 ### HeaderIconButton (icon + compact tooltip)
 **Use when:** any header toolbar icon in Sage.
@@ -45,21 +75,21 @@ const [isLeftVisible, setIsLeftVisible] = useState(true); // visibility only
 - Codicon via `iconClass`
 - Custom icon via `icon` prop (Tabler, composites)
 - Tooltip placement: `bottom` | `left` | `right`
-**Don't use when:** the control isn't an icon button (use a proper button/link component pattern instead, TBD).
+- Dark mode: `dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100`
+**Don't use when:** the control isn't an icon button (use shadcn `Button` or a link pattern instead).
 
 ### Tabler icon in Codicon toolbar
 **Use when:** Codicons doesn't have the icon you need.
-**Example:**
+**Example:** `TablerIcon` helper in `page.tsx`:
 ```tsx
-<IconFileUpload size={17} stroke={2.2} className="text-current" />
-```
-Or wrap with `TablerIcon` helper in `page.tsx`.
-**Constants:** `TABLER_ICON_SIZE = 17`, `TABLER_ICON_STROKE = 2.2` — keep Tabler icons visually matched to stroked Codicons.
-**Don't use when:** a Codicon exists and looks right — prefer one library per toolbar where possible.
+const ICON_SIZE = 20;
+const ICON_STROKE = 2.6;
 
-### Composite icon (file + pin)
-**Use when:** auto-reveal / pinned file affordance.
-**Example:** `FilePinIcon` in `page.tsx` — `IconFile` + `IconPin` at `absolute -bottom-0.5 -right-0.5`, pin `size={9}`.
+<IconUpload size={ICON_SIZE} stroke={ICON_STROKE} className="text-current" />
+```
+Or pass through `TablerIcon` for header buttons. Chat input uses ad-hoc sizes (`IconMicrophone` 20, `IconSend` 18).
+**Constants:** `ICON_SIZE = 20`, `ICON_STROKE = 2.6` — keep Tabler icons visually matched to stroked Codicons (`fontSize: ICON_SIZE` on codicons).
+**Don't use when:** a Codicon exists and looks right — prefer one library per toolbar where possible.
 
 ### Full-height layout under a header
 **Use when:** stacking a fixed header above a scrollable/flexible body in a panel.
