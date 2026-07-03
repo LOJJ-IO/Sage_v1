@@ -212,13 +212,13 @@ export default function Home() {
                 label="Auto-Sort"
               />
               <HeaderIconButton
+                icon={<FilePinIcon />}
+                label="Auto-reveal current file"
+              />
+              <HeaderIconButton
                 iconClass={isFolded ? "codicon-unfold" : "codicon-fold"}
                 label={isFolded ? "Unfold" : "Fold"}
                 onClick={() => setIsFolded((folded) => !folded)}
-              />
-              <HeaderIconButton
-                icon={<FilePinIcon />}
-                label="Auto-reveal current file"
               />
             </div>
           </header>
