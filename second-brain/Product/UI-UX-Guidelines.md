@@ -3,7 +3,7 @@ type: product
 status: active
 tags: [area/frontend, area/design]
 created: 2026-07-01
-updated: 2026-06-30
+updated: 2026-07-03
 related: ["[[Product-Vision]]", "[[FEAT-app-shell-layout]]", "[[Reusable-Patterns]]"]
 ---
 
@@ -26,7 +26,7 @@ Feature-level detail for the current shell: [[FEAT-app-shell-layout]].
 | Resize divider line | `bg-neutral-300`, hover `neutral-500` |
 | Resize hit-area hover | `bg-neutral-200/20` (subtle) |
 
-Dark global header (`#262626`) was tried and **reverted** — stick to white global header unless explicitly re-spec'd.
+Dark global header (`#262626`) was tried and **reverted**. Dark mode now uses token-based `dark:` variants (header `dark:bg-neutral-950`, panels `dark:bg-neutral-900`) toggled via sun/moon in the global header right group.
 
 ### Spacing & sizing
 | Element | Size |
@@ -35,7 +35,7 @@ Dark global header (`#262626`) was tried and **reverted** — stick to white glo
 | Left panel internal header | `h-12` (48px) |
 | Icon button hit target | `size-8` (32px) |
 | Icon group gap | `gap-1` |
-| Sidebar toggle ↔ icon group separator | `mx-2` + `w-px h-5 bg-neutral-200` |
+| Header icon-group separator (both sides) | `mx-2 h-5 w-px bg-neutral-200 dark:bg-neutral-700` — left: after sidebar toggle, before nav icons; right: after dark-mode toggle, before sidebar collapse |
 | Resize visible line | `w-0.5` (2px) |
 | Resize drag hit area | `w-4` (16px), centered over 2px track |
 | Grid divider tracks | `0.125rem` (2px) |
