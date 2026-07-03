@@ -253,6 +253,7 @@ export default function Home() {
             onClick={() => setIsDark((dark) => !dark)}
             tooltipPlacement="left"
           />
+          <div className="mx-2 h-5 w-px bg-neutral-200 dark:bg-neutral-700" />
           <HeaderIconButton
             iconClass={
               isRightVisible
