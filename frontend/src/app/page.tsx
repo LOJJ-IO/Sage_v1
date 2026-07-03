@@ -3,9 +3,9 @@
 import {
   IconEyeQuestion,
   IconFile,
-  IconFileUpload,
   IconFilter2Spark,
   IconFilter2Up,
+  IconUpload,
 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { useCallback, useState } from "react";
@@ -13,8 +13,8 @@ import { useCallback, useState } from "react";
 const MIN_SIDE_WIDTH = 12;
 const MIN_MIDDLE_WIDTH = 16;
 const DEFAULT_SIDE_WIDTH = 30;
-const TABLER_ICON_SIZE = 17;
-const TABLER_ICON_STROKE = 2.2;
+const ICON_SIZE = 20;
+const ICON_STROKE = 2.6;
 
 function TablerIcon({
   icon: Icon,
@@ -25,8 +25,8 @@ function TablerIcon({
     <Icon
       aria-hidden="true"
       className="text-current"
-      size={TABLER_ICON_SIZE}
-      stroke={TABLER_ICON_STROKE}
+      size={ICON_SIZE}
+      stroke={ICON_STROKE}
     />
   );
 }
@@ -65,6 +65,7 @@ function HeaderIconButton({
       {icon ?? (
         <span
           className={`codicon ${iconClass} [-webkit-text-stroke:0.35px_currentColor]`}
+          style={{ fontSize: ICON_SIZE }}
         />
       )}
       <span
@@ -141,14 +142,7 @@ export default function Home() {
           <HeaderIconButton iconClass="codicon-folder-library" label="Files" />
           <HeaderIconButton iconClass="codicon-search" label="Search" />
           <HeaderIconButton
-            icon={
-              <IconFileUpload
-                aria-hidden="true"
-                className="text-current"
-                size={17}
-                stroke={2.2}
-              />
-            }
+            icon={<TablerIcon icon={IconUpload} />}
             label="Upload"
           />
           <HeaderIconButton iconClass="codicon-bookmark" label="Bookmarks" />
