@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  IconEyeQuestion,
   IconFile,
   IconFileUpload,
   IconFilter2Spark,
@@ -27,30 +28,6 @@ function TablerIcon({
       size={TABLER_ICON_SIZE}
       stroke={TABLER_ICON_STROKE}
     />
-  );
-}
-
-function FilePinIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="text-current"
-      fill="none"
-      height={TABLER_ICON_SIZE}
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={TABLER_ICON_STROKE}
-      viewBox="0 0 24 24"
-      width={TABLER_ICON_SIZE}
-    >
-      <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-      <path d="M7 21h3.25" />
-      <path d="M7 21v-14a2 2 0 0 1 2 -2h5l5 5v2.5" />
-      <path d="M17.25 14.75l-2.75 2.75-1.75 1-1 1 4.25 4.25 1-1 1.75-2.75 2.75-2.75" />
-      <path d="M13.75 18.75l-2.75 2.75" />
-      <path d="M17.25 14l2.75 2.75" />
-    </svg>
   );
 }
 
@@ -212,7 +189,7 @@ export default function Home() {
                 label="Auto-Sort"
               />
               <HeaderIconButton
-                icon={<FilePinIcon />}
+                icon={<TablerIcon icon={IconEyeQuestion} />}
                 label="Auto-reveal current file"
               />
               <HeaderIconButton
