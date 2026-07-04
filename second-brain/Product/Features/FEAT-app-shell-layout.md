@@ -71,7 +71,8 @@ Left group also has a vertical separator after the sidebar toggle (same classes)
 ### Resize behavior
 - Drag handles between panels: **2px visible line** (`w-0.5`), **16px hit area** (`w-4` button absolutely centered over the 2px grid track).
 - Hover on hit area: `bg-neutral-200/20`.
-- `MIN_SIDE_WIDTH = 12%`, `MIN_MIDDLE_WIDTH = 16%`, `DEFAULT_SIDE_WIDTH = 30%`.
+- `MIN_SIDE_WIDTH = 14%`, `MIN_MIDDLE_WIDTH = 16%`, `DEFAULT_SIDE_WIDTH = 30%`.
+- Raised from 12% → 14% (2026-07-03) so left-panel toolbar tooltips (e.g. "Auto-reveal current file") aren't clipped by panel `overflow-hidden` at minimum width. See [[Lessons-Learned#2026-07-03 — Panel tooltips clipped at minimum resize width]].
 - Resize updates **saved width** (`leftWidth` / `rightWidth`).
 - Dragging a hidden panel's handle **re-shows** that panel.
 

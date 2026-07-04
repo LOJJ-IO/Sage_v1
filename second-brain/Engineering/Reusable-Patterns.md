@@ -20,6 +20,8 @@ Code patterns proven to work in this codebase. Copy instead of reinventing.
 ```tsx
 const [leftWidth, setLeftWidth] = useState(30);      // saved width %
 const [isLeftVisible, setIsLeftVisible] = useState(true); // visibility only
+const MIN_SIDE_WIDTH = 14;  // min % when panel open
+const MIN_MIDDLE_WIDTH = 16;
 ```
 **Don't use when:** the UI element isn't a persistent dockable region (use modal/drawer instead, once one exists).
 
@@ -63,9 +65,9 @@ const [isLeftVisible, setIsLeftVisible] = useState(true); // visibility only
 **Example:** `frontend/src/app/page.tsx` — left group (after left collapse) and right group (after dark-mode toggle).
 **Shape:**
 ```tsx
-<div className="mx-2 h-5 w-px bg-neutral-200 dark:bg-neutral-700" />
+<div className="mx-2 h-5 w-px bg-border" />
 ```
-**Why:** matches VS Code toolbar grouping; same token on both sides keeps light/dark consistent.
+**Why:** matches VS Code toolbar grouping; uses theme `border` token for light/dark.
 **Don't use when:** icons are already in distinct visual clusters with enough spacing.
 
 ### HeaderIconButton (icon + compact tooltip)
@@ -75,7 +77,7 @@ const [isLeftVisible, setIsLeftVisible] = useState(true); // visibility only
 - Codicon via `iconClass`
 - Custom icon via `icon` prop (Tabler, composites)
 - Tooltip placement: `bottom` | `left` | `right`
-- Dark mode: `dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100`
+- Dark mode: `text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring/50`
 **Don't use when:** the control isn't an icon button (use shadcn `Button` or a link pattern instead).
 
 ### Tabler icon in Codicon toolbar

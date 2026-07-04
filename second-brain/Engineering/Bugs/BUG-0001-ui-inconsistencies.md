@@ -52,8 +52,8 @@ No shared focus, hover, size, or dark-mode contract across these.
 | Upload → `IconFileUpload` | `IconUpload` |
 
 ### Styling system split
-- shadcn components use CSS variables from `globals.css` (`--primary`, `--muted`, etc.).
-- `HeaderIconButton`, chat input, and panel backgrounds use inline `neutral-*` Tailwind — not token-driven.
+- shadcn components and shell chrome both use CSS variables from `globals.css` (`--primary`, `--muted`, `--sidebar`, etc.) as of 2026-07-03.
+- VS Code compact tooltips remain hardcoded black — intentional.
 
 ### Dark mode incomplete
 - `isDark` toggles `dark` on `<html>` only.

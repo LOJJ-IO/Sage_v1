@@ -49,11 +49,11 @@ Tracked in detail: [[BUG-0001-ui-inconsistencies]]. Summary:
 |---|---|---|
 | 1 | Icons | Tabler header icons (`TablerIcon`) use `stroke={2.6}`; Codicons use `0.35px` webkit text-stroke — Upload looks heavier than Fold/Unfold and other Codicons in the same toolbar pattern. |
 | 2 | Icons | Tabler stroke/size not unified: headers `2.6`, empty states `2`, chat mic `2` / send `18px`+`2` — bypass `TablerIcon` helper in several places. |
-| 3 | Buttons | Three button implementations coexist: shadcn `Button`, custom `HeaderIconButton`, raw `<button>` (chat + resize handles) — no shared variant system. |
+| 3 | Buttons | Three button implementations coexist: shadcn `Button`, custom `HeaderIconButton`, raw `<button>` (chat + resize) — **partial fix 2026-07-03:** chrome buttons now share token-based hover/focus colors with shadcn ghost pattern. Still separate components. |
 | 4 | Icons | Upload in empty-state `Button` uses bare `IconUpload` (Tabler defaults); header Upload uses `TablerIcon` — same icon, different weight. |
 | 5 | Panel layout | **Docs vs code:** [[FEAT-app-shell-layout]] previously said `AskAiEmptyState` in center; code has **empty center panel** and `AskAiEmptyState` in **right** panel only. |
 | 6 | Docs | [[FEAT-app-shell-layout]] left-panel icon table stale — docs list `IconFilter2Up`, `IconFilter2Spark`, file+pin composite; code uses `IconArrowsSort`, `IconWand`, `IconEyeQuestion`. Global header docs say `IconFileUpload`; code uses `IconUpload`. |
-| 7 | Design tokens | Chat input + `HeaderIconButton` use hardcoded `neutral-*` classes; shadcn `Button`/`Empty` use CSS variables (`--primary`, `--muted`) — two styling systems in one UI. |
+| 7 | Design tokens | ~~Chat input + `HeaderIconButton` use hardcoded `neutral-*`~~ — **partial fix 2026-07-03:** shell chrome + `AskAiChatInput` now use theme tokens (`background`, `foreground`, `sidebar`, `border`, `muted`, `secondary`). Tooltips still hardcoded black (VS Code style). |
 | 8 | Dark mode | Toggle is client-only; no `localStorage`, no `prefers-color-scheme` — resets on refresh. |
 | 9 | Placeholder UI | Upload button, voice, and send have no handlers — visual only. |
 | 10 | Config | `components.json` sets `iconLibrary: lucide`; app uses Tabler + Codicons. |
@@ -88,20 +88,20 @@ Likely first extractions: `HeaderIconButton`, resize hook, panel layout componen
 - Full UI spec lives in [[UI-UX-Guidelines]] and [[FEAT-app-shell-layout]] — don't re-derive from chat.
 - Icon libraries: `@vscode/codicons` + `@tabler/icons-react`.
 - Resize vs toggle are **separate state** (`leftWidth`/`rightWidth` vs `isLeftVisible`/`isRightVisible`).
-- Global header background: white in light mode, `neutral-950` in dark mode (the old solid `#262626` header experiment was reverted — dark mode now uses token-based `dark:` variants instead).
-- Header icon groups separated from sidebar toggles by vertical dividers on **both** sides: `mx-2 h-5 w-px bg-neutral-200 dark:bg-neutral-700`.
+- Global header background uses `bg-background`; side panels use `bg-sidebar`; center uses `bg-background`. Theme tokens in `globals.css` — toggle dark mode via header sun/moon.
+- Header icon groups separated from sidebar toggles by vertical dividers on **both** sides: `mx-2 h-5 w-px bg-border`.
 - Dark mode toggle lives in the **right** header group, before its separator and the right sidebar collapse.
 - Resize divider: 2px grid track + absolutely positioned `w-4` hit area.
+- Panel resize mins: `MIN_SIDE_WIDTH = 14%`, `MIN_MIDDLE_WIDTH = 16%`, default sides `30%` — constants at top of `page.tsx`.
 - Tooltip style: compact black, `12px` semibold, not large pills.
 
 ## Recently changed
 
-- **2026-07-03** — Right header group vertical separator between dark-mode toggle and sidebar collapse (`837e8335`).
-- **2026-07-03** — Dark mode, shadcn empty states, right-panel chat input stub. See [[Daily/2026-07-03]].
-- Left panel internal header icons (Sort, New folder, Auto sort, Fold/unfold, Auto-reveal).
-- Fold/unfold toggles icon + tooltip based on `isFolded`.
-- Sidebar toggle tooltips renamed to **Collapse**, side-placed.
-- See [[Daily/2026-06-30]] for earlier shell work.
+- **2026-07-03** — `MIN_SIDE_WIDTH` 12% → **14%** (tooltip clipping fix on narrow left panel). See [[Lessons-Learned#2026-07-03 — Panel tooltips clipped at minimum resize width]].
+- **2026-07-03** — Shell chrome migrated to design tokens (`background`, `sidebar`, `muted`, etc.).
+- **2026-07-03** — Tabler icons unified via `TablerIcon`; Ask AI naming; folder empty state uses header Codicon.
+- **2026-07-03** — Right header group vertical separator (`837e8335`).
+- See [[Daily/2026-07-03]] for earlier Jul 3 work. See [[Daily/2026-06-30]] for initial shell work.
 
 ---
 *Update whenever priorities shift. Delete stale lines rather than leaving them.*

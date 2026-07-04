@@ -24,7 +24,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 
-const MIN_SIDE_WIDTH = 12;
+const MIN_SIDE_WIDTH = 14;
 const MIN_MIDDLE_WIDTH = 16;
 const DEFAULT_SIDE_WIDTH = 30;
 const ICON_SIZE = 20;
@@ -244,7 +244,7 @@ export default function Home() {
             onClick={() => setIsLeftVisible((visible) => !visible)}
             tooltipPlacement="right"
           />
-          <div className="mx-2 h-5 w-px bg-neutral-200 dark:bg-neutral-700" />
+          <div className="mx-2 h-5 w-px bg-border" />
           <HeaderIconButton iconClass="codicon-folder-library" label="Files" />
           <HeaderIconButton iconClass="codicon-search" label="Search" />
           <HeaderIconButton
@@ -260,7 +260,7 @@ export default function Home() {
             onClick={() => setIsDark((dark) => !dark)}
             tooltipPlacement="left"
           />
-          <div className="mx-2 h-5 w-px bg-neutral-200 dark:bg-neutral-700" />
+          <div className="mx-2 h-5 w-px bg-border" />
           <HeaderIconButton
             iconClass={
               isRightVisible
@@ -278,8 +278,8 @@ export default function Home() {
         className="grid min-h-0 min-w-0 flex-1 overflow-hidden"
         style={{ gridTemplateColumns }}
       >
-        <section className="flex h-full min-w-0 flex-col overflow-hidden bg-neutral-100 dark:bg-neutral-900">
-          <header className="flex h-12 shrink-0 items-center justify-center border-b border-neutral-200 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900">
+        <section className="flex h-full min-w-0 flex-col overflow-hidden bg-sidebar">
+          <header className="flex h-12 shrink-0 items-center justify-center border-b border-border bg-sidebar">
             <div className="flex items-center gap-1">
               <HeaderIconButton
                 icon={<TablerIcon icon={IconArrowsSort} />}
@@ -312,34 +312,34 @@ export default function Home() {
           {isLeftVisible ? (
             <button
               aria-label="Resize left column"
-              className="group absolute left-1/2 top-0 z-10 flex h-full w-4 -translate-x-1/2 cursor-col-resize touch-none justify-center bg-transparent transition-colors hover:bg-neutral-200/20 dark:hover:bg-neutral-700/20"
+              className="group absolute left-1/2 top-0 z-10 flex h-full w-4 -translate-x-1/2 cursor-col-resize touch-none justify-center bg-transparent transition-colors hover:bg-muted/30"
               onPointerDown={() => {
                 setIsLeftVisible(true);
                 startResize("left");
               }}
               type="button"
             >
-              <span className="h-full w-0.5 bg-neutral-300 transition-colors group-hover:bg-neutral-500 dark:bg-neutral-700" />
+              <span className="h-full w-0.5 bg-border transition-colors group-hover:bg-muted-foreground" />
             </button>
           ) : null}
         </div>
-        <section className="h-full min-w-0 overflow-hidden bg-white dark:bg-neutral-950" />
+        <section className="h-full min-w-0 overflow-hidden bg-background" />
         <div className="relative h-full">
           {isRightVisible ? (
             <button
               aria-label="Resize right column"
-              className="group absolute left-1/2 top-0 z-10 flex h-full w-4 -translate-x-1/2 cursor-col-resize touch-none justify-center bg-transparent transition-colors hover:bg-neutral-200/20 dark:hover:bg-neutral-700/20"
+              className="group absolute left-1/2 top-0 z-10 flex h-full w-4 -translate-x-1/2 cursor-col-resize touch-none justify-center bg-transparent transition-colors hover:bg-muted/30"
               onPointerDown={() => {
                 setIsRightVisible(true);
                 startResize("right");
               }}
               type="button"
             >
-              <span className="h-full w-0.5 bg-neutral-300 transition-colors group-hover:bg-neutral-500 dark:bg-neutral-700" />
+              <span className="h-full w-0.5 bg-border transition-colors group-hover:bg-muted-foreground" />
             </button>
           ) : null}
         </div>
-        <section className="flex h-full min-w-0 flex-col overflow-hidden bg-neutral-100 dark:bg-neutral-900">
+        <section className="flex h-full min-w-0 flex-col overflow-hidden bg-sidebar">
           <div className="min-h-0 flex-1 overflow-auto p-2">
             <AskAiEmptyState />
           </div>

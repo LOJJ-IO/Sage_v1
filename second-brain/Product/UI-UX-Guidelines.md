@@ -35,7 +35,7 @@ Dark global header (`#262626`) was tried and **reverted**. Dark mode now uses to
 | Left panel internal header | `h-12` (48px) |
 | Icon button hit target | `size-8` (32px) |
 | Icon group gap | `gap-1` |
-| Header icon-group separator (both sides) | `mx-2 h-5 w-px bg-neutral-200 dark:bg-neutral-700` — left: after sidebar toggle, before nav icons; right: after dark-mode toggle, before sidebar collapse |
+| Header icon-group separator (both sides) | `mx-2 h-5 w-px bg-border` — left: after sidebar toggle, before nav icons; right: after dark-mode toggle, before sidebar collapse |
 | Resize visible line | `w-0.5` (2px) |
 | Resize drag hit area | `w-4` (16px), centered over 2px track |
 | Grid divider tracks | `0.125rem` (2px) |
@@ -92,7 +92,7 @@ All header icon buttons (global + left panel internal) use this component.
 
 ### Button
 ```tsx
-className="group relative flex size-8 items-center justify-center rounded-md text-neutral-600 transition-colors hover:bg-neutral-200 hover:text-neutral-950 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+className="group relative flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
 ```
 
 Accepts either:
@@ -126,6 +126,7 @@ Key rules:
 - Grid track is **2px**; wider hit area is **absolutely positioned** over it (`w-4`, `left-1/2 -translate-x-1/2`).
 - Do **not** put `w-4` directly in a 2px grid column — it won't work as a hit target.
 - Resize changes saved width; does not affect visibility state.
+- Min side width **14%** (`MIN_SIDE_WIDTH` in `page.tsx`); min center **16%** (`MIN_MIDDLE_WIDTH`). Default sides **30%**.
 
 ## Panel toggle (visibility)
 

@@ -49,3 +49,8 @@ It's normal for `page.tsx` to hold the whole shell while exploring UI. Additive 
 Collapsing the right panel caused viewport scrollbars (horizontal + vertical).
 **Why:** (1) `min-h-screen` + header can exceed viewport if body margin isn't reset; (2) the 16px resize hit area (`w-4`) on a 2px grid track overflows past the grid edge when the adjacent panel column is `0px`.
 **Fix:** lock shell to viewport (`html`/`body`/`main`: `h-full overflow-hidden`, `body { margin: 0 }`); hide resize divider columns (`0px` track + no handle) when their panel is collapsed; restore via header toggle. See [[Reusable-Patterns#Viewport-locked app shell]] and [[Reusable-Patterns#Resizable panel divider]].
+
+### 2026-07-03 — Panel tooltips clipped at minimum resize width
+At `MIN_SIDE_WIDTH = 12%`, long bottom tooltips (e.g. "Auto-reveal current file" on the left panel header) were cut off when the panel was dragged narrow.
+**Why:** Panel sections use `overflow-hidden`; tooltips are `absolute` inside the panel, not portaled. Extra `z-index` does not escape overflow clipping.
+**Fix:** raised `MIN_SIDE_WIDTH` to **14%** in `page.tsx`. Alternative later: `overflow-visible` on panel header only, side-placed tooltips, or portal tooltips to `document.body`.
