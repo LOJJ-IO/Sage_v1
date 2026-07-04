@@ -11,10 +11,14 @@
             "id": "b2649c847a6770ea",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Graph view"
+              "type": "markdown",
+              "state": {
+                "file": "Engineering/Bugs/BUG-0001-ui-inconsistencies.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "BUG-0001-ui-inconsistencies"
             }
           }
         ]
@@ -90,6 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "BUG-NNNN-xxx.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -99,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks"
+              "title": "Backlinks for BUG-NNNN-xxx"
             }
           },
           {
@@ -108,11 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "BUG-NNNN-xxx.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links"
+              "title": "Outgoing links from BUG-NNNN-xxx"
             }
           },
           {
@@ -136,12 +142,13 @@
             "state": {
               "type": "outline",
               "state": {
+                "file": "BUG-NNNN-xxx.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline"
+              "title": "Outline of BUG-NNNN-xxx"
             }
           }
         ]
@@ -165,8 +172,9 @@
   "active": "b2649c847a6770ea",
   "lastOpenFiles": [
     "Engineering/Bugs.md",
-    "Templates/Bug-Report.md",
+    "Engineering/Bugs/BUG-0001-ui-inconsistencies.md",
     "BUG-NNNN-xxx.md",
+    "Templates/Bug-Report.md",
     "Templates/ADR.md",
     "Product/UI-UX-Guidelines.md",
     "Daily/2026-07-03.md",

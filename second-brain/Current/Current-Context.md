@@ -4,7 +4,7 @@ status: active
 tags: [area/frontend]
 created: 2026-07-01
 updated: 2026-07-03
-related: ["[[Roadmap]]", "[[Architecture-Overview]]", "[[FEAT-app-shell-layout]]", "[[UI-UX-Guidelines]]"]
+related: ["[[Roadmap]]", "[[Architecture-Overview]]", "[[FEAT-app-shell-layout]]", "[[UI-UX-Guidelines]]", "[[BUG-0001-ui-inconsistencies]]"]
 ---
 
 # Current Context
@@ -19,7 +19,7 @@ Sage is early-stage. `frontend/` is a Next.js 16 / React 19 app building a VS Co
 
 - **App shell layout** — resizable/toggleable left & right side panels, global header, left panel internal header with icons. See [[FEAT-app-shell-layout]] and [[UI-UX-Guidelines]].
 - **Dark mode** — client-side toggle in global header (sun/moon); `dark` class on `<html>`.
-- Panel **content** is placeholder UI only: empty states (left + center), chat input stub (right). No real file tree, editor, or chat backend.
+- Panel **content** is placeholder UI only: `FilesEmptyState` (left), `SageEmptyState` (right), empty center, chat input stub (right). No real file tree, editor, or chat backend.
 - No backend work started.
 
 ## What's built (UI)
@@ -35,9 +35,30 @@ Sage is early-stage. `frontend/` is a Next.js 16 / React 19 app building a VS Co
 | Resize handles (2px line, 16px hit area) | Done |
 | `HeaderIconButton` + compact black tooltips | Done |
 | Fold/unfold icon toggle (UI state only) | Done |
-| Empty states (left files, center Sage) via shadcn `Empty` | Done (UI only) |
+| Empty state — left panel (`FilesEmptyState`) via shadcn `Empty` | Done (UI only) |
+| Empty state — right panel (`SageEmptyState`) via shadcn `Empty` | Done (UI only) |
+| Center panel content | **Empty** — no placeholder yet |
 | Right panel chat input (voice + send buttons) | Done (UI only) |
 | File tree / editor / real chat | Not started |
+
+## Known bugs / inconsistencies
+
+Tracked in detail: [[BUG-0001-ui-inconsistencies]]. Summary:
+
+| # | Area | Bug |
+|---|---|---|
+| 1 | Icons | Tabler header icons (`TablerIcon`) use `stroke={2.6}`; Codicons use `0.35px` webkit text-stroke — Upload looks heavier than Fold/Unfold and other Codicons in the same toolbar pattern. |
+| 2 | Icons | Tabler stroke/size not unified: headers `2.6`, empty states `2`, chat mic `2` / send `18px`+`2` — bypass `TablerIcon` helper in several places. |
+| 3 | Buttons | Three button implementations coexist: shadcn `Button`, custom `HeaderIconButton`, raw `<button>` (chat + resize handles) — no shared variant system. |
+| 4 | Icons | Upload in empty-state `Button` uses bare `IconUpload` (Tabler defaults); header Upload uses `TablerIcon` — same icon, different weight. |
+| 5 | Panel layout | **Docs vs code:** [[FEAT-app-shell-layout]] and prior context said `SageEmptyState` in center; code has **empty center panel** and `SageEmptyState` in **right** panel only. |
+| 6 | Docs | [[FEAT-app-shell-layout]] left-panel icon table stale — docs list `IconFilter2Up`, `IconFilter2Spark`, file+pin composite; code uses `IconArrowsSort`, `IconWand`, `IconEyeQuestion`. Global header docs say `IconFileUpload`; code uses `IconUpload`. |
+| 7 | Design tokens | Chat input + `HeaderIconButton` use hardcoded `neutral-*` classes; shadcn `Button`/`Empty` use CSS variables (`--primary`, `--muted`) — two styling systems in one UI. |
+| 8 | Dark mode | Toggle is client-only; no `localStorage`, no `prefers-color-scheme` — resets on refresh. |
+| 9 | Placeholder UI | Upload button, voice, and send have no handlers — visual only. |
+| 10 | Config | `components.json` sets `iconLibrary: lucide`; app uses Tabler + Codicons. |
+| 11 | Metadata | `layout.tsx` still has Next.js scaffold title/description ("Create Next App"). |
+| 12 | Dev env | `@import "tw-animate-css"` in `globals.css` may fail under Turbopack until cache clear or explicit import path. |
 
 ## Open questions
 
