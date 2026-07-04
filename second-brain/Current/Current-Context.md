@@ -19,7 +19,7 @@ Sage is early-stage. `frontend/` is a Next.js 16 / React 19 app building a VS Co
 
 - **App shell layout** — resizable/toggleable left & right side panels, global header, left panel internal header with icons. See [[FEAT-app-shell-layout]] and [[UI-UX-Guidelines]].
 - **Dark mode** — client-side toggle in global header (sun/moon); `dark` class on `<html>`.
-- Panel **content** is placeholder UI only: `FilesEmptyState` (left), `SageEmptyState` (right), empty center, chat input stub (right). No real file tree, editor, or chat backend.
+- Panel **content** is placeholder UI only: `FilesEmptyState` (left), `AskAiEmptyState` (right), empty center, `AskAiChatInput` stub (right). No real file tree, editor, or chat backend.
 - No backend work started.
 
 ## What's built (UI)
@@ -36,9 +36,9 @@ Sage is early-stage. `frontend/` is a Next.js 16 / React 19 app building a VS Co
 | `HeaderIconButton` + compact black tooltips | Done |
 | Fold/unfold icon toggle (UI state only) | Done |
 | Empty state — left panel (`FilesEmptyState`) via shadcn `Empty` | Done (UI only) |
-| Empty state — right panel (`SageEmptyState`) via shadcn `Empty` | Done (UI only) |
+| Empty state — right panel (`AskAiEmptyState`) via shadcn `Empty` | Done (UI only) |
 | Center panel content | **Empty** — no placeholder yet |
-| Right panel chat input (voice + send buttons) | Done (UI only) |
+| Right panel chat input (`AskAiChatInput`, voice + send buttons) | Done (UI only) |
 | File tree / editor / real chat | Not started |
 
 ## Known bugs / inconsistencies
@@ -51,7 +51,7 @@ Tracked in detail: [[BUG-0001-ui-inconsistencies]]. Summary:
 | 2 | Icons | Tabler stroke/size not unified: headers `2.6`, empty states `2`, chat mic `2` / send `18px`+`2` — bypass `TablerIcon` helper in several places. |
 | 3 | Buttons | Three button implementations coexist: shadcn `Button`, custom `HeaderIconButton`, raw `<button>` (chat + resize handles) — no shared variant system. |
 | 4 | Icons | Upload in empty-state `Button` uses bare `IconUpload` (Tabler defaults); header Upload uses `TablerIcon` — same icon, different weight. |
-| 5 | Panel layout | **Docs vs code:** [[FEAT-app-shell-layout]] and prior context said `SageEmptyState` in center; code has **empty center panel** and `SageEmptyState` in **right** panel only. |
+| 5 | Panel layout | **Docs vs code:** [[FEAT-app-shell-layout]] previously said `AskAiEmptyState` in center; code has **empty center panel** and `AskAiEmptyState` in **right** panel only. |
 | 6 | Docs | [[FEAT-app-shell-layout]] left-panel icon table stale — docs list `IconFilter2Up`, `IconFilter2Spark`, file+pin composite; code uses `IconArrowsSort`, `IconWand`, `IconEyeQuestion`. Global header docs say `IconFileUpload`; code uses `IconUpload`. |
 | 7 | Design tokens | Chat input + `HeaderIconButton` use hardcoded `neutral-*` classes; shadcn `Button`/`Empty` use CSS variables (`--primary`, `--muted`) — two styling systems in one UI. |
 | 8 | Dark mode | Toggle is client-only; no `localStorage`, no `prefers-color-scheme` — resets on refresh. |

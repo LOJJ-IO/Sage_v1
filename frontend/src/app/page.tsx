@@ -4,7 +4,6 @@ import {
   IconArrowsSort,
   IconEyeQuestion,
   IconFile,
-  IconFolder,
   IconMessageCircle,
   IconMicrophone,
   IconMoon,
@@ -29,18 +28,22 @@ const MIN_SIDE_WIDTH = 12;
 const MIN_MIDDLE_WIDTH = 16;
 const DEFAULT_SIDE_WIDTH = 30;
 const ICON_SIZE = 20;
-const ICON_STROKE = 2.6;
+const ICON_SIZE_SM = 14;
+const ICON_SIZE_EMPTY = 16;
+const ICON_STROKE = 2.2;
 
 function TablerIcon({
   icon: Icon,
+  size = ICON_SIZE,
 }: {
   icon: typeof IconFile;
+  size?: number;
 }) {
   return (
     <Icon
       aria-hidden="true"
       className="text-current"
-      size={ICON_SIZE}
+      size={size}
       stroke={ICON_STROKE}
     />
   );
@@ -51,7 +54,11 @@ function FilesEmptyState() {
     <Empty className="h-full border-none px-4">
       <EmptyHeader>
         <EmptyMedia variant="icon">
-          <IconFolder aria-hidden="true" stroke={2} />
+          <span
+            aria-hidden="true"
+            className="codicon codicon-folder-library [-webkit-text-stroke:0.35px_currentColor]"
+            style={{ fontSize: ICON_SIZE_EMPTY }}
+          />
         </EmptyMedia>
         <EmptyTitle>No files yet</EmptyTitle>
         <EmptyDescription>
@@ -61,7 +68,7 @@ function FilesEmptyState() {
       </EmptyHeader>
       <EmptyContent>
         <Button size="sm" type="button">
-          <IconUpload aria-hidden="true" />
+          <TablerIcon icon={IconUpload} size={ICON_SIZE_SM} />
           Upload files
         </Button>
       </EmptyContent>
@@ -69,49 +76,49 @@ function FilesEmptyState() {
   );
 }
 
-function SageEmptyState() {
+function AskAiEmptyState() {
   return (
     <Empty className="h-full border-none px-4">
       <EmptyHeader>
         <EmptyMedia variant="icon">
-          <IconMessageCircle aria-hidden="true" stroke={2} />
+          <TablerIcon icon={IconMessageCircle} size={ICON_SIZE_EMPTY} />
         </EmptyMedia>
-        <EmptyTitle>Ask Sage</EmptyTitle>
+        <EmptyTitle>Ask AI</EmptyTitle>
         <EmptyDescription>
           Send a message below to get started. Ask about SOPs, pricing,
-          processes, and more. Sage helps you find answers across your docs.
+          processes, and more. AI helps you find answers across your docs.
         </EmptyDescription>
       </EmptyHeader>
     </Empty>
   );
 }
 
-function RightPanelChatInput() {
+function AskAiChatInput() {
   const [message, setMessage] = useState("");
 
   return (
-    <div className="shrink-0 bg-neutral-100 p-3 dark:bg-neutral-900">
-      <div className="flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white py-1.5 pl-4 pr-1.5 shadow-sm dark:border-neutral-700 dark:bg-neutral-950">
+    <div className="shrink-0 bg-sidebar p-3">
+      <div className="flex items-center gap-1.5 rounded-full border border-border bg-background py-1.5 pl-4 pr-1.5 shadow-sm">
         <input
-          className="min-w-0 flex-1 bg-transparent text-sm text-neutral-950 outline-none placeholder:text-neutral-400 dark:text-neutral-100 dark:placeholder:text-neutral-500"
+          className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
           onChange={(event) => setMessage(event.target.value)}
-          placeholder="Ask Sage..."
+          placeholder="Ask AI..."
           type="text"
           value={message}
         />
         <button
           aria-label="Voice input"
-          className="flex size-8 shrink-0 items-center justify-center rounded-full text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          className="flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           type="button"
         >
-          <IconMicrophone aria-hidden="true" size={20} stroke={2} />
+          <TablerIcon icon={IconMicrophone} />
         </button>
         <button
           aria-label="Send message"
-          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-neutral-200 text-neutral-600 transition-colors hover:bg-neutral-300 hover:text-neutral-950 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:hover:text-neutral-100"
+          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-secondary/80"
           type="button"
         >
-          <IconSend aria-hidden="true" size={18} stroke={2} />
+          <TablerIcon icon={IconSend} />
         </button>
       </div>
     </div>
@@ -145,7 +152,7 @@ function HeaderIconButton({
   return (
     <button
       aria-label={label}
-      className="group relative flex size-8 items-center justify-center rounded-md text-neutral-600 transition-colors hover:bg-neutral-200 hover:text-neutral-950 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+      className="group relative flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       onClick={onClick}
       type="button"
     >
@@ -224,8 +231,8 @@ export default function Home() {
   ].join(" ");
 
   return (
-    <main className="flex h-full flex-col overflow-hidden bg-white text-black dark:bg-neutral-950 dark:text-neutral-100">
-      <header className="relative h-12 border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
+    <main className="flex h-full flex-col overflow-hidden bg-background text-foreground">
+      <header className="relative h-12 border-b border-border bg-background">
         <div className="absolute left-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
           <HeaderIconButton
             iconClass={
@@ -334,9 +341,9 @@ export default function Home() {
         </div>
         <section className="flex h-full min-w-0 flex-col overflow-hidden bg-neutral-100 dark:bg-neutral-900">
           <div className="min-h-0 flex-1 overflow-auto p-2">
-            <SageEmptyState />
+            <AskAiEmptyState />
           </div>
-          <RightPanelChatInput />
+          <AskAiChatInput />
         </section>
       </div>
     </main>

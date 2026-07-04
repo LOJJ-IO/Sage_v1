@@ -24,8 +24,8 @@ A three-column layout inside `frontend/src/app/page.tsx`:
 ```
 
 - **Left panel** (`bg-neutral-100` / `dark:bg-neutral-900`): internal 48px header with centered action icons; body shows `FilesEmptyState` (shadcn `Empty`).
-- **Center** (`bg-white` / `dark:bg-neutral-950`): `SageEmptyState` placeholder.
-- **Right panel** (`bg-neutral-100` / `dark:bg-neutral-900`): `SageEmptyState` + `RightPanelChatInput` at bottom (UI only).
+- **Center** (`bg-white` / `dark:bg-neutral-950`): empty — no placeholder yet.
+- **Right panel** (`bg-neutral-100` / `dark:bg-neutral-900`): `AskAiEmptyState` + `AskAiChatInput` at bottom (UI only).
 
 Panels start at **30% / 40% / 30%** width. Side panels are resizable and toggleable.
 

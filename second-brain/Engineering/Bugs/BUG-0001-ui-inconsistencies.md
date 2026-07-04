@@ -40,8 +40,8 @@ Rapid additive UI work in a single file without a consolidated design-system pas
 No shared focus, hover, size, or dark-mode contract across these.
 
 ### Panel layout vs documentation
-- **Code:** center panel is an empty `<section>`; `SageEmptyState` lives in the **right** panel; `FilesEmptyState` in the **left** panel.
-- **Docs:** [[FEAT-app-shell-layout]] and [[Current-Context]] previously claimed `SageEmptyState` in the **center** — incorrect.
+- **Code:** center panel is an empty `<section>`; `AskAiEmptyState` lives in the **right** panel; `FilesEmptyState` in the **left** panel.
+- **Docs:** [[FEAT-app-shell-layout]] previously claimed `AskAiEmptyState` in the **center** — incorrect.
 
 ### Vault / spec drift ([[FEAT-app-shell-layout]])
 | Doc says | Code has |
