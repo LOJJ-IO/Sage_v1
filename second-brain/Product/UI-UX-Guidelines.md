@@ -4,12 +4,14 @@ status: active
 tags: [area/frontend, area/design]
 created: 2026-07-01
 updated: 2026-07-03
-related: ["[[Product-Vision]]", "[[FEAT-app-shell-layout]]", "[[Reusable-Patterns]]"]
+related: ["[[Product-Vision]]", "[[FEAT-app-shell-layout]]", "[[Reusable-Patterns]]", "[[Workspace-UI-Design-Decisions]]"]
 ---
 
 # UI/UX Guidelines
 
 Conventions for how Sage looks and behaves. Update when a pattern is established beyond one component — don't let decisions live only in code.
+
+**Workspace product decisions (zero-states, tabs, personas):** [[Workspace-UI-Design-Decisions]] — authoritative for *what* to build; this file is for *how it looks*.
 
 Feature-level detail for the current shell: [[FEAT-app-shell-layout]].
 
@@ -146,12 +148,17 @@ Fold/unfold toggle:
 - `isFolded === true` → `codicon-unfold`, tooltip **Unfold**
 - Currently UI-only until file tree exists.
 
+**Planned — collapse-all:** replace X-like affordance with `codicon-collapse-all` (or Lucide `copy-minus`). Structural controls need recognizable icons, not tooltip-only discovery — see [[Workspace-UI-Design-Decisions#4. Iconography — collapse-all]].
+
 ## Styling stack
 - Tailwind CSS 4 utility-first.
 - Do not introduce a second styling system without an ADR.
 
 ## Design principles (emerging)
 - **VS Code / Cursor familiarity** — layout, icons, tooltips, and panel behavior should feel like a code editor shell.
+- **Hotel-staff constraints** — interruption-driven, shared desks, minimal training, speed over polish. See [[Workspace-UI-Design-Decisions#Hotel staff design constraints (personas & environment)]].
+- **Recognizable icons for structural actions** — tooltips are last-resort for power features; collapse/close-like glyphs need established conventions.
+- **Coherent zero-state** — three panels should guide one first-run flow, not pretend the others don't exist.
 - **Additive UI work** — build shell patterns in place first; extract components when boundaries stabilize (see [[Current-Context#Code organization philosophy]]).
 - **Separate resize state from visibility state** — matches how Cursor handles sidebars.
 

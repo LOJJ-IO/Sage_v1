@@ -4,7 +4,7 @@ status: in-progress
 tags: [area/frontend, area/design]
 created: 2026-06-30
 updated: 2026-07-03
-related: ["[[UI-UX-Guidelines]]", "[[Reusable-Patterns]]", "[[Current-Context]]"]
+related: ["[[UI-UX-Guidelines]]", "[[Reusable-Patterns]]", "[[Current-Context]]", "[[Workspace-UI-Design-Decisions]]"]
 ---
 
 # FEAT: App shell layout
@@ -13,7 +13,7 @@ related: ["[[UI-UX-Guidelines]]", "[[Reusable-Patterns]]", "[[Current-Context]]"
 `in-progress` — layout shell, headers, icons, resize/toggle, dark mode, and placeholder panel content shipped in UI; real file tree, editor, and chat backend not yet built.
 
 ## Problem
-Sage needs a VS Code / Cursor–style application shell: resizable side panels, a flexible center area, and icon-driven navigation in headers — before real product features land.
+Sage needs a VS Code / Cursor–style **workspace shell**: resizable side panels, a flexible center stage (tabs + apps), and icon-driven navigation — before real product features land. Not a document viewer; panels are slots for files, apps, and AI. See [[Workspace-UI-Design-Decisions#Product direction (context)]].
 
 ## Solution
 A three-column layout inside `frontend/src/app/page.tsx`:
@@ -30,12 +30,13 @@ A three-column layout inside `frontend/src/app/page.tsx`:
 Panels start at **30% / 40% / 30%** width. Side panels are resizable and toggleable.
 
 ## Out of scope (for this feature)
-- File tree content
-- Editor / main workspace content
-- Right panel content
+- File tree content (beyond empty state)
+- Center tab bar and tab groups (see [[Workspace-UI-Design-Decisions#2. Tab model (center panel)]])
+- Dock and drag-in apps
 - Persisting panel widths to localStorage
 - Keyboard shortcuts
 - Pixel-based panel widths (currently percentage-based)
+- Avatar / account menu (bottom-left — planned separately)
 
 ## UI/UX
 Full conventions in [[UI-UX-Guidelines]]. Summary:
@@ -93,9 +94,10 @@ Resize and toggle are **separate state** (Cursor/VS Code model):
 ## Open questions
 - When to extract `page.tsx` into components/hooks (see [[Current-Context]]).
 - Whether panel widths should move to pixels for production fidelity.
-- What the right panel is for.
+- Center zero-state: checklist vs. v1 fallback CTA — [[Workspace-UI-Design-Decisions#1. Center panel zero-state]].
 
 ## Related
+- [[Workspace-UI-Design-Decisions]]
 - [[UI-UX-Guidelines]]
 - [[Reusable-Patterns]]
 - Canonical implementation: `frontend/src/app/page.tsx`

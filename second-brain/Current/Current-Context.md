@@ -4,7 +4,7 @@ status: active
 tags: [area/frontend]
 created: 2026-07-01
 updated: 2026-07-03
-related: ["[[Roadmap]]", "[[Architecture-Overview]]", "[[FEAT-app-shell-layout]]", "[[UI-UX-Guidelines]]", "[[BUG-0001-ui-inconsistencies]]"]
+related: ["[[Roadmap]]", "[[Architecture-Overview]]", "[[FEAT-app-shell-layout]]", "[[UI-UX-Guidelines]]", "[[BUG-0001-ui-inconsistencies]]", "[[Workspace-UI-Design-Decisions]]"]
 ---
 
 # Current Context
@@ -13,13 +13,16 @@ related: ["[[Roadmap]]", "[[Architecture-Overview]]", "[[FEAT-app-shell-layout]]
 
 ## Where the project is
 
-Sage is early-stage. `frontend/` is a Next.js 16 / React 19 app building a VS Code–style application shell. Almost all UI currently lives in a single file: `frontend/src/app/page.tsx` (~347 lines). shadcn/ui components live under `frontend/src/components/ui/`. `backend/` exists as an empty directory.
+Sage is early-stage. `frontend/` is a Next.js 16 / React 19 app building a **LOJJ workspace shell** (not a document viewer) — three panel slots (file tree, center stage, AI chat) with dockable apps and Cursor-style center tabs planned. Almost all UI currently lives in `frontend/src/app/page.tsx`. shadcn/ui components live under `frontend/src/components/ui/`. `backend/` exists as an empty directory.
+
+**Product UX decisions (July 2026 review):** [[Workspace-UI-Design-Decisions]] — zero-states, tabs, iconography, hotel-staff constraints. Read before proposing workspace UX.
 
 ## Active work
 
-- **App shell layout** — resizable/toggleable left & right side panels, global header, left panel internal header with icons. See [[FEAT-app-shell-layout]] and [[UI-UX-Guidelines]].
+- **Next UX (from [[Workspace-UI-Design-Decisions]]):** center panel checklist zero-state (or v1 fallback CTA), coherent three-panel empty flow, AI panel copy fix, collapse-all icon (`codicon-collapse-all`), dock visibility on first load — most not started in code yet.
+- **App shell layout** — resizable/toggleable panels, headers, icons. See [[FEAT-app-shell-layout]] and [[UI-UX-Guidelines]].
 - **Dark mode** — client-side toggle in global header (sun/moon); `dark` class on `<html>`.
-- Panel **content** is placeholder UI only: `FilesEmptyState` (left), `AskAiEmptyState` (right), empty center, `AskAiChatInput` stub (right). No real file tree, editor, or chat backend.
+- Panel **content** is placeholder UI only: `FilesEmptyState` (left), `AskAiEmptyState` (right), **empty center** (zero-state planned), `AskAiChatInput` stub (right). No file tree, tabs, dock, or chat backend.
 - No backend work started.
 
 ## What's built (UI)
@@ -37,7 +40,9 @@ Sage is early-stage. `frontend/` is a Next.js 16 / React 19 app building a VS Co
 | Fold/unfold icon toggle (UI state only) | Done |
 | Empty state — left panel (`FilesEmptyState`) via shadcn `Empty` | Done (UI only) |
 | Empty state — right panel (`AskAiEmptyState`) via shadcn `Empty` | Done (UI only) |
-| Center panel content | **Empty** — no placeholder yet |
+| Center panel content | **Empty** — checklist zero-state planned ([[Workspace-UI-Design-Decisions#1. Center panel zero-state]]) |
+| Center tabs (Cursor-style) | Not started |
+| Dock (connected apps) | Not started |
 | Right panel chat input (`AskAiChatInput`, voice + send buttons) | Done (UI only) |
 | File tree / editor / real chat | Not started |
 
@@ -62,10 +67,11 @@ Tracked in detail: [[BUG-0001-ui-inconsistencies]]. Summary:
 
 ## Open questions
 
+- Apps in center: tabs vs. stage-takeover — see [[Workspace-UI-Design-Decisions#3. Apps in the workspace — tabs vs. replace]] (leaning apps-as-tabs).
+- State persistence: per-login vs. per-desk on shared front-desk terminals — [[Workspace-UI-Design-Decisions#8. State persistence]].
 - Backend stack not decided — log as ADR when chosen.
 - When to extract `page.tsx` into components (see below).
 - Whether panel widths should become pixel-based for production.
-- Product vision still placeholder — see [[Product-Vision]].
 
 ## Code organization philosophy
 
@@ -85,7 +91,7 @@ Likely first extractions: `HeaderIconButton`, resize hook, panel layout componen
 
 ## What NOT to re-explain to Claude
 
-- Full UI spec lives in [[UI-UX-Guidelines]] and [[FEAT-app-shell-layout]] — don't re-derive from chat.
+- Full UI spec lives in [[UI-UX-Guidelines]], [[FEAT-app-shell-layout]], and [[Workspace-UI-Design-Decisions]] — don't re-derive workspace UX from chat.
 - Icon libraries: `@vscode/codicons` + `@tabler/icons-react`.
 - Resize vs toggle are **separate state** (`leftWidth`/`rightWidth` vs `isLeftVisible`/`isRightVisible`).
 - Global header background uses `bg-background`; side panels use `bg-sidebar`; center uses `bg-background`. Theme tokens in `globals.css` — toggle dark mode via header sun/moon.
@@ -97,6 +103,7 @@ Likely first extractions: `HeaderIconButton`, resize hook, panel layout componen
 
 ## Recently changed
 
+- **2026-07-03** — [[Workspace-UI-Design-Decisions]] logged (zero-states, tabs, hotel-staff constraints, open items).
 - **2026-07-03** — `MIN_SIDE_WIDTH` 12% → **14%** (tooltip clipping fix on narrow left panel). See [[Lessons-Learned#2026-07-03 — Panel tooltips clipped at minimum resize width]].
 - **2026-07-03** — Shell chrome migrated to design tokens (`background`, `sidebar`, `muted`, etc.).
 - **2026-07-03** — Tabler icons unified via `TablerIcon`; Ask AI naming; folder empty state uses header Codicon.

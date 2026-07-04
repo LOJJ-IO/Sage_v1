@@ -24,7 +24,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 
-const MIN_SIDE_WIDTH = 14;
+const MIN_SIDE_WIDTH = 16;
 const MIN_MIDDLE_WIDTH = 16;
 const DEFAULT_SIDE_WIDTH = 30;
 const ICON_SIZE = 20;
