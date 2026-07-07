@@ -159,7 +159,7 @@ header {
 
 Now Header Layer sits above Panel Layer. Everything on the header — including tooltips — comes along. You're moving the whole photo, not just one drawing on it.
 
-In Sage shell: add `relative z-20` to the global `<header>` in `page.tsx` when bottom-placed tooltips extend into the panel grid. See [[Lessons-Learned#2026-07-07 — Header tooltips hidden behind grid panels (stacking context)]].
+In Sage shell: ~~add `relative z-20` to the global `<header>`~~ **Done (2026-07-07):** portaled tooltips via [[Stacking-Contexts-and-Portals#Sage implementation]] — preferred over lifting the header layer.
 
 ## Fix: cut the tooltip out (portal)
 
@@ -211,6 +211,22 @@ Almost always for UI that must escape its container:
 - Date pickers / popovers
 
 Radix UI, Headless UI, Material UI, etc. render these through portals by default.
+
+### Sage implementation
+
+**Status:** shipped 2026-07-07.
+
+| Piece | Location |
+|---|---|
+| Tooltip primitive | `frontend/src/components/ui/tooltip.tsx` — shadcn/Base UI, `TooltipPrimitive.Portal` |
+| App provider | `frontend/src/app/layout.tsx` — `<TooltipProvider>` wraps `{children}` |
+| Shell usage | `HeaderIconButton` in `frontend/src/app/page.tsx` — `Tooltip` + `TooltipTrigger` + `TooltipContent variant="compact"` |
+
+**Why portal over `z-20` on header:** Lifting the global header layer fixes paint-order for header tooltips but does not fix panel-header tooltips clipped by `overflow-hidden`. Portaling fixes both mechanisms with one pattern.
+
+**Compact variant:** Sage toolbars keep VS Code–style black tooltips (`bg-black`, `text-[12px]`, `px-2.5 py-1.5`) via `variant="compact"` on `TooltipContent` — not the default shadcn `bg-foreground` popover style.
+
+**Rule going forward:** Any new shell tooltip (global header, panel headers, future toolbars) should use the portaled `Tooltip` component, not nested absolute spans.
 
 ## Don't confuse with overflow clipping
 

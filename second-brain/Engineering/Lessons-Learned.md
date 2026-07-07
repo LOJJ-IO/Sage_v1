@@ -53,12 +53,12 @@ Collapsing the right panel caused viewport scrollbars (horizontal + vertical).
 ### 2026-07-03 — Panel tooltips clipped at minimum resize width
 At `MIN_SIDE_WIDTH = 12%`, long bottom tooltips (e.g. "Auto-reveal current file" on the left panel header) were cut off when the panel was dragged narrow.
 **Why:** Panel sections use `overflow-hidden`; tooltips are `absolute` inside the panel, not portaled. Extra `z-index` does not escape overflow clipping.
-**Fix:** raised `MIN_SIDE_WIDTH` to **14%** in `page.tsx`. Alternative later: `overflow-visible` on panel header only, side-placed tooltips, or portal tooltips to `document.body`.
+**Fix:** raised `MIN_SIDE_WIDTH` to **16%** in `page.tsx` (was 14% in vault notes). **Also fixed (2026-07-07):** portaled tooltips escape `overflow-hidden` on panels — see [[Stacking-Contexts-and-Portals#Sage implementation]]. `MIN_SIDE_WIDTH` raise remains useful for toolbar layout at narrow widths.
 
 ### 2026-07-07 — Header tooltips hidden behind grid panels (stacking context)
 Upload (and other header) tooltips had `z-50` but still painted **under** the left/right panel grid when the tooltip extended below the header.
 **Why:** Browsers paint by **stacking context** (layer), not per-element z-index globally. The tooltip's `z-50` only wins against siblings **inside the header**. The grid is a **sibling** of the header — if the grid's layer is above the header's layer, the entire grid covers everything on the header, including high-z tooltips. Analogy: z-index on the tooltip is ink on "Header Paper"; it can't jump above "Panel Paper" unless you lift the whole header sheet or cut the tooltip out.
-**Fix options:** (1) Raise the header stacking context — e.g. `relative z-20` on `<header>` so header layer > grid layer. (2) **Portal** tooltip to `document.body` so it escapes the header DOM subtree (pattern used by Radix, MUI, etc. for tooltips/modals/menus). Full mental model: [[Stacking-Contexts-and-Portals]].
+**Fix (2026-07-07):** Portaled all `HeaderIconButton` tooltips via shadcn/Base UI `Tooltip` (`TooltipPrimitive.Portal` in `frontend/src/components/ui/tooltip.tsx`). `variant="compact"` preserves VS Code black tooltip styling. `TooltipProvider` in `layout.tsx`. Supersedes the `relative z-20` on global `<header>` workaround — portal is the chosen long-term fix. See [[Stacking-Contexts-and-Portals#Sage implementation]].
 **Related:** [[Lessons-Learned#2026-07-03 — Panel tooltips clipped at minimum resize width]] (overflow clipping — different mechanism). See [[Reusable-Patterns#HeaderIconButton (icon + compact tooltip)]].
 
 ### 2026-07-07 — React Hooks: `useState` and functional updaters

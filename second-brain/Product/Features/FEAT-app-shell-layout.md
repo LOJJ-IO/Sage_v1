@@ -98,7 +98,7 @@ Resize and toggle are **separate state** (Cursor/VS Code model):
 - Single file for now: `frontend/src/app/page.tsx` (~347 lines). shadcn primitives in `frontend/src/components/ui/`. Intentional during early additive UI work — see [[Current-Context#Code organization philosophy]].
 - CSS Grid for column layout: `gridTemplateColumns: left 0.125rem 1fr 0.125rem right`.
 - Middle column uses `minmax(0, 1fr)` so it absorbs remaining space when sides are hidden or resized.
-- `HeaderIconButton` component (inline in `page.tsx`) for all icon buttons + tooltips.
+- `HeaderIconButton` component (inline in `page.tsx`) for icon buttons; tooltips via portaled shadcn `Tooltip` (`variant="compact"`). `TooltipProvider` in `layout.tsx`.
 - Icon libraries: `@vscode/codicons` (CSS imported in `layout.tsx`), `@tabler/icons-react` for icons Codicons doesn't cover.
 
 ## Open questions

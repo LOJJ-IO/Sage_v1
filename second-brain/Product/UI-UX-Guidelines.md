@@ -3,7 +3,7 @@ type: product
 status: active
 tags: [area/frontend, area/design]
 created: 2026-07-01
-updated: 2026-07-03
+updated: 2026-07-07
 related: ["[[Product-Vision]]", "[[FEAT-app-shell-layout]]", "[[Reusable-Patterns]]", "[[Workspace-UI-Design-Decisions]]"]
 ---
 
@@ -102,23 +102,26 @@ Accepts either:
 - `icon` — custom React node (Tabler icon, composite, etc.)
 
 ### Tooltips
-Black compact tooltip, **not** browser `title`:
+Black compact tooltip, **not** browser `title`. Rendered via **portaled** shadcn/Base UI `Tooltip` (`TooltipPrimitive.Portal` → `document.body`). See [[Stacking-Contexts-and-Portals#Sage implementation]].
 
 | Property | Value |
 |---|---|
+| Component | `TooltipContent variant="compact"` in `frontend/src/components/ui/tooltip.tsx` |
 | Background | `bg-black` |
 | Text | `text-[12px] font-semibold leading-none text-white` |
 | Padding | `px-2.5 py-1.5` |
 | Shadow | `shadow-md` |
-| Show on | `group-hover` + `group-focus-visible` |
-| Caret | `size-2 rotate-45 bg-black` |
+| Show on | Base UI hover + focus (replaces CSS `group-hover` on nested spans) |
+| Caret | `TooltipPrimitive.Arrow` — `size-2 bg-black` |
 
-**Placement:**
-- `bottom` (default) — centered below icon, caret on top. Used for most global + left-panel icons.
-- `right` — to the right of icon (left sidebar toggle).
-- `left` — to the left of icon (right sidebar toggle).
+**Placement** (`side` on `TooltipContent`):
+- `bottom` (default) — centered below icon. Most global + panel header icons.
+- `right` — left sidebar toggle.
+- `left` — right sidebar toggle.
 
-Do **not** use large tooltip sizing (`text-sm`, heavy padding) — reference is VS Code compact tooltips.
+`sideOffset`: `6` bottom, `8` left/right (matches prior `mt-1.5` / `mr-2` / `ml-2` spacing).
+
+Do **not** use large tooltip sizing (`text-sm`, heavy padding) — reference is VS Code compact tooltips. Do **not** use nested `absolute` tooltips inside buttons — they fail stacking-context and overflow tests; always portal.
 
 ## Panel resize
 

@@ -3,7 +3,7 @@ type: bug
 status: open
 tags: [area/frontend, area/design]
 created: 2026-07-03
-updated: 2026-07-03
+updated: 2026-07-07
 related: ["[[Current-Context]]", "[[UI-UX-Guidelines]]", "[[FEAT-app-shell-layout]]"]
 ---
 
@@ -33,7 +33,7 @@ Rapid additive UI work in a single file without a consolidated design-system pas
 | Location | Implementation |
 |---|---|
 | Empty state "Upload files" | shadcn `Button` |
-| Global + panel headers | custom `HeaderIconButton` (raw `<button>` + tooltip) |
+| Global + panel headers | `HeaderIconButton` — portaled shadcn `Tooltip` (`variant="compact"`) |
 | Chat voice / send | raw `<button>` + hand-rolled classes |
 | Resize handles | raw `<button>` |
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "@vscode/codicons/dist/codicon.css";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,7 +15,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body className="flex h-full flex-col overflow-hidden">{children}</body>
+      <body className="flex h-full flex-col overflow-hidden">
+        <TooltipProvider>{children}</TooltipProvider>
+      </body>
     </html>
   );
 }

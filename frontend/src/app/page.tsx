@@ -16,6 +16,11 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Empty,
   EmptyContent,
   EmptyDescription,
@@ -150,36 +155,30 @@ function HeaderIconButton({
   onClick?: () => void;
   tooltipPlacement?: "bottom" | "left" | "right";
 }) {
-  const tooltipPosition = {
-    bottom: "left-1/2 top-full mt-1.5 -translate-x-1/2",
-    left: "right-full top-1/2 mr-2 -translate-y-1/2",
-    right: "left-full top-1/2 ml-2 -translate-y-1/2",
-  }[tooltipPlacement];
-  const caretPosition = {
-    bottom: "-top-1 left-1/2 -translate-x-1/2",
-    left: "-right-1 top-1/2 -translate-y-1/2",
-    right: "-left-1 top-1/2 -translate-y-1/2",
-  }[tooltipPlacement];
+  const sideOffset = tooltipPlacement === "bottom" ? 6 : 8;
 
   return (
-    <button
-      aria-label={label}
-      className="group relative flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-      onClick={onClick}
-      type="button"
-    >
-      {icon ?? (
-        <Codicon iconClass={iconClass!} size={ICON_SIZE} />
-      )}
-      <span
-        className={`pointer-events-none absolute z-50 whitespace-nowrap rounded-md bg-black px-2.5 py-1.5 text-[12px] font-semibold leading-none text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 ${tooltipPosition}`}
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <button
+            aria-label={label}
+            className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            onClick={onClick}
+            type="button"
+          />
+        }
       >
-        <span
-          className={`absolute size-2 rotate-45 bg-black ${caretPosition}`}
-        />
+        {icon ?? <Codicon iconClass={iconClass!} size={ICON_SIZE} />}
+      </TooltipTrigger>
+      <TooltipContent
+        side={tooltipPlacement}
+        sideOffset={sideOffset}
+        variant="compact"
+      >
         {label}
-      </span>
-    </button>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 

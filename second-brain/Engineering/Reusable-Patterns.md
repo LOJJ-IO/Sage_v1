@@ -79,9 +79,10 @@ const MIN_MIDDLE_WIDTH = 16;
 - Tooltip placement: `bottom` | `left` | `right`
 - Dark mode: `text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring/50`
 **Stacking / visibility:**
-- Tooltips are `absolute` inside the button (`z-50` on tooltip span). That does **not** guarantee visibility over the panel grid below the header — see [[Lessons-Learned#2026-07-07 — Header tooltips hidden behind grid panels (stacking context)]] and [[Stacking-Contexts-and-Portals]].
-- If tooltips extend past the header: add `relative z-20` on global `<header>`, or portal tooltips to `body`.
-- Panel-header tooltips can still be clipped by `overflow-hidden` on panels — different bug; see [[Lessons-Learned#2026-07-03 — Panel tooltips clipped at minimum resize width]].
+- Tooltips use shadcn/Base UI `Tooltip` with `TooltipPrimitive.Portal` → `document.body` (via `frontend/src/components/ui/tooltip.tsx`). `HeaderIconButton` wraps trigger + `TooltipContent variant="compact"` (VS Code black compact style).
+- `TooltipProvider` wraps the app in `frontend/src/app/layout.tsx`.
+- Portaling fixes stacking-context paint-order bugs (global header tooltips under panel headers) and overflow clipping on panel tooltips — see [[Lessons-Learned#2026-07-07 — Header tooltips hidden behind grid panels (stacking context)]] and [[Stacking-Contexts-and-Portals#Sage implementation]].
+- Do **not** revert to nested `absolute` + `group-hover` tooltips inside the button — `z-50` on the span cannot escape parent stacking contexts or `overflow-hidden` panels.
 **Don't use when:** the control isn't an icon button (use shadcn `Button` or a link pattern instead).
 
 ### Tabler icon in Codicon toolbar
