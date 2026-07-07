@@ -11,10 +11,14 @@
             "id": "b2649c847a6770ea",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Graph view"
+              "type": "markdown",
+              "state": {
+                "file": "Current/Current-Context.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Current-Context"
             }
           }
         ]
@@ -167,8 +171,9 @@
   },
   "active": "b2649c847a6770ea",
   "lastOpenFiles": [
-    "Product/Sage-MVP-Functional-Spec.md",
     "Product/Features/FEAT-sage-mvp.md",
+    "00-Home.md",
+    "Product/Sage-MVP-Functional-Spec.md",
     "Daily/2026-07-06.md",
     "Architecture/Decisions/0007-boutique-retail-mvp-beachhead.md",
     "Architecture/Decisions/0006-keyword-retrieval-mvp.md",
@@ -189,7 +194,6 @@
     "Templates/Intake-Entry.md",
     "Inbox",
     "Architecture/Database-Schema.md",
-    "00-Home.md",
     "Daily/2026-06-30.md",
     "Product/Features/FEAT-app-shell-layout.md"
   ]
