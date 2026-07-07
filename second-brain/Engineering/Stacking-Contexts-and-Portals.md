@@ -9,7 +9,102 @@ related: ["[[Lessons-Learned]]", "[[Reusable-Patterns]]", "[[UI-UX-Guidelines]]"
 
 # Stacking Contexts and Portals
 
-Reference for why header tooltips can disappear behind panels, and how React portals fix it.
+Reference for paint order, stacking contexts, and why header tooltips disappear behind panels — plus how React portals fix it.
+
+Once paint order and stacking contexts click, `z-index` almost becomes boring.
+
+## Paint order (first principles)
+
+Browsers have **one canvas**. They don't erase — they **paint over** previous pixels. Paint order is simply **the order things are drawn**. If two things occupy the same pixel, whoever is painted **last** wins.
+
+```
+Stroke 1: Background
+Stroke 2: Header      (covers background where they overlap)
+Stroke 3: Sidebar     (covers header/background where they overlap)
+Stroke 4: Tooltip     (covers whatever is underneath)
+```
+
+Think Photoshop layers: later layers appear on top. **This has nothing to do with z-index yet.**
+
+### DOM order
+
+Without CSS, paint order usually follows DOM order:
+
+```html
+<div>A</div>
+<div>B</div>
+```
+
+If A and B overlap, **B wins** — painted second.
+
+```html
+<header></header>
+<main></main>
+<footer></footer>
+```
+
+→ paint header, then main, then footer.
+
+### When paint order alone breaks down
+
+Header contains a tooltip that hangs below into `<main>`:
+
+```
+HEADER
+  Upload
+  Tooltip  ← overlaps main
+──────────────
+MAIN
+  Panel
+```
+
+DOM order says main is painted after header, so **main covers the tooltip** — even before z-index enters the picture. We need more rules.
+
+### z-index (within a context)
+
+`z-index` tells the browser: *within this area, paint this element after other things here.* It does **not** automatically compare across unrelated parts of the tree.
+
+## Stacking contexts
+
+A stacking context is a **building where z-index values are compared** — not the whole page.
+
+**Apartment analogy:** Floor 50 in Building A vs Floor 1 in Building B — you can't compare floor numbers across buildings. If Building B sits on a hill (higher stacking context), Building B Floor 1 is still above Building A Floor 50.
+
+Beginners assume `z=9999` always beats `z=1`. **No** — only among elements in the **same** stacking context.
+
+```html
+<header>  <!-- Header Context -->
+  <Tooltip style="z-index:999" />
+</header>
+<main>    <!-- Main Context -->
+  <Panel />
+</main>
+```
+
+Browser compares **Header Context vs Main Context**, not Tooltip 999 vs Panel 1. Whichever context wins, everything inside it wins.
+
+### Recursive / atomic painting
+
+Browser doesn't interleave children across contexts. Conceptually:
+
+```
+Paint Header Context → Button, Tooltip → HEADER.PNG (one atomic picture)
+Paint Main Context   → Panel          → MAIN.PNG
+```
+
+If MAIN.PNG is laid on top, it covers HEADER.PNG entirely — tooltip is **baked into** the header picture.
+
+**Photo model:** each stacking context is a photograph laid on a table; you can't pull one drawing out of a photo without moving the whole photo or cutting that element into its own photo (portal).
+
+**Paper-sheet model:** same idea — tooltip is ink on Sheet A; Sheet B on top hides everything on Sheet A regardless of ink z-index. See [[#Fix: lift the whole sheet]].
+
+### Debug checklist
+
+When something renders behind something else:
+
+1. **What is painted first?** (paint order / DOM order)
+2. **Which stacking context does each element belong to?** (which "photo"?)
+3. **Am I comparing z-index across different contexts?** (if yes, that's the bug)
 
 ## The beginner mental model (wrong)
 
@@ -22,7 +117,7 @@ Page
 
 Assumption: tooltip `z-index: 9999` always wins over the panel.
 
-**Reality:** the browser compares **layers** (stacking contexts), not individual elements globally.
+**Reality:** the browser compares **stacking contexts** (layers / photos), not individual elements globally.
 
 ## The correct mental model
 
@@ -36,19 +131,6 @@ Page
 ```
 
 Ask **which layer is above the other?** Only then worry about z-index *within* each layer.
-
-## Paper-sheet analogy
-
-Two transparent sheets of paper:
-
-**Sheet A (Header)** — Upload button + tooltip drawn on it.
-**Sheet B (Panel)** — Sort, New Folder, etc.
-
-If Sheet B lies on top of Sheet A, **everything** on Sheet A is hidden — including a tooltip with `z-index: 9999`. The tooltip is ink on Sheet A; it cannot jump off the sheet.
-
-`z-index` on the tooltip only answers: *"Among drawings on this same sheet, who goes on top?"*
-
-It does **not** say: *"Teleport me above every other sheet."*
 
 ### Quiz
 
@@ -75,23 +157,23 @@ header {
 }
 ```
 
-Now Header Layer sits above Panel Layer. Everything on the header — including tooltips — comes along.
+Now Header Layer sits above Panel Layer. Everything on the header — including tooltips — comes along. You're moving the whole photo, not just one drawing on it.
 
 In Sage shell: add `relative z-20` to the global `<header>` in `page.tsx` when bottom-placed tooltips extend into the panel grid. See [[Lessons-Learned#2026-07-07 — Header tooltips hidden behind grid panels (stacking context)]].
 
 ## Fix: cut the tooltip out (portal)
 
-A React portal renders DOM elsewhere while keeping logical ownership in the component tree.
+A React portal renders DOM elsewhere while keeping logical ownership in the component tree. The tooltip escapes `HEADER.PNG` and becomes its own layer.
 
 **Before (DOM):**
 
 ```
 <body>
-  <header>
+  <header>          ← HEADER.PNG
     <Upload />
-    <Tooltip />   ← child of header; trapped on Header Paper
+    <Tooltip />     ← baked into header picture
   </header>
-  <Panel />
+  <Panel />         ← MAIN.PNG
 </body>
 ```
 
@@ -99,11 +181,11 @@ A React portal renders DOM elsewhere while keeping logical ownership in the comp
 
 ```
 <body>
-  <header>
+  <header>          ← HEADER.PNG
     <Upload />
   </header>
-  <Panel />
-  <Tooltip />     ← sibling; its own layer, can float above everything
+  <Panel />         ← MAIN.PNG
+  <Tooltip />       ← TOOLTIP.PNG — painted independently
 </body>
 ```
 
@@ -136,6 +218,7 @@ A **different** bug: panel sections use `overflow-hidden`, which clips absolutel
 
 | Mechanism | Symptom | Fix |
 |---|---|---|
+| Paint order / DOM order | Later sibling covers earlier overlap | Reorder DOM, or raise stacking context / portal |
 | Stacking context | Tooltip behind sibling layer (e.g. grid below header) | Raise parent layer (`z-20` on header) or portal |
 | Overflow clipping | Tooltip cut off at panel edge | Wider min width, `overflow-visible` on header row, side placement, or portal |
 
