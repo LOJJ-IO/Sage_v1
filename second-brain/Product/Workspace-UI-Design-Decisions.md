@@ -3,8 +3,8 @@ type: product
 status: active
 tags: [area/product, area/design, area/frontend]
 created: 2026-07-03
-updated: 2026-07-03
-related: ["[[Product-Vision]]", "[[UI-UX-Guidelines]]", "[[FEAT-app-shell-layout]]", "[[Current-Context]]"]
+updated: 2026-07-06
+related: ["[[Product-Vision]]", "[[UI-UX-Guidelines]]", "[[FEAT-app-shell-layout]]", "[[Current-Context]]", "[[Sage-MVP-Functional-Spec]]", "[[0007-boutique-retail-mvp-beachhead]]"]
 ---
 
 # Workspace UI — Design Decisions & Rationale
@@ -12,6 +12,23 @@ related: ["[[Product-Vision]]", "[[UI-UX-Guidelines]]", "[[FEAT-app-shell-layout
 > Decision log from UI review session, July 2026. Covers the zero-state, panel/tab model, iconography, and hotel-staff design constraints for the LOJJ workspace shell.
 
 **Read this before proposing workspace UX changes.** Don't re-litigate decisions here in chat — extend or supersede this note.
+
+---
+
+## Relationship to MVP functional spec
+
+[[Sage-MVP-Functional-Spec]] is **approved for implementation** and **defers** most of this document's workspace-shell scope (dock, tabs, connected apps) to post-MVP. See [[0007-boutique-retail-mvp-beachhead]].
+
+**Still relevant for MVP:**
+- Shared-device / interruption-driven / minimal-training constraints (retail floor ≈ hotel front desk)
+- Iconography principles (collapse-all, recognizable glyphs)
+- Touch equivalents for hover-only affordances (kebab menus on tablets)
+- Coherent zero-state flow across panels (adapt copy for retail, not hotel)
+- Per-user server-side preferences ([[Sage-MVP-Functional-Spec#6]]) — resolves open item §8 below for MVP
+
+**Deferred past MVP:** dock, center tabs, app slots, drag-apps-into-panels, property switcher.
+
+**Open conflict (resolve during frontend build):** this doc §7 puts account menu on bottom-left avatar; MVP spec §4.2 puts settings/themes/Manage Accounts under top-right gear. Working resolution: gear owns settings; avatar owns identity (who am I, log out). See [[Sage-MVP-Functional-Spec#0]].
 
 ---
 

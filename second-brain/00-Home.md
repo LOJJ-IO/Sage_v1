@@ -3,7 +3,7 @@ type: index
 status: active
 tags: []
 created: 2026-07-01
-updated: 2026-07-03
+updated: 2026-07-06
 related: []
 ---
 
@@ -14,6 +14,8 @@ Entry point for both humans and AI agents. Start here, then follow links.
 ## Right now
 
 - [[Current-Context]] — active work, open questions, what Claude should know before touching this repo today
+- [[Sage-MVP-Functional-Spec]] — **approved MVP functional spec** (read before building backend/features)
+- [[FEAT-sage-mvp]] — MVP feature index with links to architecture
 - [[Roadmap]] — where we're headed
 - [[Sprint-Log]] — what shipped recently
 
