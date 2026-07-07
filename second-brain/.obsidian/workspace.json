@@ -171,6 +171,10 @@
   },
   "active": "b2649c847a6770ea",
   "lastOpenFiles": [
+    "Templates/Daily-Note.md",
+    "Current/Current-Context.md",
+    "Daily/2026-07-07.md",
+    "Engineering/Stacking-Contexts-and-Portals.md",
     "Product/Features/FEAT-sage-mvp.md",
     "00-Home.md",
     "Product/Sage-MVP-Functional-Spec.md",
@@ -193,8 +197,6 @@
     "Engineering/Intake-Process.md",
     "Templates/Intake-Entry.md",
     "Inbox",
-    "Architecture/Database-Schema.md",
-    "Daily/2026-06-30.md",
-    "Product/Features/FEAT-app-shell-layout.md"
+    "Architecture/Database-Schema.md"
   ]
 }

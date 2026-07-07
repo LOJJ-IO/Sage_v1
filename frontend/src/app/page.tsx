@@ -32,6 +32,22 @@ const ICON_SIZE_SM = 14;
 const ICON_SIZE_EMPTY = 16;
 const ICON_STROKE = 2.2;
 
+function Codicon({
+  iconClass,
+  size = ICON_SIZE,
+}: {
+  iconClass: string;
+  size?: number;
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`codicon ${iconClass} [-webkit-text-stroke:0.35px_currentColor]`}
+      style={{ fontSize: size }}
+    />
+  );
+}
+
 function TablerIcon({
   icon: Icon,
   size = ICON_SIZE,
@@ -54,11 +70,7 @@ function FilesEmptyState() {
     <Empty className="h-full border-none px-4">
       <EmptyHeader>
         <EmptyMedia variant="icon">
-          <span
-            aria-hidden="true"
-            className="codicon codicon-folder-library [-webkit-text-stroke:0.35px_currentColor]"
-            style={{ fontSize: ICON_SIZE_EMPTY }}
-          />
+          <Codicon iconClass="codicon-folder-library" size={ICON_SIZE_EMPTY} />
         </EmptyMedia>
         <EmptyTitle>No files yet</EmptyTitle>
         <EmptyDescription>
@@ -157,10 +169,7 @@ function HeaderIconButton({
       type="button"
     >
       {icon ?? (
-        <span
-          className={`codicon ${iconClass} [-webkit-text-stroke:0.35px_currentColor]`}
-          style={{ fontSize: ICON_SIZE }}
-        />
+        <Codicon iconClass={iconClass!} size={ICON_SIZE} />
       )}
       <span
         className={`pointer-events-none absolute z-50 whitespace-nowrap rounded-md bg-black px-2.5 py-1.5 text-[12px] font-semibold leading-none text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 ${tooltipPosition}`}
@@ -338,6 +347,19 @@ export default function Home() {
           ) : null}
         </div>
         <section className="flex h-full min-w-0 flex-col overflow-hidden bg-sidebar">
+          <header className="flex h-12 shrink-0 items-center justify-center border-b border-border bg-sidebar">
+            <div className="flex items-center gap-1">
+              <HeaderIconButton
+                iconClass="codicon-new-session"
+                label="New chat"
+              />
+              <HeaderIconButton
+                iconClass="codicon-search"
+                label="Search chats"
+              />
+              <HeaderIconButton iconClass="codicon-history" label="History" />
+            </div>
+          </header>
           <div className="min-h-0 flex-1 overflow-auto p-2">
             <AskAiEmptyState />
           </div>

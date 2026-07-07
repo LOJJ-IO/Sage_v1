@@ -3,7 +3,7 @@ type: feature
 status: in-progress
 tags: [area/frontend, area/design]
 created: 2026-06-30
-updated: 2026-07-06
+updated: 2026-07-07
 related: ["[[UI-UX-Guidelines]]", "[[Reusable-Patterns]]", "[[Current-Context]]", "[[Workspace-UI-Design-Decisions]]"]
 ---
 
@@ -25,7 +25,7 @@ A three-column layout inside `frontend/src/app/page.tsx`:
 
 - **Left panel** (`bg-neutral-100` / `dark:bg-neutral-900`): internal 48px header with centered action icons; body shows `FilesEmptyState` (shadcn `Empty`).
 - **Center** (`bg-white` / `dark:bg-neutral-950`): empty — no placeholder yet.
-- **Right panel** (`bg-neutral-100` / `dark:bg-neutral-900`): `AskAiEmptyState` + `AskAiChatInput` at bottom (UI only).
+- **Right panel** (`bg-sidebar`): internal 48px header with centered icon buttons (New chat, Search chats, History); `AskAiEmptyState` + `AskAiChatInput` at bottom (UI only).
 
 Panels start at **30% / 40% / 30%** width. Side panels are resizable and toggleable.
 
@@ -63,16 +63,23 @@ Left group also has a vertical separator after the sidebar toggle (same classes)
 ### Left panel internal header (`h-12` / 48px, centered icons)
 | Icon | Source | Tooltip | Active? |
 |---|---|---|---|
-| Sort | Tabler `IconFilter2Up` | Sort | No |
+| Sort | Tabler `IconArrowsSort` | Sort | No |
 | New folder | Codicon `new-folder` | New folder | No |
-| Auto sort | Tabler `IconFilter2Spark` | Auto-Sort | No |
-| Collapse all (file tree) | Codicon `collapse-all` | Collapse all | No — UI only until file tree exists |
-| Auto-reveal | Composite Tabler `IconFile` + `IconPin` (pin bottom-right) | Auto-reveal current file | No |
+| Auto sort | Tabler `IconWand` | Auto-Sort | No |
+| Auto-reveal | Tabler `IconEyeQuestion` | Auto-reveal current file | No |
+| Collapse all | Codicon `collapse-all` | Collapse all | No — UI only until file tree exists |
+
+### Right panel internal header (`h-12` / 48px, centered icons)
+| Icon | Source | Tooltip | Active? |
+|---|---|---|---|
+| New chat | Codicon `new-session` | New chat | No — UI only until chat backend |
+| Search chats | Codicon `search` | Search chats | No |
+| History | Codicon `history` | History | No — per [[Sage-MVP-Functional-Spec#7.5 Chat history access (UI)]] |
 
 ### Resize behavior
 - Drag handles between panels: **2px visible line** (`w-0.5`), **16px hit area** (`w-4` button absolutely centered over the 2px grid track).
 - Hover on hit area: `bg-neutral-200/20`.
-- `MIN_SIDE_WIDTH = 14%`, `MIN_MIDDLE_WIDTH = 16%`, `DEFAULT_SIDE_WIDTH = 30%`.
+- `MIN_SIDE_WIDTH = 16%`, `MIN_MIDDLE_WIDTH = 16%`, `DEFAULT_SIDE_WIDTH = 30%`.
 - Raised from 12% → 14% (2026-07-03) so left-panel toolbar tooltips (e.g. "Auto-reveal current file") aren't clipped by panel `overflow-hidden` at minimum width. See [[Lessons-Learned#2026-07-03 — Panel tooltips clipped at minimum resize width]].
 - Resize updates **saved width** (`leftWidth` / `rightWidth`).
 - Dragging a hidden panel's handle **re-shows** that panel.

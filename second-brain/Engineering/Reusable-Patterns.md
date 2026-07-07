@@ -3,8 +3,8 @@ type: pattern
 status: active
 tags: [area/frontend]
 created: 2026-07-01
-updated: 2026-07-03
-related: ["[[Coding-Standards]]", "[[UI-UX-Guidelines]]", "[[FEAT-app-shell-layout]]", "[[Lessons-Learned]]"]
+updated: 2026-07-07
+related: ["[[Coding-Standards]]", "[[UI-UX-Guidelines]]", "[[FEAT-app-shell-layout]]", "[[Lessons-Learned]]", "[[Stacking-Contexts-and-Portals]]"]
 ---
 
 # Reusable Patterns
@@ -78,6 +78,10 @@ const MIN_MIDDLE_WIDTH = 16;
 - Custom icon via `icon` prop (Tabler, composites)
 - Tooltip placement: `bottom` | `left` | `right`
 - Dark mode: `text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring/50`
+**Stacking / visibility:**
+- Tooltips are `absolute` inside the button (`z-50` on tooltip span). That does **not** guarantee visibility over the panel grid below the header — see [[Lessons-Learned#2026-07-07 — Header tooltips hidden behind grid panels (stacking context)]] and [[Stacking-Contexts-and-Portals]].
+- If tooltips extend past the header: add `relative z-20` on global `<header>`, or portal tooltips to `body`.
+- Panel-header tooltips can still be clipped by `overflow-hidden` on panels — different bug; see [[Lessons-Learned#2026-07-03 — Panel tooltips clipped at minimum resize width]].
 **Don't use when:** the control isn't an icon button (use shadcn `Button` or a link pattern instead).
 
 ### Tabler icon in Codicon toolbar
