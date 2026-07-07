@@ -349,7 +349,7 @@ export default function Home() {
           <header className="flex h-12 shrink-0 items-center justify-center border-b border-border bg-sidebar">
             <div className="flex items-center gap-1">
               <Button size="sm" type="button">
-                <Codicon iconClass="codicon-new-session" size={ICON_SIZE_SM} />
+                <Codicon iconClass="codicon-add" size={ICON_SIZE_SM} />
                 New chat
               </Button>
               <div className="mx-2 h-5 w-px bg-border" />

@@ -74,7 +74,7 @@ Primary action uses a labeled button; browse/search utilities are icon-only (unl
 
 | Control | Source | Style | Active? |
 |---|---|---|---|
-| New chat | Codicon `new-session` | shadcn `Button` `size="sm"` — primary CTA | No — UI only until chat backend |
+| New chat | Codicon `add` | shadcn `Button` `size="sm"` — primary CTA | No — UI only until chat backend |
 | *(separator)* | `mx-2 h-5 w-px bg-border` | — | — |
 | Search chats | Codicon `search` | `HeaderIconButton` + tooltip | No |
 | History | Codicon `history` | `HeaderIconButton` + tooltip | No — per [[Sage-MVP-Functional-Spec#7.5 Chat history access (UI)]] |
