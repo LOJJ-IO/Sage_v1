@@ -349,10 +349,11 @@ export default function Home() {
         <section className="flex h-full min-w-0 flex-col overflow-hidden bg-sidebar">
           <header className="flex h-12 shrink-0 items-center justify-center border-b border-border bg-sidebar">
             <div className="flex items-center gap-1">
-              <HeaderIconButton
-                iconClass="codicon-new-session"
-                label="New chat"
-              />
+              <Button size="sm" type="button">
+                <Codicon iconClass="codicon-new-session" size={ICON_SIZE_SM} />
+                New chat
+              </Button>
+              <div className="mx-2 h-5 w-px bg-border" />
               <HeaderIconButton
                 iconClass="codicon-search"
                 label="Search chats"
