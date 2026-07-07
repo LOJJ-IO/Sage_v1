@@ -3,7 +3,7 @@ type: feature
 status: in-progress
 tags: [area/frontend, area/design]
 created: 2026-06-30
-updated: 2026-07-03
+updated: 2026-07-06
 related: ["[[UI-UX-Guidelines]]", "[[Reusable-Patterns]]", "[[Current-Context]]", "[[Workspace-UI-Design-Decisions]]"]
 ---
 
@@ -66,7 +66,7 @@ Left group also has a vertical separator after the sidebar toggle (same classes)
 | Sort | Tabler `IconFilter2Up` | Sort | No |
 | New folder | Codicon `new-folder` | New folder | No |
 | Auto sort | Tabler `IconFilter2Spark` | Auto-Sort | No |
-| Fold / unfold | Codicon `fold` / `unfold` | Fold / Unfold | Yes — toggles `isFolded` (UI only until file tree exists) |
+| Collapse all (file tree) | Codicon `collapse-all` | Collapse all | No — UI only until file tree exists |
 | Auto-reveal | Composite Tabler `IconFile` + `IconPin` (pin bottom-right) | Auto-reveal current file | No |
 
 ### Resize behavior

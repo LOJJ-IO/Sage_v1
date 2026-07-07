@@ -143,12 +143,9 @@ Key rules:
 
 Centered horizontally (`flex justify-center`) — stays centered as panel resizes.
 
-Fold/unfold toggle:
-- `isFolded === false` → `codicon-fold`, tooltip **Fold**
-- `isFolded === true` → `codicon-unfold`, tooltip **Unfold**
-- Currently UI-only until file tree exists.
-
-**Planned — collapse-all:** replace X-like affordance with `codicon-collapse-all` (or Lucide `copy-minus`). Structural controls need recognizable icons, not tooltip-only discovery — see [[Workspace-UI-Design-Decisions#4. Iconography — collapse-all]].
+Collapse all:
+- `codicon-collapse-all`, tooltip **Collapse all**
+- Collapses all folders in the file tree (VS Code convention). UI only until file tree exists; no `onClick` wired yet.
 
 ## Styling stack
 - Tailwind CSS 4 utility-first.

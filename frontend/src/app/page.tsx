@@ -179,7 +179,6 @@ export default function Home() {
   const [rightWidth, setRightWidth] = useState(DEFAULT_SIDE_WIDTH);
   const [isLeftVisible, setIsLeftVisible] = useState(true);
   const [isRightVisible, setIsRightVisible] = useState(true);
-  const [isFolded, setIsFolded] = useState(false);
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -298,9 +297,8 @@ export default function Home() {
                 label="Auto-reveal current file"
               />
               <HeaderIconButton
-                iconClass={isFolded ? "codicon-unfold" : "codicon-fold"}
-                label={isFolded ? "Unfold" : "Fold"}
-                onClick={() => setIsFolded((folded) => !folded)}
+                iconClass="codicon-collapse-all"
+                label="Collapse all"
               />
             </div>
           </header>

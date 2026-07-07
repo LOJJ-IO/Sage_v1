@@ -70,6 +70,7 @@ Tracked in [[Sage-MVP-Functional-Spec#11. Open Items / Not Yet Decided]]:
 
 ## Recently changed
 
+- **2026-07-06** — Left panel header: replaced fold/unfold toggle with `codicon-collapse-all` ("Collapse all"); removed `isFolded` state. See [[Workspace-UI-Design-Decisions#4. Iconography — collapse-all]].
 - **2026-07-06** — MVP functional spec ingested into second-brain: [[Sage-MVP-Functional-Spec]], [[FEAT-sage-mvp]], 7 ADRs, updated [[Architecture-Overview]], [[Database-Schema]], [[API-Documentation]], [[Product-Vision]], [[Roadmap]].
 - **2026-07-03** — [[Workspace-UI-Design-Decisions]] logged; shell chrome token migration. See [[Daily/2026-07-03]].
 

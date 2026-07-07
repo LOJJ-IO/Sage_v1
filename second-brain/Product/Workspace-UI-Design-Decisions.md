@@ -116,7 +116,7 @@ Patterns to design against — validate against firsthand front-desk experience:
 - [ ] Per-desk vs. per-login state persistence data model
 - [ ] Dock visibility on first load
 - [ ] Demo/sample SOP seeded for new workspaces
-- [ ] Replace collapse-all X icon (Lucide `copy-minus` or Codicons `collapse-all`)
+- [x] Replace collapse-all icon — `codicon-collapse-all` in left panel header (2026-07-06)
 - [ ] Avatar menu + room for property switcher
 - [ ] Center panel checklist zero-state (or v1 fallback CTA)
 - [ ] AI panel empty-state copy + example-driven placeholder
