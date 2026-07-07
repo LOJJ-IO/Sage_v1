@@ -20,6 +20,16 @@
               "icon": "lucide-file",
               "title": "Current-Context"
             }
+          },
+          {
+            "id": "cdd7db7a03552914",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
           }
         ]
       }
@@ -171,8 +181,8 @@
   },
   "active": "b2649c847a6770ea",
   "lastOpenFiles": [
-    "Templates/Daily-Note.md",
     "Current/Current-Context.md",
+    "Templates/Daily-Note.md",
     "Daily/2026-07-07.md",
     "Engineering/Stacking-Contexts-and-Portals.md",
     "Product/Features/FEAT-sage-mvp.md",

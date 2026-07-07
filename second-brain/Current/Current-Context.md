@@ -41,15 +41,16 @@ Full UI inventory + bugs: [[BUG-0001-ui-inconsistencies]].
 
 ## Architecture (decided — not built)
 
-| Component | Choice | ADR |
-|---|---|---|
-| Backend | FastAPI (Python) | [[0001-fastapi-python-backend]] |
-| Database + storage | Supabase (backend-only) | [[0002-supabase-postgres-backend-only]] |
-| Hosting | Railway (3 services) | [[0003-railway-hosting-all-services]] |
-| Auth | Username + PIN (modular) | [[0004-username-pin-modular-auth]] |
-| AI agent | VoltAgent microservice | [[0005-voltagent-ai-microservice]] |
-| Retrieval | Keyword/tags (not vector) | [[0006-keyword-retrieval-mvp]] |
-| Market | Boutique retail MVP | [[0007-boutique-retail-mvp-beachhead]] |
+| Component          | Choice                    | ADR                                     |
+| ------------------ | ------------------------- | --------------------------------------- |
+| Backend            | FastAPI (Python)          | [[0001-fastapi-python-backend]]         |
+| Database + storage | Supabase (backend-only)   | [[0002-supabase-postgres-backend-only]] |
+| Hosting            | Railway (3 services)      | [[0003-railway-hosting-all-services]]   |
+| Auth               | Username + PIN (modular)  | [[0004-username-pin-modular-auth]]      |
+| AI agent           | VoltAgent microservice    | [[0005-voltagent-ai-microservice]]      |
+| Retrieval          | Keyword/tags (not vector) | [[0006-keyword-retrieval-mvp]]          |
+| Market             | Boutique retail MVP       | [[0007-boutique-retail-mvp-beachhead]]  |
+|                    |                           |                                         |
 
 Schema: [[Database-Schema]]. API: [[API-Documentation]].
 
