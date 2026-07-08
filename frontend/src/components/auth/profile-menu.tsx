@@ -118,6 +118,11 @@ export function ProfileMenu() {
     setAppearanceOpen(true);
   };
 
+  const closeAppearance = () => {
+    cancelAppearanceClose();
+    setAppearanceOpen(false);
+  };
+
   const scheduleAppearanceClose = () => {
     cancelAppearanceClose();
     appearanceCloseTimeoutRef.current = setTimeout(() => {
@@ -241,6 +246,11 @@ export function ProfileMenu() {
                 return;
               }
 
+              if (menuRef.current?.contains(next)) {
+                closeAppearance();
+                return;
+              }
+
               scheduleAppearanceClose();
             }}
             role="menu"
@@ -297,6 +307,11 @@ export function ProfileMenu() {
                 return;
               }
 
+              if (menuRef.current?.contains(next)) {
+                closeAppearance();
+                return;
+              }
+
               scheduleAppearanceClose();
             }}
             onFocus={openAppearance}
@@ -311,6 +326,7 @@ export function ProfileMenu() {
           <button
             className={menuItemClass()}
             onClick={closeMenu}
+            onMouseEnter={closeAppearance}
             role="menuitem"
             type="button"
           >
@@ -321,6 +337,7 @@ export function ProfileMenu() {
             <button
               className={menuItemClass()}
               onClick={closeMenu}
+              onMouseEnter={closeAppearance}
               role="menuitem"
               type="button"
             >
@@ -333,6 +350,7 @@ export function ProfileMenu() {
           <button
             className={menuItemClass()}
             onClick={closeMenu}
+            onMouseEnter={closeAppearance}
             role="menuitem"
             type="button"
           >
