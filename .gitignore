@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local upload storage (interim Next.js API)
+frontend/.data/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -14,7 +14,9 @@ import {
 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
+import { FileList } from "@/components/file-list";
 import { Button } from "@/components/ui/button";
+import { useFileLibrary } from "@/hooks/use-file-library";
 import {
   Tooltip,
   TooltipContent,
@@ -70,7 +72,13 @@ function TablerIcon({
   );
 }
 
-function FilesEmptyState() {
+function FilesEmptyState({
+  onUpload,
+  isUploading,
+}: {
+  onUpload: () => void;
+  isUploading: boolean;
+}) {
   return (
     <Empty className="h-full border-none px-4">
       <EmptyHeader>
@@ -84,7 +92,12 @@ function FilesEmptyState() {
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
-        <Button size="sm" type="button">
+        <Button
+          disabled={isUploading}
+          onClick={onUpload}
+          size="sm"
+          type="button"
+        >
           <TablerIcon icon={IconUpload} size={ICON_SIZE_SM} />
           Upload files
         </Button>
@@ -183,6 +196,16 @@ function HeaderIconButton({
 }
 
 export default function Home() {
+  const {
+    files,
+    isLoading,
+    isUploading,
+    error,
+    openFilePicker,
+    inputRef,
+    inputProps,
+  } = useFileLibrary();
+
   const [leftWidth, setLeftWidth] = useState(DEFAULT_SIDE_WIDTH);
   const [rightWidth, setRightWidth] = useState(DEFAULT_SIDE_WIDTH);
   const [isLeftVisible, setIsLeftVisible] = useState(true);
@@ -239,6 +262,7 @@ export default function Home() {
 
   return (
     <main className="flex h-full flex-col overflow-hidden bg-background text-foreground">
+      <input ref={inputRef} {...inputProps} />
       <header className="relative h-12 border-b border-border bg-background">
         <div className="absolute left-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
           <HeaderIconButton
@@ -257,6 +281,7 @@ export default function Home() {
           <HeaderIconButton
             icon={<TablerIcon icon={IconUpload} />}
             label="Upload"
+            onClick={openFilePicker}
           />
           <HeaderIconButton iconClass="codicon-bookmark" label="Bookmarks" />
         </div>
@@ -311,7 +336,26 @@ export default function Home() {
             </div>
           </header>
           <div className="min-h-0 flex-1 overflow-auto p-2">
-            <FilesEmptyState />
+            {error ? (
+              <p
+                className="mb-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+                role="alert"
+              >
+                {error}
+              </p>
+            ) : null}
+            {isLoading ? (
+              <p className="px-2 py-4 text-sm text-muted-foreground">
+                Loading files…
+              </p>
+            ) : files.length > 0 ? (
+              <FileList files={files} />
+            ) : (
+              <FilesEmptyState
+                isUploading={isUploading}
+                onUpload={openFilePicker}
+              />
+            )}
           </div>
         </section>
         <div className="relative h-full">

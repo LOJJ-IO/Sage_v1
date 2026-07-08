@@ -85,6 +85,19 @@ const MIN_MIDDLE_WIDTH = 16;
 - Do **not** revert to nested `absolute` + `group-hover` tooltips inside the button — `z-50` on the span cannot escape parent stacking contexts or `overflow-hidden` panels.
 **Don't use when:** the control isn't an icon button (use shadcn `Button` or a link pattern instead).
 
+### File upload (multi-file picker)
+**Use when:** adding files to the knowledge base from header or empty state.
+**Example:** `FileUploadInput` + `useFileLibrary` in `page.tsx`; shared rules in `frontend/src/lib/file-upload.ts`.
+**Shape:**
+```tsx
+<FileUploadInput onFilesSelected={uploadFiles}>
+  <Button>Upload files</Button>
+</FileUploadInput>
+```
+**Supported (v1):** PDF, DOCX, TXT, MD, JPEG/PNG/WebP/GIF — 25 MB each. Legacy `.doc` rejected. See [[FEAT-file-upload]].
+**Interim API:** `GET/POST /api/files` (Next.js) until FastAPI `POST /files`.
+**Don't use when:** folder upload (deferred) — `webkitdirectory` bypasses `accept` filter; requires post-enumeration skip summary.
+
 ### Tabler icon in Codicon toolbar
 **Use when:** Codicons doesn't have the icon you need.
 **Example:** `TablerIcon` helper in `page.tsx`:
