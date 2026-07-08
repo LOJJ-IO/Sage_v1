@@ -4,7 +4,7 @@ status: active
 tags: [area/backend, area/frontend, area/product, priority/high]
 created: 2026-07-01
 updated: 2026-07-07
-related: ["[[Roadmap]]", "[[Architecture-Overview]]", "[[Sage-MVP-Functional-Spec]]", "[[FEAT-sage-mvp]]", "[[FEAT-app-shell-layout]]", "[[UI-UX-Guidelines]]", "[[BUG-0001-ui-inconsistencies]]", "[[Workspace-UI-Design-Decisions]]", "[[Stacking-Contexts-and-Portals]]"]
+related: ["[[Roadmap]]", "[[Architecture-Overview]]", "[[Sage-MVP-Functional-Spec]]", "[[FEAT-sage-mvp]]", "[[FEAT-sign-in]]", "[[FEAT-manage-team]]", "[[FEAT-app-shell-layout]]", "[[UI-UX-Guidelines]]", "[[BUG-0001-ui-inconsistencies]]", "[[Workspace-UI-Design-Decisions]]", "[[Stacking-Contexts-and-Portals]]"]
 ---
 
 # Current Context
@@ -34,7 +34,7 @@ Sage MVP functional spec is **approved for implementation** — [[Sage-MVP-Funct
 | Dark mode toggle (client-only, no persist) | Done |
 | Empty states (left + right panels) | Done (placeholder) |
 | File tree / preview / real chat | Not started |
-| Auth screens | Not started |
+| Auth screens | Sign-in at `/sign-in` ([[FEAT-sign-in]]); manage team at `/manage-team` ([[FEAT-manage-team]]); change-PIN + route guards not started |
 | Backend / sage-agent | Not started |
 
 Full UI inventory + bugs: [[BUG-0001-ui-inconsistencies]].
@@ -71,6 +71,8 @@ Tracked in [[Sage-MVP-Functional-Spec#11. Open Items / Not Yet Decided]]:
 
 ## Recently changed
 
+- **2026-07-08** — Manage team page at `/manage-team`: account list, add-account modal, reset PIN, deactivate/reactivate, primary-admin protection. See [[FEAT-manage-team]].
+- **2026-07-07** — Sign-in page at `/sign-in`: centered card, username field, touch keypad PIN entry, API-ready `login()` stub. See [[FEAT-sign-in]].
 - **2026-07-07** — Portaled all shell tooltips: shadcn/Base UI `Tooltip` + `variant="compact"` on `HeaderIconButton`; `TooltipProvider` in `layout.tsx`. Fixes header stacking-context bug and panel overflow clipping. See [[Stacking-Contexts-and-Portals#Sage implementation]], [[Reusable-Patterns#HeaderIconButton (icon + compact tooltip)]].
 - **2026-07-07** — Documented header tooltip stacking-context bug + React Hooks learnings in [[Stacking-Contexts-and-Portals]], [[Lessons-Learned#2026-07-07 — Header tooltips hidden behind grid panels (stacking context)]].
 - **2026-07-06** — Left panel header: replaced fold/unfold toggle with `codicon-collapse-all` ("Collapse all"); removed `isFolded` state. See [[Workspace-UI-Design-Decisions#4. Iconography — collapse-all]].
