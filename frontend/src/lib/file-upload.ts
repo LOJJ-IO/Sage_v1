@@ -4,6 +4,8 @@ export type LibraryFile = {
   id: string;
   file: File;
   fileType: SageFileType;
+  tags: string[];
+  isBookmarked: boolean;
 };
 
 export const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
@@ -44,7 +46,7 @@ const SYSTEM_JUNK_NAMES = new Set([
   "desktop.ini",
 ]);
 
-function getExtension(filename: string): string {
+export function getExtension(filename: string): string {
   const base = filename.split(/[/\\]/).pop() ?? filename;
   const dot = base.lastIndexOf(".");
   if (dot === -1) return "";
@@ -95,6 +97,19 @@ export function validateFileForUpload(file: File): FileValidationResult {
   }
 
   return { ok: true, fileType };
+}
+
+export function tagsFromFilename(filename: string): string[] {
+  const base = (filename.split(/[/\\]/).pop() ?? filename).replace(
+    /\.[^.]+$/,
+    "",
+  );
+  const tokens = base
+    .split(/[^a-zA-Z0-9]+/)
+    .map((token) => token.toLowerCase())
+    .filter((token) => token.length > 1);
+
+  return [...new Set(tokens)];
 }
 
 export function formatFileSize(bytes: number): string {

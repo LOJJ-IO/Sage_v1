@@ -3,6 +3,12 @@ import type { Account } from "@/lib/accounts/types";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
+export function inactiveTextClass(isActive: boolean) {
+  return !isActive
+    ? "text-muted-foreground line-through decoration-muted-foreground"
+    : undefined;
+}
+
 export function AccountRoleBadges({
   account,
   className,
@@ -12,11 +18,13 @@ export function AccountRoleBadges({
   className?: string;
   inactive?: boolean;
 }) {
+  const variant = account.role === "admin" ? "admin" : "staff";
+
   return (
     <div className={cn("flex flex-wrap items-center gap-1.5", className)}>
       <Badge
-        className={cn(inactive && "inactive-account-badge")}
-        variant="admin"
+        className={cn(inactiveTextClass(!inactive))}
+        variant={variant}
       >
         {account.role === "admin" ? "Admin" : "Staff"}
       </Badge>
@@ -31,9 +39,9 @@ export function formatAccountDate(value: string) {
 }
 
 export function inactiveTableRowClass(isActive: boolean) {
-  return !isActive ? "inactive-account-row" : "";
+  return !isActive ? "bg-muted/20" : undefined;
 }
 
 export function inactiveCardClass(isActive: boolean) {
-  return !isActive ? "inactive-account-card" : "";
+  return !isActive ? "bg-muted/20" : undefined;
 }

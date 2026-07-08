@@ -3,7 +3,7 @@ type: feature
 status: in-progress
 tags: [area/frontend, area/backend, area/product]
 created: 2026-07-07
-updated: 2026-07-07
+updated: 2026-07-08
 related: ["[[Sage-MVP-Functional-Spec]]", "[[FEAT-sage-mvp]]", "[[FEAT-app-shell-layout]]", "[[API-Documentation]]", "[[Database-Schema]]", "[[Lessons-Learned]]"]
 ---
 
@@ -41,9 +41,8 @@ Constants + client validation in `frontend/src/lib/file-upload.ts`.
 ## Out of scope (this iteration)
 - Folder upload (`webkitdirectory`) — enumerate + skip-summary deferred
 - Admin role enforcement (no auth yet)
-- Text extraction, auto-tags, manual-tag modal
-- Replace / delete / kebab menu
-- Center preview + tabs on upload
+- Text extraction, server-side auto-tags
+- Center preview + tabs on file click
 - Drag-and-drop onto center panel
 - Per-business storage quotas (documented; not enforced in interim API)
 - FastAPI + Supabase Storage
@@ -52,15 +51,15 @@ Constants + client validation in `frontend/src/lib/file-upload.ts`.
 - **Entry points:** global header Upload icon; left panel "Upload files" button when tree is empty.
 - **Picker:** `<input type="file" multiple accept="...">` — OS grays unsupported types for file mode.
 - **Feedback:** inline error banner for batch failures; skipped files listed in upload result.
-- **After upload:** file list replaces empty state (flat list until folder tree exists).
+- **After upload:** flat file list in left panel — Tabler `file-type-*` icon, filename, bookmark toggle, kebab (Edit tags / Replace / Delete). Delete + Edit tags use manage-team dialog pattern. In-memory only.
 - Admin-only in production; all users see upload UI in shell prototype until auth ships.
 
 ## Technical approach
 
 ### Client only (current)
-- `frontend/src/lib/file-upload.ts` — `ALLOWED_EXTENSIONS`, `validateFileForUpload`, `LibraryFile` type
-- `frontend/src/hooks/use-file-library.ts` — `useState<LibraryFile[]>`; hidden `<input type="file" multiple>`
-- `frontend/src/components/file-list.tsx` — flat list in left panel
+- `frontend/src/lib/file-upload.ts` — validation, `LibraryFile` (`tags`, `isBookmarked`)
+- `frontend/src/hooks/use-file-library.ts` — add / replace / delete / tags / bookmark
+- `frontend/src/components/files/` — `file-list`, `file-row-menu`, `file-bookmark-button`, `delete-file-dialog`, `edit-file-tags-dialog`, `file-type-icon`
 
 ### Target (FastAPI)
 `POST /files` with server validation, storage, extraction. Replace in-memory state with API fetch + optimistic UI.

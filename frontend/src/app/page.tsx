@@ -12,7 +12,7 @@ import {
 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { useCallback, useState } from "react";
-import { FileList } from "@/components/file-list";
+import { FileLibraryPanel } from "@/components/files/file-library-panel";
 import { ProfileMenu } from "@/components/auth/profile-menu";
 import { Button } from "@/components/ui/button";
 import { useFileLibrary } from "@/hooks/use-file-library";
@@ -184,8 +184,19 @@ function HeaderIconButton({
 }
 
 export default function Home() {
-  const { files, error, openFilePicker, inputRef, inputProps } =
-    useFileLibrary();
+  const {
+    files,
+    error,
+    openFilePicker,
+    removeFile,
+    updateTags,
+    toggleBookmark,
+    openReplacePicker,
+    inputRef,
+    replaceInputRef,
+    inputProps,
+    replaceInputProps,
+  } = useFileLibrary();
 
   const [leftWidth, setLeftWidth] = useState(DEFAULT_SIDE_WIDTH);
   const [rightWidth, setRightWidth] = useState(DEFAULT_SIDE_WIDTH);
@@ -239,6 +250,7 @@ export default function Home() {
   return (
     <main className="flex h-full flex-col overflow-hidden bg-background text-foreground">
       <input ref={inputRef} {...inputProps} />
+      <input ref={replaceInputRef} {...replaceInputProps} />
       <header className="relative h-12 border-b border-border bg-background">
         <div className="absolute left-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
           <HeaderIconButton
@@ -316,7 +328,13 @@ export default function Home() {
               </p>
             ) : null}
             {files.length > 0 ? (
-              <FileList files={files} />
+              <FileLibraryPanel
+                files={files}
+                onDeleteFile={removeFile}
+                onEditTags={updateTags}
+                onReplaceFile={openReplacePicker}
+                onToggleBookmark={toggleBookmark}
+              />
             ) : (
               <FilesEmptyState onUpload={openFilePicker} />
             )}

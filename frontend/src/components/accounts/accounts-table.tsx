@@ -7,6 +7,7 @@ import {
   formatAccountDate,
   inactiveCardClass,
   inactiveTableRowClass,
+  inactiveTextClass,
 } from "@/components/accounts/account-role-badge";
 import { AccountRowMenu } from "@/components/accounts/account-row-menu";
 import { Button } from "@/components/ui/button";
@@ -83,8 +84,18 @@ export function AccountsTable({
                   inactiveTableRowClass(account.is_active)
                 )}
               >
-                <td className={rowCellClass("font-medium")}>{account.name}</td>
-                <td className={rowCellClass("font-medium")}>
+                <td
+                  className={rowCellClass(
+                    cn("font-medium", inactiveTextClass(account.is_active))
+                  )}
+                >
+                  {account.name}
+                </td>
+                <td
+                  className={rowCellClass(
+                    cn("font-medium", inactiveTextClass(account.is_active))
+                  )}
+                >
                   {account.username}
                 </td>
                 <td className={rowCellClass()}>
@@ -93,7 +104,11 @@ export function AccountsTable({
                     inactive={!account.is_active}
                   />
                 </td>
-                <td className={rowCellClass()}>
+                <td
+                  className={rowCellClass(
+                    inactiveTextClass(account.is_active)
+                  )}
+                >
                   {formatAccountDate(account.created_at)}
                 </td>
                 <td className="px-4 py-3">
@@ -123,13 +138,32 @@ export function AccountsTable({
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 space-y-2">
-                <h2 className="truncate font-medium">{account.name}</h2>
-                <p className="truncate text-sm">{account.username}</p>
+                <h2
+                  className={cn(
+                    "truncate font-medium",
+                    inactiveTextClass(account.is_active)
+                  )}
+                >
+                  {account.name}
+                </h2>
+                <p
+                  className={cn(
+                    "truncate text-sm",
+                    inactiveTextClass(account.is_active)
+                  )}
+                >
+                  {account.username}
+                </p>
                 <AccountRoleBadges
                   account={account}
                   inactive={!account.is_active}
                 />
-                <p className="text-sm">
+                <p
+                  className={cn(
+                    "text-sm",
+                    inactiveTextClass(account.is_active)
+                  )}
+                >
                   Created {formatAccountDate(account.created_at)}
                 </p>
               </div>

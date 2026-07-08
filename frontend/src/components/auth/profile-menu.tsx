@@ -12,9 +12,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useTheme } from "@/hooks/use-theme";
 import { getUserRole } from "@/lib/auth/session";
-import { type ThemePreference } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const ICON_SIZE = 20;
@@ -30,10 +28,12 @@ type MenuPosition = {
 };
 
 type AppearanceOption = {
-  value: ThemePreference;
+  value: "light" | "dark" | "system";
   label: string;
   description: string;
 };
+
+const APPEARANCE_SELECTION = "system" satisfies AppearanceOption["value"];
 
 const APPEARANCE_OPTIONS: AppearanceOption[] = [
   { value: "light", label: "Light", description: "Always use light mode" },
@@ -92,7 +92,6 @@ function getMainMenuPosition(
 }
 
 export function ProfileMenu() {
-  const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null);
@@ -257,15 +256,13 @@ export function ProfileMenu() {
             style={{ marginRight: SUBMENU_GAP, marginTop: appearanceOffset }}
           >
             {APPEARANCE_OPTIONS.map((option) => {
-              const selected = theme === option.value;
+              const selected = APPEARANCE_SELECTION === option.value;
 
               return (
                 <button
                   key={option.value}
                   className={menuItemClass(selected)}
-                  onClick={() => {
-                    setTheme(option.value);
-                  }}
+                  onClick={() => {}}
                   role="menuitem"
                   type="button"
                 >
