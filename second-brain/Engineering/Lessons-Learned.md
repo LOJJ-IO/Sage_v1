@@ -63,3 +63,11 @@ Upload (and other header) tooltips had `z-50` but still painted **under** the le
 
 ### 2026-07-07 — React Hooks: `useState` and functional updaters
 `useState` is a **Hook** (any `use*` function). `const [value, setValue] = useState(initial)` gives current state + updater. For toggles, prefer `setValue((current) => !current)` over `setValue(!value)` when next state depends on previous — functional form receives latest committed state and avoids stale reads under batching. Used in shell for `isLeftVisible`, `isRightVisible`, `isDark` in `page.tsx`. See [[Stacking-Contexts-and-Portals#React Hooks (related learning)]].
+
+### 2026-07-07 — File upload abuse surface
+Upload is Admin-only in MVP, but abuse still matters: stolen PIN on shared tablets, staff bypassing UI if API lacks role checks, cross-tenant `business_id` bugs, MIME/extension spoofing, zip-bomb PDFs/DOCX exhausting extraction, storage spam, filename path tricks, image pixel bombs, and **prompt injection** via document text (highest Sage-specific impact).
+**Mitigation:** server-side Admin check; magic-byte + parse validation; UUID storage paths; extraction timeout + max text size; rate limits + per-business quota; reject `.svg` and legacy `.doc` in v1. See [[FEAT-file-upload#Security (must hold in FastAPI)]].
+
+### 2026-07-07 — Legacy `.doc` rejected in v1 upload
+Spec lists DOC + DOCX but stack only has `python-docx` (DOCX). Legacy `.doc` is a different binary format.
+**Decision:** accept `.docx` only; reject `.doc` with clear message to save as DOCX. See [[FEAT-file-upload#Supported file types (v1 decision)]].
