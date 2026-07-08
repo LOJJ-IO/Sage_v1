@@ -1,137 +1,79 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   ACCEPT_ATTRIBUTE,
   isSystemJunkFile,
-  MAX_FILES_PER_BATCH,
   validateFileForUpload,
-  type SageFile,
-  type SkippedFile,
+  type LibraryFile,
 } from "@/lib/file-upload";
-import { fetchFiles, uploadFiles as postFiles } from "@/lib/files-api";
 
 export function useFileLibrary() {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [files, setFiles] = useState<SageFile[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isUploading, setIsUploading] = useState(false);
+  const [files, setFiles] = useState<LibraryFile[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [lastSkipped, setLastSkipped] = useState<SkippedFile[]>([]);
-
-  const loadFiles = useCallback(async () => {
-    setError(null);
-    try {
-      const nextFiles = await fetchFiles();
-      setFiles(nextFiles);
-    } catch {
-      setError("Could not load files.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadFiles();
-  }, [loadFiles]);
 
   const openFilePicker = useCallback(() => {
     inputRef.current?.click();
   }, []);
 
-  const uploadFiles = useCallback(
-    async (selected: File[]) => {
-      setError(null);
-      setLastSkipped([]);
+  const addFiles = useCallback((selected: File[]) => {
+    setError(null);
 
-      const candidates = selected.filter((file) => !isSystemJunkFile(file.name));
-      if (candidates.length === 0) {
-        setError("No supported files selected.");
-        return;
+    const accepted: LibraryFile[] = [];
+    let firstSkipReason: string | null = null;
+    let skippedCount = 0;
+
+    for (const file of selected) {
+      if (isSystemJunkFile(file.name)) continue;
+
+      const result = validateFileForUpload(file);
+      if (!result.ok) {
+        skippedCount += 1;
+        firstSkipReason ??= result.reason;
+        continue;
       }
 
-      if (candidates.length > MAX_FILES_PER_BATCH) {
-        setError(`Select at most ${MAX_FILES_PER_BATCH} files at a time.`);
-        return;
-      }
+      accepted.push({
+        id: crypto.randomUUID(),
+        file,
+        fileType: result.fileType,
+      });
+    }
 
-      const clientSkipped: SkippedFile[] = [];
-      const accepted: File[] = [];
+    if (accepted.length > 0) {
+      setFiles((current) => [...current, ...accepted]);
+    }
 
-      for (const file of candidates) {
-        const result = validateFileForUpload(file);
-        if (!result.ok) {
-          if (result.reason !== "System file skipped") {
-            clientSkipped.push({ name: file.name, reason: result.reason });
-          }
-          continue;
-        }
-        accepted.push(file);
-      }
-
-      if (accepted.length === 0) {
-        setLastSkipped(clientSkipped);
-        setError(clientSkipped[0]?.reason ?? "No supported files selected.");
-        return;
-      }
-
-      setIsUploading(true);
-      try {
-        const result = await postFiles(accepted);
-        setLastSkipped([...clientSkipped, ...result.skipped]);
-        await loadFiles();
-        if (result.skipped.length > 0 && result.uploaded.length > 0) {
-          setError(
-            `Uploaded ${result.uploaded.length} file(s). ${result.skipped.length} skipped.`,
-          );
-        } else if (clientSkipped.length > 0 && result.uploaded.length > 0) {
-          setError(
-            `Uploaded ${result.uploaded.length} file(s). ${clientSkipped.length} skipped.`,
-          );
-        }
-      } catch (uploadError) {
-        setLastSkipped(clientSkipped);
-        setError(
-          uploadError instanceof Error
-            ? uploadError.message
-            : "Upload failed. Please try again.",
-        );
-      } finally {
-        setIsUploading(false);
-      }
-    },
-    [loadFiles],
-  );
+    if (accepted.length === 0) {
+      setError(firstSkipReason ?? "No supported files selected.");
+    } else if (skippedCount > 0) {
+      setError(
+        `Added ${accepted.length} file(s). ${skippedCount} skipped.`,
+      );
+    }
+  }, []);
 
   const handleInputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const selected = Array.from(event.target.files ?? []);
       event.target.value = "";
-      if (selected.length > 0) {
-        void uploadFiles(selected);
-      }
+      if (selected.length > 0) addFiles(selected);
     },
-    [uploadFiles],
+    [addFiles],
   );
-
-  const inputProps = {
-    type: "file" as const,
-    multiple: true,
-    accept: ACCEPT_ATTRIBUTE,
-    className: "sr-only",
-    onChange: handleInputChange,
-    disabled: isUploading,
-  };
 
   return {
     files,
-    isLoading,
-    isUploading,
     error,
-    lastSkipped,
     openFilePicker,
     inputRef,
-    inputProps,
-    reloadFiles: loadFiles,
+    inputProps: {
+      type: "file" as const,
+      multiple: true,
+      accept: ACCEPT_ATTRIBUTE,
+      className: "sr-only",
+      onChange: handleInputChange,
+    },
   };
 }

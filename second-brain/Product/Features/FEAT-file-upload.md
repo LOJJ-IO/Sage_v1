@@ -10,15 +10,15 @@ related: ["[[Sage-MVP-Functional-Spec]]", "[[FEAT-sage-mvp]]", "[[FEAT-app-shell
 # FEAT: File upload
 
 ## Status
-`in-progress` — client upload UI + interim Next.js API route shipped; FastAPI + Supabase pipeline not yet built.
+`in-progress` — **in-memory prototype** in the shell UI (no API, no disk). FastAPI + Supabase pipeline not yet built.
 
 ## Problem
 Admins need to populate the shared knowledge base with SOPs, policies, and product docs. The left file tree and center preview/tabs depend on real files existing. Upload is the entry point for the whole document workflow ([[Sage-MVP-Functional-Spec#4.6]]).
 
 ## Solution
-Multi-file upload from global header **Upload** button and left-panel empty-state CTA. Client validates type/size; server re-validates authoritatively. Accepted files appear in the left panel file list.
+Multi-file picker from global header **Upload** button and left-panel empty-state CTA. Client validates type/size. Accepted files held in React state (`LibraryFile[]` with native `File` objects) and shown in a flat left-panel list.
 
-**Interim (current):** `POST /api/files` Next.js route stores files on disk under `frontend/.data/uploads/` with a JSON manifest. Replaced by FastAPI `POST /files` when backend lands.
+**Current (shell prototype):** `useFileLibrary` hook — `useState` only. **Lost on refresh.** No server.
 
 **Target (MVP):** FastAPI validates → Supabase Storage → text extraction → auto-tags → `files` row ([[Sage-MVP-Functional-Spec#4.6]]).
 
@@ -34,11 +34,9 @@ Multi-file upload from global header **Upload** button and left-panel empty-stat
 
 **Rejected for v1:** legacy `.doc` — different binary format; `python-docx` does not parse it. Show clear error: *"Legacy Word (.doc) is not supported — save as .docx."*
 
-**Limits:** 25 MB per file ([[Sage-MVP-Functional-Spec#4.1]]). Max 50 files per batch (interim).
+**Limits:** 25 MB per file ([[Sage-MVP-Functional-Spec#4.1]]).
 
-**Not accepted:** `.svg` (XSS risk), `.xlsx`, `.zip`, executables, system junk (`.DS_Store`, `Thumbs.db`, `desktop.ini` — skipped silently).
-
-Constants live in `frontend/src/lib/file-upload.ts` (shared client + API route).
+Constants + client validation in `frontend/src/lib/file-upload.ts`.
 
 ## Out of scope (this iteration)
 - Folder upload (`webkitdirectory`) — enumerate + skip-summary deferred
@@ -59,20 +57,13 @@ Constants live in `frontend/src/lib/file-upload.ts` (shared client + API route).
 
 ## Technical approach
 
-### Client (`frontend/src/lib/file-upload.ts`)
-- `ALLOWED_EXTENSIONS`, `ACCEPT_ATTRIBUTE`, `MAX_FILE_SIZE_BYTES`
-- `validateFileForUpload(file)` → `{ ok } | { ok: false, reason }`
-- `isSystemJunkFile(name)` for silent skip
+### Client only (current)
+- `frontend/src/lib/file-upload.ts` — `ALLOWED_EXTENSIONS`, `validateFileForUpload`, `LibraryFile` type
+- `frontend/src/hooks/use-file-library.ts` — `useState<LibraryFile[]>`; hidden `<input type="file" multiple>`
+- `frontend/src/components/file-list.tsx` — flat list in left panel
 
-### Interim API (`frontend/src/app/api/files/route.ts`)
-- `GET` — list manifest entries
-- `POST` — `multipart/form-data`, field `files` (repeatable)
-- Storage: `frontend/.data/uploads/{uuid}.{ext}` + `manifest.json`
-- Server: extension + size + magic-byte sniff; UUID storage path; sanitized display name only
-- Returns `{ uploaded: SageFile[], skipped: { name, reason }[] }`
-
-### Migration to FastAPI
-Replace `files-api.ts` base URL with FastAPI; keep same client validation + shared types. Add JWT + Admin role check on server.
+### Target (FastAPI)
+`POST /files` with server validation, storage, extraction. Replace in-memory state with API fetch + optimistic UI.
 
 ## Security (must hold in FastAPI)
 
@@ -94,5 +85,5 @@ Highest pilot risks: stolen admin PIN on shared tablet; prompt injection in uplo
 
 ## Related
 - [[Sage-MVP-Functional-Spec#4.1]], [[Sage-MVP-Functional-Spec#4.6]], [[Sage-MVP-Functional-Spec#4.8]]
-- `frontend/src/lib/file-upload.ts`, `frontend/src/app/api/files/route.ts`
+- `frontend/src/lib/file-upload.ts`, `frontend/src/hooks/use-file-library.ts`
 - [[API-Documentation#Files]]
