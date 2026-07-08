@@ -3,7 +3,7 @@ type: context
 status: active
 tags: [area/backend, area/frontend, area/product, priority/high]
 created: 2026-07-01
-updated: 2026-07-07
+updated: 2026-07-08
 related: ["[[Roadmap]]", "[[Architecture-Overview]]", "[[Sage-MVP-Functional-Spec]]", "[[FEAT-sage-mvp]]", "[[FEAT-sign-in]]", "[[FEAT-manage-team]]", "[[FEAT-app-shell-layout]]", "[[FEAT-file-upload]]", "[[UI-UX-Guidelines]]", "[[BUG-0001-ui-inconsistencies]]", "[[Workspace-UI-Design-Decisions]]", "[[Stacking-Contexts-and-Portals]]"]
 ---
 
@@ -21,7 +21,7 @@ Sage MVP functional spec is **approved for implementation** — [[Sage-MVP-Funct
 
 ## Active work
 
-- **File upload** — [[FEAT-file-upload]] in progress (UI + interim Next.js API); FastAPI pipeline next
+- **File upload** — [[FEAT-file-upload]] in progress (in-memory UI prototype); FastAPI pipeline next
 - **MVP implementation planning** — backend, auth, files, Sage chat per [[Sage-MVP-Functional-Spec]]
 - **Frontend alignment** — existing shell partially matches MVP layout; reconcile with spec (gear settings, auth screens, file tree, chat UX). Workspace-shell features (dock, tabs) are **out of MVP scope**.
 - **Open UI conflict:** gear (settings) vs avatar (account menu) — working resolution in spec §0; finalize during frontend build.
@@ -34,7 +34,7 @@ Sage MVP functional spec is **approved for implementation** — [[Sage-MVP-Funct
 | Panel headers (left + right), icons, resize, toggle | Done |
 | Dark mode toggle (client-only, no persist) | Done |
 | Empty states (left + right panels) | Done (placeholder) |
-| File upload (UI + interim API) | In progress — [[FEAT-file-upload]] |
+| File upload (in-memory UI prototype) | In progress — [[FEAT-file-upload]] |
 | File tree / preview / real chat | Not started |
 | Auth screens | Sign-in at `/sign-in` ([[FEAT-sign-in]]); manage team at `/manage-team` ([[FEAT-manage-team]]); change-PIN + route guards not started |
 | Backend / sage-agent | Not started |
@@ -52,7 +52,6 @@ Full UI inventory + bugs: [[BUG-0001-ui-inconsistencies]].
 | AI agent           | VoltAgent microservice    | [[0005-voltagent-ai-microservice]]      |
 | Retrieval          | Keyword/tags (not vector) | [[0006-keyword-retrieval-mvp]]          |
 | Market             | Boutique retail MVP       | [[0007-boutique-retail-mvp-beachhead]]  |
-|                    |                           |                                         |
 
 Schema: [[Database-Schema]]. API: [[API-Documentation]].
 
@@ -75,8 +74,8 @@ Tracked in [[Sage-MVP-Functional-Spec#11. Open Items / Not Yet Decided]]:
 
 - **2026-07-08** — Manage team page at `/manage-team`: account list, add-account modal, reset PIN, deactivate/reactivate, primary-admin protection. See [[FEAT-manage-team]].
 - **2026-07-07** — Sign-in page at `/sign-in`: centered card, username field, touch keypad PIN entry, API-ready `login()` stub. See [[FEAT-sign-in]].
-- **2026-07-07** — [[FEAT-file-upload]] specced + interim implementation: multi-file upload, supported types (PDF/DOCX/TXT/MD/images), `.doc` rejected, Next.js `/api/files` until FastAPI.
-- **2026-07-07** — Portaled all shell tooltips: shadcn/Base UI `Tooltip` + `variant="compact"` on `HeaderIconButton`; `TooltipProvider` in `layout.tsx`. Fixes header stacking-context bug and panel overflow clipping. See [[Stacking-Contexts-and-Portals#Sage implementation]], [[Reusable-Patterns#HeaderIconButton (icon + compact tooltip)]].
+- **2026-07-07** — [[FEAT-file-upload]] simplified to in-memory `File` state (no Next.js API/disk); validation rules kept in `file-upload.ts`.
+- **2026-07-07** — Portaled all shell tooltips: shadcn/Base UI `Tooltip` + `variant="compact"` on `HeaderIconButton`; `TooltipProvider` in `layout.tsx`. See [[Stacking-Contexts-and-Portals#Sage implementation]], [[Reusable-Patterns#HeaderIconButton (icon + compact tooltip)]].
 - **2026-07-07** — Documented header tooltip stacking-context bug + React Hooks learnings in [[Stacking-Contexts-and-Portals]], [[Lessons-Learned#2026-07-07 — Header tooltips hidden behind grid panels (stacking context)]].
 - **2026-07-06** — Left panel header: replaced fold/unfold toggle with `codicon-collapse-all` ("Collapse all"); removed `isFolded` state. See [[Workspace-UI-Design-Decisions#4. Iconography — collapse-all]].
 - **2026-07-06** — MVP functional spec ingested into second-brain: [[Sage-MVP-Functional-Spec]], [[FEAT-sage-mvp]], 7 ADRs, updated [[Architecture-Overview]], [[Database-Schema]], [[API-Documentation]], [[Product-Vision]], [[Roadmap]].

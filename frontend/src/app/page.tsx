@@ -72,13 +72,7 @@ function TablerIcon({
   );
 }
 
-function FilesEmptyState({
-  onUpload,
-  isUploading,
-}: {
-  onUpload: () => void;
-  isUploading: boolean;
-}) {
+function FilesEmptyState({ onUpload }: { onUpload: () => void }) {
   return (
     <Empty className="h-full border-none px-4">
       <EmptyHeader>
@@ -92,12 +86,7 @@ function FilesEmptyState({
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
-        <Button
-          disabled={isUploading}
-          onClick={onUpload}
-          size="sm"
-          type="button"
-        >
+        <Button onClick={onUpload} size="sm" type="button">
           <TablerIcon icon={IconUpload} size={ICON_SIZE_SM} />
           Upload files
         </Button>
@@ -196,15 +185,8 @@ function HeaderIconButton({
 }
 
 export default function Home() {
-  const {
-    files,
-    isLoading,
-    isUploading,
-    error,
-    openFilePicker,
-    inputRef,
-    inputProps,
-  } = useFileLibrary();
+  const { files, error, openFilePicker, inputRef, inputProps } =
+    useFileLibrary();
 
   const [leftWidth, setLeftWidth] = useState(DEFAULT_SIDE_WIDTH);
   const [rightWidth, setRightWidth] = useState(DEFAULT_SIDE_WIDTH);
@@ -344,17 +326,10 @@ export default function Home() {
                 {error}
               </p>
             ) : null}
-            {isLoading ? (
-              <p className="px-2 py-4 text-sm text-muted-foreground">
-                Loading files…
-              </p>
-            ) : files.length > 0 ? (
+            {files.length > 0 ? (
               <FileList files={files} />
             ) : (
-              <FilesEmptyState
-                isUploading={isUploading}
-                onUpload={openFilePicker}
-              />
+              <FilesEmptyState onUpload={openFilePicker} />
             )}
           </div>
         </section>
