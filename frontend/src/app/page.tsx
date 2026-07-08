@@ -6,15 +6,14 @@ import {
   IconFile,
   IconMessageCircle,
   IconMicrophone,
-  IconMoon,
   IconSend,
-  IconSun,
   IconUpload,
   IconWand,
 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { FileList } from "@/components/file-list";
+import { ProfileMenu } from "@/components/auth/profile-menu";
 import { Button } from "@/components/ui/button";
 import { useFileLibrary } from "@/hooks/use-file-library";
 import {
@@ -210,11 +209,6 @@ export default function Home() {
   const [rightWidth, setRightWidth] = useState(DEFAULT_SIDE_WIDTH);
   const [isLeftVisible, setIsLeftVisible] = useState(true);
   const [isRightVisible, setIsRightVisible] = useState(true);
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", isDark);
-  }, [isDark]);
 
   const startResize = useCallback(
     (side: "left" | "right") => {
@@ -286,12 +280,7 @@ export default function Home() {
           <HeaderIconButton iconClass="codicon-bookmark" label="Bookmarks" />
         </div>
         <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
-          <HeaderIconButton
-            icon={<TablerIcon icon={isDark ? IconSun : IconMoon} />}
-            label={isDark ? "Light mode" : "Dark mode"}
-            onClick={() => setIsDark((dark) => !dark)}
-            tooltipPlacement="left"
-          />
+          <ProfileMenu />
           <div className="mx-2 h-5 w-px bg-border" />
           <HeaderIconButton
             iconClass={

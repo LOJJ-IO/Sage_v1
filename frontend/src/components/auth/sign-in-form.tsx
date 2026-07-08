@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoginError, PIN_LENGTH } from "@/lib/auth/types";
 import { login, storeAuthToken } from "@/lib/auth/login";
+import { storeUserRole } from "@/lib/auth/session";
 
 export function SignInForm() {
   const router = useRouter();
@@ -40,6 +41,7 @@ export function SignInForm() {
       });
 
       storeAuthToken(response.access_token);
+      storeUserRole(response.role);
 
       if (response.must_change_pin) {
         router.push("/change-pin");
