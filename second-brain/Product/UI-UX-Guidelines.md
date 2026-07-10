@@ -20,46 +20,45 @@ Feature-level detail for the current shell: [[FEAT-app-shell-layout]].
 ### Palette (current)
 | Area | Color |
 |---|---|
-| Global header | White (`bg-white`), border `neutral-200` |
-| Left / right panels | Light gray (`bg-neutral-100`) |
-| Center (editor area) | White (`bg-white`) |
-| Icon default | `text-neutral-600` |
-| Icon hover | `hover:bg-neutral-200`, `hover:text-neutral-950` |
-| Resize divider line | `bg-neutral-300`, hover `neutral-500` |
-| Resize hit-area hover | `bg-neutral-200/20` (subtle) |
+| Top toolbar | Same as page well (`bg-muted`) — no white bar / border |
+| Page well | `bg-muted` — shows through gutters / around panels |
+| All three panels | White (`bg-background`), `rounded-2xl` |
+| Icon default | `text-muted-foreground` |
+| Icon hover | `hover:bg-muted`, `hover:text-foreground` |
+| Resize gutter | Invisible — well color only (no divider line) |
+| Disclaimer footer | `text-xs text-muted-foreground` |
 
-Dark global header (`#262626`) was tried and **reverted**. Theme switching / dark mode was removed (2026-07-09) — UI is **light-only** for now (`:root` tokens only; no `.dark` class or Appearance control).
+Theme switching / dark mode was removed (2026-07-09) — UI is **light-only** for now (`:root` tokens only; no `.dark` class or Appearance control).
 
 ### Spacing & sizing
 | Element | Size |
 |---|---|
-| Global header height | `h-12` (48px) |
-| Left panel internal header | `h-12` (48px) |
+| Top toolbar height | `h-12` (48px), on muted well |
+| Panel internal header | `h-14` |
+| Panel corner radius | `rounded-2xl` (kept when a side is collapsed) |
+| Panel row inset | `p-2` (`pb-0` above footer) |
+| Panel gutter / resize track | `0.5rem` (8px) |
 | Icon button hit target | `size-8` (32px) |
-| Icon group gap | `gap-1` |
-| Header icon-group separator (both sides) | `mx-2 h-5 w-px bg-border` — left: after sidebar toggle, before nav icons; right: after dark-mode toggle, before sidebar collapse |
-| Resize visible line | `w-0.5` (2px) |
-| Resize drag hit area | `w-4` (16px), centered over 2px track |
-| Grid divider tracks | `0.125rem` (2px) |
+| Icon group gap | `gap-0.5` inside pill; `gap-2` between pills |
+| Resize drag hit area | `w-4` (16px), centered over gutter — no visible chrome |
+| Disclaimer footer | `py-1.5`, centered |
 
 ### Layout shell
 ```txt
 ┌─────────────────────────────────────────────┐
-│ Global header (48px)                        │
-├──────────┬─┬──────────────────┬─┬──────────┤
-│ Left     │││ Center (1fr)     │││ Right    │
-│ panel    │││                  │││ panel    │
-│ ┌──────┐ │││                  │││          │
-│ │ hdr  │ │││                  │││          │
-│ ├──────┤ │││                  │││          │
-│ │ body │ │││                  │││          │
-│ └──────┘ │││                  │││          │
-└──────────┴─┴──────────────────┴─┴──────────┘
+│ [icons]                         [icons]     │  ← muted well (no white bar)
+│ ╭────────╮   ╭──────────────╮   ╭────────╮  │
+│ │ Left   │   │ Center (1fr) │   │ Right  │  │
+│ │ panel  │   │              │   │ panel  │  │
+│ ╰────────╯   ╰──────────────╯   ╰────────╯  │
+│     Sage can be inaccurate; …               │  ← disclaimer
+└─────────────────────────────────────────────┘
 ```
 
-- Outer shell: `flex min-h-screen flex-col`.
-- Panel row: `grid min-h-0 flex-1`.
-- Left panel: `flex flex-col overflow-hidden`; internal header `shrink-0`, body `min-h-0 flex-1`.
+- Outer shell: `flex h-full flex-col overflow-hidden bg-muted`.
+- Top toolbar: `h-12` on the well (no `bg-background` / no border).
+- Panel row: `grid min-h-0 flex-1 px-2 pb-0`.
+- Each panel: `rounded-2xl bg-background overflow-hidden`; internal header `shrink-0`, body `min-h-0 flex-1`.
 - Use `min-h-0` on flex/grid children to prevent vertical overflow when headers are stacked.
 
 Default widths: left **30%**, center **40%** (via `1fr`), right **30%**.
@@ -86,15 +85,20 @@ const ICON_STROKE = 2.6;
 
 Constants in `page.tsx`: `ICON_SIZE = 20`, `ICON_STROKE = 2.6`. Codicons in the same toolbar use `style={{ fontSize: ICON_SIZE }}`.
 
-## `HeaderIconButton` pattern
+## `HeaderIconGroup` + `HeaderIconButton` pattern
 
 Canonical implementation: `frontend/src/app/page.tsx`.
 
-All header icon buttons (global + left panel internal) use this component.
+Related icon buttons sit inside a shared pill shell (`HeaderIconGroup`). Primary CTAs (`New chat`) stay outside utility pills; Profile uses its own solo pill. Separate pills with `gap-2` (not `|` dividers). See [[Reusable-Patterns#HeaderIconGroup (pill shell)]].
+
+### Group shell
+```tsx
+className="flex items-center gap-0.5 rounded-full border border-border bg-background p-0.5 shadow-sm"
+```
 
 ### Button
 ```tsx
-className="group relative flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
 ```
 
 Accepts either:
@@ -128,10 +132,11 @@ Do **not** use large tooltip sizing (`text-sm`, heavy padding) — reference is 
 See [[Reusable-Patterns#Resizable panel divider]].
 
 Key rules:
-- Grid track is **2px**; wider hit area is **absolutely positioned** over it (`w-4`, `left-1/2 -translate-x-1/2`).
-- Do **not** put `w-4` directly in a 2px grid column — it won't work as a hit target.
+- Grid gutter track is **`0.5rem`**; wider hit area is **absolutely positioned** over it (`w-4`, `left-1/2 -translate-x-1/2`).
+- Resizer is **fully invisible** (no line, no hover fill) — the muted well is the only visual separation.
+- Do **not** put `w-4` directly as the grid track width — hit area won't work correctly.
 - Resize changes saved width; does not affect visibility state.
-- Min side width **14%** (`MIN_SIDE_WIDTH` in `page.tsx`); min center **16%** (`MIN_MIDDLE_WIDTH`). Default sides **30%**.
+- Min side width **16%** (`MIN_SIDE_WIDTH` in `page.tsx`); min center **16%** (`MIN_MIDDLE_WIDTH`). Default sides **30%**.
 
 ## Panel toggle (visibility)
 
@@ -155,7 +160,8 @@ Collapse all:
 - Do not introduce a second styling system without an ADR.
 
 ## Design principles (emerging)
-- **VS Code / Cursor familiarity** — layout, icons, tooltips, and panel behavior should feel like a code editor shell.
+- **Floating panel chrome** — rounded panels on a muted well with invisible gutters (NotebookLM-inspired); icons/tooltips/resize behavior still lean VS Code / Cursor.
+- **VS Code / Cursor familiarity** — icons, tooltips, and panel toggle/resize state model should feel like a code editor shell.
 - **Hotel-staff constraints** — interruption-driven, shared desks, minimal training, speed over polish. See [[Workspace-UI-Design-Decisions#Hotel staff design constraints (personas & environment)]].
 - **Recognizable icons for structural actions** — tooltips are last-resort for power features; collapse/close-like glyphs need established conventions.
 - **Coherent zero-state** — three panels should guide one first-run flow, not pretend the others don't exist.

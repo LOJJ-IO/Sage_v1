@@ -160,7 +160,7 @@ export function AddAccountDialog({
                     Grant admin privileges
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Admins can upload files and manage team accounts.
+                    Admins can upload files and manage organization accounts.
                   </p>
                 </div>
                 <Switch

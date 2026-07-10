@@ -29,7 +29,7 @@ Spec authority: [[Sage-MVP-Functional-Spec#3.4.1 Regular sign-in]], [[Sage-MVP-F
 
 ## Out of scope (this feature)
 - Change-PIN flow (`/change-pin`) — separate feature; sign-in redirects there when API returns `must_change_pin`
-- Manage Accounts UI
+- Organization UI
 - Route guards / middleware protecting `/`
 - Session inactivity timeout (30 min) — session layer, not sign-in page
 

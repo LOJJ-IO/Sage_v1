@@ -2,20 +2,23 @@
 
 import {
   IconArrowsSort,
+  IconArrowUp,
+  IconBookmark,
   IconEyeQuestion,
   IconFile,
   IconMessageCircle,
   IconMicrophone,
-  IconSend,
   IconUpload,
   IconWand,
 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { FileLibraryPanel } from "@/components/files/file-library-panel";
 import { ProfileMenu } from "@/components/auth/profile-menu";
 import { Button } from "@/components/ui/button";
 import { useFileLibrary } from "@/hooks/use-file-library";
+import { getUserRole } from "@/lib/auth/session";
 import {
   Tooltip,
   TooltipContent,
@@ -33,6 +36,10 @@ import {
 const MIN_SIDE_WIDTH = 16;
 const MIN_MIDDLE_WIDTH = 16;
 const DEFAULT_SIDE_WIDTH = 30;
+/** Visual gutter between floating panels (also the resize track). */
+const PANEL_GUTTER = "0.5rem";
+const PANEL_SURFACE =
+  "flex h-full min-w-0 flex-col overflow-hidden rounded-2xl bg-background";
 const ICON_SIZE = 20;
 const ICON_SIZE_SM = 14;
 const ICON_SIZE_EMPTY = 16;
@@ -94,7 +101,35 @@ function FilesEmptyState({ onUpload }: { onUpload: () => void }) {
   );
 }
 
-function AskAiEmptyState() {
+function AskAiEmptyState({
+  hasFiles,
+  onUpload,
+}: {
+  hasFiles: boolean;
+  onUpload: () => void;
+}) {
+  if (!hasFiles) {
+    return (
+      <Empty className="h-full border-none px-4">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <TablerIcon icon={IconMessageCircle} size={ICON_SIZE_EMPTY} />
+          </EmptyMedia>
+          <EmptyTitle>No documents yet</EmptyTitle>
+          <EmptyDescription>
+            Upload documents first so I can answer questions about them.
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button onClick={onUpload} size="sm" type="button">
+            <TablerIcon icon={IconUpload} size={ICON_SIZE_SM} />
+            Upload files
+          </Button>
+        </EmptyContent>
+      </Empty>
+    );
+  }
+
   return (
     <Empty className="h-full border-none px-4">
       <EmptyHeader>
@@ -103,42 +138,62 @@ function AskAiEmptyState() {
         </EmptyMedia>
         <EmptyTitle>Ask AI</EmptyTitle>
         <EmptyDescription>
-          Send a message below to get started. Ask about SOPs, pricing,
-          processes, and more. AI helps you find answers across your docs.
+          Ask about SOPs, pricing, returns, and more. I&apos;ll look across your
+          uploaded docs.
         </EmptyDescription>
       </EmptyHeader>
     </Empty>
   );
 }
 
-function AskAiChatInput() {
+function AskAiChatInput({ hasFiles }: { hasFiles: boolean }) {
   const [message, setMessage] = useState("");
+  const canSend = hasFiles && message.trim().length > 0;
 
   return (
-    <div className="shrink-0 bg-sidebar p-3">
-      <div className="flex items-center gap-1.5 rounded-full border border-border bg-background py-1.5 pl-4 pr-1.5 shadow-sm">
+    <div className="shrink-0 p-3">
+      <div className="flex items-center gap-0.5 rounded-full border border-border bg-background py-1 pl-4 pr-0.5 shadow-sm">
         <input
-          className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+          className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={!hasFiles}
           onChange={(event) => setMessage(event.target.value)}
-          placeholder="Ask AI..."
+          placeholder={
+            hasFiles
+              ? "Ask about return policy, pricing, or store procedures..."
+              : "Upload documents to start asking..."
+          }
           type="text"
           value={message}
         />
         <button
           aria-label="Voice input"
-          className="flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+          disabled={!hasFiles}
           type="button"
         >
           <TablerIcon icon={IconMicrophone} />
         </button>
         <button
           aria-label="Send message"
-          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-secondary/80"
+          className={
+            canSend
+              ? "flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-secondary/80"
+              : "flex size-8 shrink-0 cursor-not-allowed items-center justify-center rounded-full text-muted-foreground"
+          }
+          disabled={!canSend}
           type="button"
         >
-          <TablerIcon icon={IconSend} />
+          <TablerIcon icon={IconArrowUp} />
         </button>
       </div>
+    </div>
+  );
+}
+
+function HeaderIconGroup({ children }: { children: ReactNode }) {
+  return (
+    <div className="inline-flex w-fit items-center gap-0.5 rounded-full border border-border bg-background p-0.5 shadow-sm">
+      {children}
     </div>
   );
 }
@@ -164,7 +219,7 @@ function HeaderIconButton({
         render={
           <button
             aria-label={label}
-            className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             onClick={onClick}
             type="button"
           />
@@ -202,6 +257,14 @@ export default function Home() {
   const [rightWidth, setRightWidth] = useState(DEFAULT_SIDE_WIDTH);
   const [isLeftVisible, setIsLeftVisible] = useState(true);
   const [isRightVisible, setIsRightVisible] = useState(true);
+  const [chatTitle, setChatTitle] = useState("Title");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    const role = getUserRole();
+    setIsAdmin(role === "admin" || role === null);
+  }, []);
 
   const startResize = useCallback(
     (side: "left" | "right") => {
@@ -241,61 +304,80 @@ export default function Home() {
   const rightColumnWidth = isRightVisible ? `${rightWidth}%` : "0px";
   const gridTemplateColumns = [
     leftColumnWidth,
-    isLeftVisible ? "0.125rem" : "0px",
+    isLeftVisible ? PANEL_GUTTER : "0px",
     "minmax(0, 1fr)",
-    isRightVisible ? "0.125rem" : "0px",
+    isRightVisible ? PANEL_GUTTER : "0px",
     rightColumnWidth,
   ].join(" ");
 
   return (
-    <main className="flex h-full flex-col overflow-hidden bg-background text-foreground">
+    <main className="flex h-full flex-col overflow-hidden bg-muted text-foreground">
       <input ref={inputRef} {...inputProps} />
       <input ref={replaceInputRef} {...replaceInputProps} />
-      <header className="relative h-12 border-b border-border bg-background">
-        <div className="absolute left-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
-          <HeaderIconButton
-            iconClass={
-              isLeftVisible
-                ? "codicon-layout-sidebar-left-off"
-                : "codicon-layout-sidebar-left"
-            }
-            label="Collapse"
-            onClick={() => setIsLeftVisible((visible) => !visible)}
-            tooltipPlacement="right"
-          />
-          <div className="mx-2 h-5 w-px bg-border" />
-          <HeaderIconButton iconClass="codicon-folder-library" label="Files" />
-          <HeaderIconButton iconClass="codicon-search" label="Search" />
-          <HeaderIconButton
-            icon={<TablerIcon icon={IconUpload} />}
-            label="Upload"
-            onClick={openFilePicker}
-          />
-          <HeaderIconButton iconClass="codicon-bookmark" label="Bookmarks" />
+      <div className="relative flex h-12 shrink-0 items-center px-2">
+        <div className="flex items-center gap-2">
+          <HeaderIconGroup>
+            <HeaderIconButton
+              iconClass={
+                isLeftVisible
+                  ? "codicon-layout-sidebar-left-off"
+                  : "codicon-layout-sidebar-left"
+              }
+              label="Collapse"
+              onClick={() => setIsLeftVisible((visible) => !visible)}
+              tooltipPlacement="right"
+            />
+          </HeaderIconGroup>
+          <HeaderIconGroup>
+            <HeaderIconButton iconClass="codicon-folder-library" label="Files" />
+            <HeaderIconButton iconClass="codicon-search" label="Search" />
+            <HeaderIconButton
+              icon={<TablerIcon icon={IconUpload} />}
+              label="Upload"
+              onClick={openFilePicker}
+            />
+            <HeaderIconButton
+              icon={<TablerIcon icon={IconBookmark} />}
+              label="Bookmarks"
+            />
+          </HeaderIconGroup>
         </div>
-        <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
-          <ProfileMenu />
-          <div className="mx-2 h-5 w-px bg-border" />
-          <HeaderIconButton
-            iconClass={
-              isRightVisible
-                ? "codicon-layout-sidebar-right-off"
-                : "codicon-layout-sidebar-right"
-            }
-            label="Collapse"
-            onClick={() => setIsRightVisible((visible) => !visible)}
-            tooltipPlacement="left"
-          />
+        <div className="ml-auto flex items-center gap-2">
+          <HeaderIconGroup>
+            {isAdmin ? (
+              <>
+                <HeaderIconButton
+                  iconClass="codicon-organization"
+                  label="Organization"
+                  onClick={() => router.push("/organization")}
+                />
+                <div className="mx-0.5 h-5 w-px shrink-0 bg-border" />
+              </>
+            ) : null}
+            <ProfileMenu />
+          </HeaderIconGroup>
+          <HeaderIconGroup>
+            <HeaderIconButton
+              iconClass={
+                isRightVisible
+                  ? "codicon-layout-sidebar-right-off"
+                  : "codicon-layout-sidebar-right"
+              }
+              label="Collapse"
+              onClick={() => setIsRightVisible((visible) => !visible)}
+              tooltipPlacement="left"
+            />
+          </HeaderIconGroup>
         </div>
-      </header>
+      </div>
 
       <div
-        className="grid min-h-0 min-w-0 flex-1 overflow-hidden"
+        className="grid min-h-0 min-w-0 flex-1 overflow-hidden px-2 pb-0"
         style={{ gridTemplateColumns }}
       >
-        <section className="flex h-full min-w-0 flex-col overflow-hidden bg-sidebar">
-          <header className="flex h-12 shrink-0 items-center justify-center border-b border-border bg-sidebar">
-            <div className="flex items-center gap-1">
+        <section className={PANEL_SURFACE}>
+          <header className="flex h-14 w-full shrink-0 items-center justify-center border-b border-border">
+            <HeaderIconGroup>
               <HeaderIconButton
                 icon={<TablerIcon icon={IconArrowsSort} />}
                 label="Sort"
@@ -316,7 +398,7 @@ export default function Home() {
                 iconClass="codicon-collapse-all"
                 label="Collapse all"
               />
-            </div>
+            </HeaderIconGroup>
           </header>
           <div className="min-h-0 flex-1 overflow-auto p-2">
             {error ? (
@@ -344,54 +426,64 @@ export default function Home() {
           {isLeftVisible ? (
             <button
               aria-label="Resize left column"
-              className="group absolute left-1/2 top-0 z-10 flex h-full w-4 -translate-x-1/2 cursor-col-resize touch-none justify-center bg-transparent transition-colors hover:bg-muted/30"
+              className="absolute left-1/2 top-0 z-10 h-full w-4 -translate-x-1/2 cursor-col-resize touch-none bg-transparent"
               onPointerDown={() => {
                 setIsLeftVisible(true);
                 startResize("left");
               }}
               type="button"
-            >
-              <span className="h-full w-0.5 bg-border transition-colors group-hover:bg-muted-foreground" />
-            </button>
+            />
           ) : null}
         </div>
-        <section className="h-full min-w-0 overflow-hidden bg-background" />
+        <section className={PANEL_SURFACE} />
         <div className="relative h-full">
           {isRightVisible ? (
             <button
               aria-label="Resize right column"
-              className="group absolute left-1/2 top-0 z-10 flex h-full w-4 -translate-x-1/2 cursor-col-resize touch-none justify-center bg-transparent transition-colors hover:bg-muted/30"
+              className="absolute left-1/2 top-0 z-10 h-full w-4 -translate-x-1/2 cursor-col-resize touch-none bg-transparent"
               onPointerDown={() => {
                 setIsRightVisible(true);
                 startResize("right");
               }}
               type="button"
-            >
-              <span className="h-full w-0.5 bg-border transition-colors group-hover:bg-muted-foreground" />
-            </button>
+            />
           ) : null}
         </div>
-        <section className="flex h-full min-w-0 flex-col overflow-hidden bg-sidebar">
-          <header className="flex h-12 shrink-0 items-center justify-center border-b border-border bg-sidebar">
-            <div className="flex items-center gap-1">
-              <Button size="sm" type="button">
-                <Codicon iconClass="codicon-add" size={ICON_SIZE_SM} />
-                New chat
-              </Button>
-              <div className="mx-2 h-5 w-px bg-border" />
-              <HeaderIconButton
-                iconClass="codicon-search"
-                label="Search chats"
-              />
-              <HeaderIconButton iconClass="codicon-history" label="History" />
+        <section className={PANEL_SURFACE}>
+          <header className="flex h-14 w-full shrink-0 items-center gap-2 border-b border-border px-2">
+            <input
+              aria-label="Chat title"
+              className="h-8 w-64 min-w-0 max-w-[calc(100%-7.5rem)] shrink truncate rounded-md border border-border bg-transparent px-2 text-sm font-semibold text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+              onChange={(event) => setChatTitle(event.target.value)}
+              value={chatTitle}
+            />
+            <div className="ml-auto shrink-0">
+              <HeaderIconGroup>
+                <HeaderIconButton iconClass="codicon-add" label="New chat" />
+                <HeaderIconButton
+                  iconClass="codicon-search"
+                  label="Search chats"
+                />
+                <HeaderIconButton
+                  iconClass="codicon-history"
+                  label="History"
+                />
+              </HeaderIconGroup>
             </div>
           </header>
           <div className="min-h-0 flex-1 overflow-auto p-2">
-            <AskAiEmptyState />
+            <AskAiEmptyState
+              hasFiles={files.length > 0}
+              onUpload={openFilePicker}
+            />
           </div>
-          <AskAiChatInput />
+          <AskAiChatInput hasFiles={files.length > 0} />
         </section>
       </div>
+
+      <footer className="shrink-0 px-2 py-1.5 text-center text-xs text-muted-foreground">
+        Sage can be inaccurate; please double-check its responses.
+      </footer>
     </main>
   );
 }

@@ -3,31 +3,35 @@ type: feature
 status: in-progress
 tags: [area/frontend, area/design]
 created: 2026-06-30
-updated: 2026-07-07
+updated: 2026-07-09
 related: ["[[UI-UX-Guidelines]]", "[[Reusable-Patterns]]", "[[Current-Context]]", "[[Workspace-UI-Design-Decisions]]"]
 ---
 
 # FEAT: App shell layout
 
 ## Status
-`in-progress` — layout shell, headers, icons, resize/toggle, dark mode, and placeholder panel content shipped in UI; real file tree, editor, and chat backend not yet built.
+`in-progress` — layout shell, headers, icons, resize/toggle, floating-panel chrome, and placeholder panel content shipped in UI; real file tree, editor, and chat backend not yet built.
 
 ## Problem
-Sage needs a VS Code / Cursor–style **workspace shell**: resizable side panels, a flexible center stage (tabs + apps), and icon-driven navigation — before real product features land. Not a document viewer; panels are slots for files, apps, and AI. See [[Workspace-UI-Design-Decisions#Product direction (context)]].
+Sage needs a **workspace shell**: resizable side panels, a flexible center stage (tabs + apps), and icon-driven navigation — before real product features land. Not a document viewer; panels are slots for files, apps, and AI. See [[Workspace-UI-Design-Decisions#Product direction (context)]].
 
 ## Solution
 A three-column layout inside `frontend/src/app/page.tsx`:
 
 ```txt
-[ global header — 48px ]
-[ left panel | resize | center | resize | right panel ]
+[ toolbar icons on muted well — no white bar ]
+[ padded well: left | gutter | center | gutter | right ]  ← rounded floating panels
+[ disclaimer footer ]
 ```
 
-- **Left panel** (`bg-neutral-100` / `dark:bg-neutral-900`): internal 48px header with centered action icons; body shows `FilesEmptyState` (shadcn `Empty`).
-- **Center** (`bg-white` / `dark:bg-neutral-950`): empty — no placeholder yet.
-- **Right panel** (`bg-sidebar`): internal 48px header — primary **New chat** CTA + divider + utility icons (Search chats, History); `AskAiEmptyState` + `AskAiChatInput` at bottom (UI only).
+- **Page well** (`bg-muted`): shows through gutters and around panels; top toolbar sits on the same well (no full-bleed white header).
+- **All three panels** (`rounded-2xl bg-background`): same surface fill; radius kept when a side is collapsed.
+- **Left**: internal `h-14` header with centered action icons; body shows `FilesEmptyState` / file library.
+- **Center**: same panel surface (empty stage for now).
+- **Right**: chat title + utility icons; `AskAiEmptyState` + `AskAiChatInput` (UI only).
+- **Footer**: thin disclaimer strip under the panel row.
 
-Panels start at **30% / 40% / 30%** width. Side panels are resizable and toggleable.
+Panels start at **30% / 40% / 30%** width. Side panels are resizable and toggleable. Chrome is NotebookLM-inspired (floating rounded panels, invisible resizer); iconography/behavior still lean VS Code / Cursor.
 
 ## Out of scope (for this feature)
 - File tree content (beyond empty state)
@@ -41,26 +45,13 @@ Panels start at **30% / 40% / 30%** width. Side panels are resizable and togglea
 ## UI/UX
 Full conventions in [[UI-UX-Guidelines]]. Summary:
 
-### Global header (`h-12` / 48px, white)
-**Left group** (after sidebar toggle, separated by vertical divider):
-| Icon | Source | Tooltip | Active? |
-|---|---|---|---|
-| Sidebar toggle | Codicon `layout-sidebar-left-off` / `layout-sidebar-left` | Collapse | Yes — toggles `isLeftVisible` |
-| Files | Codicon `folder-library` | Files | No |
-| Search | Codicon `search` | Search | No |
-| Upload | Tabler `IconFileUpload` | Upload | No |
-| Bookmarks | Codicon `bookmark` | Bookmarks | No |
+### Top toolbar (`h-12`, on muted well — no white bar)
+**Left** — Collapse pill, then Files / Search / Upload / Bookmarks pill (`gap-2`).
+**Right** — Organization (admin) + Profile pill, then Collapse pill.
 
-**Right** (dark-mode toggle, vertical separator, then sidebar toggle):
-| Icon | Source | Tooltip | Active? |
-|---|---|---|---|
-| Dark mode | Tabler `IconMoon` / `IconSun` | Dark mode / Light mode | Yes — toggles `isDark` on `<html>` |
-| *(separator)* | `mx-2 h-5 w-px bg-neutral-200 dark:bg-neutral-700` | — | — |
-| Sidebar toggle | Codicon `layout-sidebar-right-off` / `layout-sidebar-right` | Collapse | Yes — toggles `isRightVisible` |
+Sidebar toggle tooltips use **side placement** (left toggle → tooltip to the right; right-side icons → tooltip to the left).
 
-Left group also has a vertical separator after the sidebar toggle (same classes). Sidebar toggle tooltips use **side placement** (left toggle → tooltip to the right; right-side icons → tooltip to the left).
-
-### Left panel internal header (`h-12` / 48px, centered icons)
+### Left panel internal header (`h-14`, centered icons)
 | Icon | Source | Tooltip | Active? |
 |---|---|---|---|
 | Sort | Tabler `IconArrowsSort` | Sort | No |
@@ -69,21 +60,15 @@ Left group also has a vertical separator after the sidebar toggle (same classes)
 | Auto-reveal | Tabler `IconEyeQuestion` | Auto-reveal current file | No |
 | Collapse all | Codicon `collapse-all` | Collapse all | No — UI only until file tree exists |
 
-### Right panel internal header (`h-12` / 48px, centered controls)
-Primary action uses a labeled button; browse/search utilities are icon-only (unlike the left panel, where all toolbar actions are peers).
-
-| Control | Source | Style | Active? |
-|---|---|---|---|
-| New chat | Codicon `add` | shadcn `Button` `size="sm"` — primary CTA | No — UI only until chat backend |
-| *(separator)* | `mx-2 h-5 w-px bg-border` | — | — |
-| Search chats | Codicon `search` | `HeaderIconButton` + tooltip | No |
-| History | Codicon `history` | `HeaderIconButton` + tooltip | No — per [[Sage-MVP-Functional-Spec#7.5 Chat history access (UI)]] |
+### Right panel internal header (`h-14`)
+Editable chat title + utility pill (New chat / Search chats / History) — all icon-only in `HeaderIconGroup`.
 
 ### Resize behavior
-- Drag handles between panels: **2px visible line** (`w-0.5`), **16px hit area** (`w-4` button absolutely centered over the 2px grid track).
-- Hover on hit area: `bg-neutral-200/20`.
+- Grid gutter tracks: **`0.5rem` (8px)** — page well shows through (no visible divider line).
+- Hit area: **16px** (`w-4`) absolutely centered over the gutter; **fully invisible** (no line, no hover chrome).
+- Outer inset: `p-2` on the panel row (`pb-0` so the footer owns the bottom band).
 - `MIN_SIDE_WIDTH = 16%`, `MIN_MIDDLE_WIDTH = 16%`, `DEFAULT_SIDE_WIDTH = 30%`.
-- Raised from 12% → 14% (2026-07-03) so left-panel toolbar tooltips (e.g. "Auto-reveal current file") aren't clipped by panel `overflow-hidden` at minimum width. See [[Lessons-Learned#2026-07-03 — Panel tooltips clipped at minimum resize width]].
+- Raised from 12% → 14% → 16% so left-panel toolbar tooltips aren't clipped by panel `overflow-hidden` at minimum width. See [[Lessons-Learned#2026-07-03 — Panel tooltips clipped at minimum resize width]].
 - Resize updates **saved width** (`leftWidth` / `rightWidth`).
 - Dragging a hidden panel's handle **re-shows** that panel.
 
@@ -95,8 +80,9 @@ Resize and toggle are **separate state** (Cursor/VS Code model):
 - Toggle does **not** mutate saved width.
 
 ## Technical approach
-- Single file for now: `frontend/src/app/page.tsx` (~347 lines). shadcn primitives in `frontend/src/components/ui/`. Intentional during early additive UI work — see [[Current-Context#Code organization philosophy]].
-- CSS Grid for column layout: `gridTemplateColumns: left 0.125rem 1fr 0.125rem right`.
+- Single file for now: `frontend/src/app/page.tsx`. shadcn primitives in `frontend/src/components/ui/`. Intentional during early additive UI work — see [[Current-Context#Code organization philosophy]].
+- CSS Grid: `gridTemplateColumns: left 0.5rem 1fr 0.5rem right` (gutter tracks collapse to `0px` when a side is hidden).
+- Shared panel surface class: `rounded-2xl bg-background` (`PANEL_SURFACE` in `page.tsx`).
 - Middle column uses `minmax(0, 1fr)` so it absorbs remaining space when sides are hidden or resized.
 - `HeaderIconButton` component (inline in `page.tsx`) for icon buttons; tooltips via portaled shadcn `Tooltip` (`variant="compact"`). `TooltipProvider` in `layout.tsx`.
 - Icon libraries: `@vscode/codicons` (CSS imported in `layout.tsx`), `@tabler/icons-react` for icons Codicons doesn't cover.

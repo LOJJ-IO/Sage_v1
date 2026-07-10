@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Manage team — Sage",
+  title: "Organization — Sage",
   description:
-    "Create staff accounts, reset PINs, and manage team access for your store.",
+    "Create staff accounts, reset PINs, and manage organization access for your store.",
 };
 
-export default function ManageTeamLayout({
+export default function OrganizationLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;

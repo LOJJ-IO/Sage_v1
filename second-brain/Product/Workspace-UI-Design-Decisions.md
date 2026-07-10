@@ -80,6 +80,7 @@ The app is a **workspace shell**, not a document viewer. Three panels (file tree
 - Current copy ("AI helps you find answers across your docs") contradicts the empty state — asking anything with no docs is a guaranteed dead end.
 - **Decision:** AI panel acknowledges empty state: "Upload documents first so I can answer questions about them," with its own upload shortcut.
 - Placeholder text should be example-driven ("Ask about check-in procedures...") instead of repeating "Ask AI" twice (panel header + input).
+- **Shipped (2026-07-09):** `AskAiEmptyState` gates on `files.length`; empty → upload CTA; with files → ask copy. Input disabled until files exist; retail example placeholder. See `page.tsx`.
 
 ### 7. Avatar / account button (bottom-left)
 - Add a chevron or three-dot affordance so it reads as clickable.
@@ -119,7 +120,7 @@ Patterns to design against — validate against firsthand front-desk experience:
 - [x] Replace collapse-all icon — `codicon-collapse-all` in left panel header (2026-07-06)
 - [ ] Avatar menu + room for property switcher
 - [ ] Center panel checklist zero-state (or v1 fallback CTA)
-- [ ] AI panel empty-state copy + example-driven placeholder
+- [x] AI panel empty-state copy + example-driven placeholder (2026-07-09)
 - [ ] Coherent three-panel zero-state flow
 
 ## Related

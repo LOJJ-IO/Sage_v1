@@ -93,7 +93,7 @@ export function AdminPrivilegesDialog({
                     <span className="font-medium text-foreground">
                       {account.name}
                     </span>{" "}
-                    admin access to upload files and manage team accounts.
+                    admin access to upload files and manage organization accounts.
                     Confirm with your PIN to continue.
                   </>
                 ) : (

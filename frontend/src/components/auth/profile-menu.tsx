@@ -9,7 +9,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { getUserRole } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 
 const ICON_SIZE = 20;
@@ -72,15 +71,10 @@ function getMainMenuPosition(
 
 export function ProfileMenu() {
   const [open, setOpen] = useState(false);
+  const [tooltipOpen, setTooltipOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const role = getUserRole();
-    setIsAdmin(role === "admin" || role === null);
-  }, [open]);
 
   const updateMenuPosition = () => {
     if (!triggerRef.current || !menuRef.current) {
@@ -99,7 +93,7 @@ export function ProfileMenu() {
     }
 
     updateMenuPosition();
-  }, [open, isAdmin]);
+  }, [open]);
 
   useEffect(() => {
     if (!open) {
@@ -146,6 +140,16 @@ export function ProfileMenu() {
     setOpen(false);
   };
 
+  const toggleMenu = () => {
+    setOpen((current) => {
+      const next = !current;
+      if (next) {
+        setTooltipOpen(false);
+      }
+      return next;
+    });
+  };
+
   const menu =
     open && typeof document !== "undefined" ? (
       <div
@@ -167,17 +171,6 @@ export function ProfileMenu() {
           Reset PIN
         </button>
 
-        {isAdmin ? (
-          <button
-            className={menuItemClass()}
-            onClick={closeMenu}
-            role="menuitem"
-            type="button"
-          >
-            Manage team
-          </button>
-        ) : null}
-
         <div className="my-1 h-px bg-border" role="separator" />
 
         <button
@@ -193,22 +186,29 @@ export function ProfileMenu() {
 
   return (
     <div ref={triggerRef}>
-      <Tooltip open={open ? false : undefined}>
+      <Tooltip
+        open={open ? false : tooltipOpen}
+        onOpenChange={(next) => {
+          if (!open) {
+            setTooltipOpen(next);
+          }
+        }}
+      >
         <TooltipTrigger
           render={
             <button
               aria-expanded={open}
               aria-haspopup="menu"
               aria-label="Profile"
-              className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-              onClick={() => setOpen((current) => !current)}
+              className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+              onClick={toggleMenu}
               type="button"
             />
           }
         >
           <TablerIcon icon={IconUser} />
         </TooltipTrigger>
-        <TooltipContent side="left" sideOffset={8} variant="compact">
+        <TooltipContent side="bottom" sideOffset={8} variant="compact">
           Profile
         </TooltipContent>
       </Tooltip>

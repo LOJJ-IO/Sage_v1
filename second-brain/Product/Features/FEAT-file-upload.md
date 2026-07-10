@@ -51,7 +51,7 @@ Constants + client validation in `frontend/src/lib/file-upload.ts`.
 - **Entry points:** global header Upload icon; left panel "Upload files" button when tree is empty.
 - **Picker:** `<input type="file" multiple accept="...">` — OS grays unsupported types for file mode.
 - **Feedback:** inline error banner for batch failures; skipped files listed in upload result.
-- **After upload:** flat file list in left panel — Tabler `file-type-*` icon, filename, bookmark toggle, kebab (Edit tags / Replace / Delete). Delete + Edit tags use manage-team dialog pattern. In-memory only.
+- **After upload:** flat file list in left panel — Tabler `file-type-*` icon, filename, bookmark toggle, kebab (Edit tags / Replace / Delete). Delete + Edit tags use organization dialog pattern. In-memory only.
 - Admin-only in production; all users see upload UI in shell prototype until auth ships.
 
 ## Technical approach

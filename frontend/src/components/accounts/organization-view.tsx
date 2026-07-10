@@ -34,7 +34,7 @@ import type {
   CreateAccountRequest,
 } from "@/lib/accounts/types";
 
-export function ManageTeamView() {
+export function OrganizationView() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -165,7 +165,7 @@ export function ManageTeamView() {
           </Link>
           <div>
             <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground">
-              Manage team
+              Organization
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Create accounts, reset PINs, and deactivate staff access.

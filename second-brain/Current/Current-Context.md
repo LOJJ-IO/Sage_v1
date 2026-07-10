@@ -4,7 +4,7 @@ status: active
 tags: [area/backend, area/frontend, area/product, priority/high]
 created: 2026-07-01
 updated: 2026-07-09
-related: ["[[Roadmap]]", "[[Architecture-Overview]]", "[[Sage-MVP-Functional-Spec]]", "[[FEAT-sage-mvp]]", "[[FEAT-sign-in]]", "[[FEAT-manage-team]]", "[[FEAT-app-shell-layout]]", "[[FEAT-file-upload]]", "[[UI-UX-Guidelines]]", "[[BUG-0001-ui-inconsistencies]]", "[[Workspace-UI-Design-Decisions]]", "[[Stacking-Contexts-and-Portals]]"]
+related: ["[[Roadmap]]", "[[Architecture-Overview]]", "[[Sage-MVP-Functional-Spec]]", "[[FEAT-sage-mvp]]", "[[FEAT-sign-in]]", "[[FEAT-organization]]", "[[FEAT-app-shell-layout]]", "[[FEAT-file-upload]]", "[[UI-UX-Guidelines]]", "[[BUG-0001-ui-inconsistencies]]", "[[Workspace-UI-Design-Decisions]]", "[[Stacking-Contexts-and-Portals]]"]
 ---
 
 # Current Context
@@ -30,13 +30,13 @@ Sage MVP functional spec is **approved for implementation** — [[Sage-MVP-Funct
 
 | Area | Status |
 |---|---|
-| Three-column resizable layout | Done |
+| Three-column resizable layout | Done — floating rounded panels, invisible gutters, disclaimer footer |
 | Panel headers (left + right), icons, resize, toggle | Done |
 | Theme / dark mode | Removed — light-only UI for now |
 | Empty states (left + right panels) | Done (placeholder) |
 | File upload (in-memory UI prototype) | In progress — [[FEAT-file-upload]] |
 | File tree / preview / real chat | Not started |
-| Auth screens | Sign-in at `/sign-in` ([[FEAT-sign-in]]); manage team at `/manage-team` ([[FEAT-manage-team]]); change-PIN + route guards not started |
+| Auth screens | Sign-in at `/sign-in` ([[FEAT-sign-in]]); Organization at `/organization` ([[FEAT-organization]]); change-PIN + route guards not started |
 | Backend / sage-agent | Not started |
 
 Full UI inventory + bugs: [[BUG-0001-ui-inconsistencies]].
@@ -72,8 +72,10 @@ Tracked in [[Sage-MVP-Functional-Spec#11. Open Items / Not Yet Decided]]:
 
 ## Recently changed
 
-- **2026-07-09** — Light-only UI: removed theme boot script, `lib/theme`, `use-theme`, Appearance menu, `.dark` tokens/`dark:` classes. Manage team: fixed back Codicon, role chips (active=admin style, inactive=muted+strikethrough), Badge `twMerge`. Primary `Button` soft texture (pill, gradient, shadow).
-- **2026-07-08** — Manage team page at `/manage-team`: account list, add-account modal, reset PIN, deactivate/reactivate, primary-admin protection. See [[FEAT-manage-team]].
+- **2026-07-09** — AI panel zero-state: no-docs acknowledges upload-first + CTA; chat input disabled until files exist ([[Workspace-UI-Design-Decisions#6. AI panel zero-state]]).
+- **2026-07-09** — Shell chrome: floating `rounded-2xl` panels on `bg-muted` well, 8px invisible gutters, middle panel same fill, disclaimer footer. Supersedes flush VS Code seams / 2px divider — see [[FEAT-app-shell-layout]], [[UI-UX-Guidelines]].
+- **2026-07-09** — Light-only UI: removed theme boot script, `lib/theme`, `use-theme`, Appearance menu, `.dark` tokens/`dark:` classes. Organization: fixed back Codicon, role chips (active=admin style, inactive=muted+strikethrough), Badge `twMerge`. Primary `Button` soft texture (pill, gradient, shadow). Header/panel icon clusters wrapped in `HeaderIconGroup` pill shells — see [[Reusable-Patterns#HeaderIconGroup (pill shell)]]. Renamed Manage team → Organization (`/organization`).
+- **2026-07-08** — Organization page (was Manage team) at `/organization`: account list, add-account modal, reset PIN, deactivate/reactivate, primary-admin protection. See [[FEAT-organization]].
 - **2026-07-07** — Sign-in page at `/sign-in`: centered card, username field, touch keypad PIN entry, API-ready `login()` stub. See [[FEAT-sign-in]].
 - **2026-07-07** — [[FEAT-file-upload]] simplified to in-memory `File` state (no Next.js API/disk); validation rules kept in `file-upload.ts`.
 - **2026-07-07** — Portaled all shell tooltips: shadcn/Base UI `Tooltip` + `variant="compact"` on `HeaderIconButton`; `TooltipProvider` in `layout.tsx`. See [[Stacking-Contexts-and-Portals#Sage implementation]], [[Reusable-Patterns#HeaderIconButton (icon + compact tooltip)]].
