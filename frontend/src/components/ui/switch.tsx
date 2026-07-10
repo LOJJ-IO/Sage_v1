@@ -20,7 +20,7 @@ function Switch({
       aria-checked={checked}
       className={cn(
         "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50",
-        checked ? "bg-primary" : "bg-input dark:bg-input/50",
+        checked ? "bg-primary" : "bg-input",
         className
       )}
       disabled={disabled}

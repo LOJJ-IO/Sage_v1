@@ -18,13 +18,11 @@ export function AccountRoleBadges({
   className?: string;
   inactive?: boolean;
 }) {
-  const variant = account.role === "admin" ? "admin" : "staff";
-
   return (
     <div className={cn("flex flex-wrap items-center gap-1.5", className)}>
       <Badge
-        className={cn(inactiveTextClass(!inactive))}
-        variant={variant}
+        className={cn(inactive && inactiveTextClass(false))}
+        variant={inactive ? "staff" : "admin"}
       >
         {account.role === "admin" ? "Admin" : "Staff"}
       </Badge>

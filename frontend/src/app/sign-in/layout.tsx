@@ -12,7 +12,7 @@ export default function SignInLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="min-h-full overflow-y-auto bg-neutral-100 dark:bg-neutral-950">
+    <div className="min-h-full overflow-y-auto bg-neutral-100">
       {children}
     </div>
   );

@@ -3,7 +3,7 @@ type: product
 status: active
 tags: [area/frontend, area/design]
 created: 2026-07-01
-updated: 2026-07-07
+updated: 2026-07-09
 related: ["[[Product-Vision]]", "[[FEAT-app-shell-layout]]", "[[Reusable-Patterns]]", "[[Workspace-UI-Design-Decisions]]"]
 ---
 
@@ -28,7 +28,7 @@ Feature-level detail for the current shell: [[FEAT-app-shell-layout]].
 | Resize divider line | `bg-neutral-300`, hover `neutral-500` |
 | Resize hit-area hover | `bg-neutral-200/20` (subtle) |
 
-Dark global header (`#262626`) was tried and **reverted**. Dark mode now uses token-based `dark:` variants (header `dark:bg-neutral-950`, panels `dark:bg-neutral-900`) toggled via sun/moon in the global header right group.
+Dark global header (`#262626`) was tried and **reverted**. Theme switching / dark mode was removed (2026-07-09) — UI is **light-only** for now (`:root` tokens only; no `.dark` class or Appearance control).
 
 ### Spacing & sizing
 | Element | Size |

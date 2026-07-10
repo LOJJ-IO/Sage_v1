@@ -159,7 +159,7 @@ export function ManageTeamView() {
           >
             <span
               aria-hidden="true"
-              className="codicon codicon-chevron-left-compact text-foreground [-webkit-text-stroke:0.35px_currentColor]"
+              className="codicon codicon-chevron-left text-foreground [-webkit-text-stroke:0.35px_currentColor]"
               style={{ fontSize: 20 }}
             />
           </Link>

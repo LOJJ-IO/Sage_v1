@@ -3,7 +3,7 @@ type: context
 status: active
 tags: [area/backend, area/frontend, area/product, priority/high]
 created: 2026-07-01
-updated: 2026-07-08
+updated: 2026-07-09
 related: ["[[Roadmap]]", "[[Architecture-Overview]]", "[[Sage-MVP-Functional-Spec]]", "[[FEAT-sage-mvp]]", "[[FEAT-sign-in]]", "[[FEAT-manage-team]]", "[[FEAT-app-shell-layout]]", "[[FEAT-file-upload]]", "[[UI-UX-Guidelines]]", "[[BUG-0001-ui-inconsistencies]]", "[[Workspace-UI-Design-Decisions]]", "[[Stacking-Contexts-and-Portals]]"]
 ---
 
@@ -32,7 +32,7 @@ Sage MVP functional spec is **approved for implementation** — [[Sage-MVP-Funct
 |---|---|
 | Three-column resizable layout | Done |
 | Panel headers (left + right), icons, resize, toggle | Done |
-| Dark mode toggle (client-only, no persist) | Done |
+| Theme / dark mode | Removed — light-only UI for now |
 | Empty states (left + right panels) | Done (placeholder) |
 | File upload (in-memory UI prototype) | In progress — [[FEAT-file-upload]] |
 | File tree / preview / real chat | Not started |
@@ -72,6 +72,7 @@ Tracked in [[Sage-MVP-Functional-Spec#11. Open Items / Not Yet Decided]]:
 
 ## Recently changed
 
+- **2026-07-09** — Light-only UI: removed theme boot script, `lib/theme`, `use-theme`, Appearance menu, `.dark` tokens/`dark:` classes. Manage team: fixed back Codicon, role chips (active=admin style, inactive=muted+strikethrough), Badge `twMerge`. Primary `Button` soft texture (pill, gradient, shadow).
 - **2026-07-08** — Manage team page at `/manage-team`: account list, add-account modal, reset PIN, deactivate/reactivate, primary-admin protection. See [[FEAT-manage-team]].
 - **2026-07-07** — Sign-in page at `/sign-in`: centered card, username field, touch keypad PIN entry, API-ready `login()` stub. See [[FEAT-sign-in]].
 - **2026-07-07** — [[FEAT-file-upload]] simplified to in-memory `File` state (no Next.js API/disk); validation rules kept in `file-upload.ts`.
