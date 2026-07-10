@@ -1,76 +1,134 @@
 "use client";
 
-import { IconLogin2 } from "@tabler/icons-react";
+import { IconX } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
+import { LockIconVideo } from "@/components/auth/lock-icon-video";
 import { PinKeypad } from "@/components/auth/pin-keypad";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoginError, PIN_LENGTH } from "@/lib/auth/types";
 import { login, storeAuthToken } from "@/lib/auth/login";
+import {
+  playLockFailClip,
+  playLockSuccessClip,
+  resetLockVideo,
+} from "@/lib/auth/lock-video-playback";
 import { storeUserRole } from "@/lib/auth/session";
 
 export function SignInForm() {
   const router = useRouter();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const submittingRef = useRef(false);
   const [username, setUsername] = useState("");
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const trimmedUsername = username.trim();
-  const canSubmit =
-    trimmedUsername.length > 0 &&
-    pin.length === PIN_LENGTH &&
-    !isSubmitting;
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-
-    if (!canSubmit) {
+  const resetLockIcon = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) {
       return;
     }
+    resetLockVideo(video);
+  }, []);
 
-    setIsSubmitting(true);
-
-    try {
-      const response = await login({
-        username: trimmedUsername,
-        pin,
-      });
-
-      storeAuthToken(response.access_token);
-      storeUserRole(response.role);
-
-      if (response.must_change_pin) {
-        router.push("/change-pin");
+  const authenticate = useCallback(
+    async (nextPin: string) => {
+      if (submittingRef.current) {
         return;
       }
 
-      router.push("/");
-    } catch (submitError) {
-      if (submitError instanceof LoginError) {
-        setError(submitError.message);
-        if (submitError.code === "invalid_credentials") {
+      if (trimmedUsername.length === 0 || nextPin.length !== PIN_LENGTH) {
+        return;
+      }
+
+      submittingRef.current = true;
+      setIsSubmitting(true);
+      setError(null);
+
+      const video = videoRef.current;
+
+      try {
+        const response = await login({
+          username: trimmedUsername,
+          pin: nextPin,
+        });
+
+        storeAuthToken(response.access_token);
+        storeUserRole(response.role);
+
+        if (video) {
+          await playLockSuccessClip(video);
+        }
+
+        submittingRef.current = false;
+        setIsSubmitting(false);
+
+        if (response.must_change_pin) {
+          router.push("/change-pin");
+          return;
+        }
+
+        router.push("/");
+      } catch (submitError) {
+        if (video) {
+          await playLockFailClip(video);
+        }
+
+        const message =
+          submitError instanceof LoginError
+            ? submitError.message
+            : "Something went wrong. Try again.";
+        const clearPin =
+          submitError instanceof LoginError &&
+          submitError.code === "invalid_credentials";
+
+        setError(message);
+        if (clearPin) {
           setPin("");
         }
-        return;
+        submittingRef.current = false;
+        setIsSubmitting(false);
       }
+    },
+    [router, trimmedUsername]
+  );
 
-      setError("Something went wrong. Try again.");
-    } finally {
-      setIsSubmitting(false);
+  const handlePasscodeChange = (nextPin: string) => {
+    if (nextPin.length === 1 && pin.length === 0) {
+      resetLockIcon();
+    }
+
+    setPin(nextPin);
+    if (error) {
+      setError(null);
+    }
+
+    if (nextPin.length === PIN_LENGTH) {
+      void authenticate(nextPin);
+    }
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (pin.length === PIN_LENGTH) {
+      void authenticate(pin);
     }
   };
 
   return (
     <div className="w-full max-w-md">
       <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
-        <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-muted text-foreground">
-            <IconLogin2 aria-hidden="true" className="size-6" stroke={2.2} />
-          </div>
+        <div className="mb-6 flex flex-col items-center text-center">
+          <LockIconVideo ref={videoRef} />
           <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground">
             Sign in to Sage
           </h1>
@@ -88,45 +146,52 @@ export function SignInForm() {
               name="username"
               onChange={(event) => {
                 setUsername(event.target.value);
-                setError(null);
+                if (error) {
+                  setError(null);
+                }
               }}
-              placeholder="e.g. maria"
+              placeholder="e.g. sage"
               spellCheck={false}
               value={username}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="pin-keypad">PIN</Label>
+            <Label className="sr-only" htmlFor="passcode-keypad">
+              Passcode
+            </Label>
             <PinKeypad
-              disabled={isSubmitting}
-              id="pin-keypad"
-              onChange={(nextPin) => {
-                setPin(nextPin);
-                setError(null);
-              }}
+              disabled={isSubmitting || trimmedUsername.length === 0}
+              id="passcode-keypad"
+              onChange={handlePasscodeChange}
               value={pin}
             />
+            {trimmedUsername.length === 0 ? (
+              <p className="text-center text-xs text-muted-foreground">
+                Enter your username, then your passcode.
+              </p>
+            ) : null}
           </div>
+        </form>
 
+        <div className="mt-6">
           {error ? (
             <div
-              className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
+              className="flex items-center gap-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3"
               role="alert"
             >
-              {error}
+              <p className="min-w-0 flex-1 text-sm text-rose-950">{error}</p>
+              <button
+                aria-label="Dismiss error"
+                className="flex size-7 shrink-0 items-center justify-center rounded-md text-rose-950/70 transition-colors hover:bg-rose-100 hover:text-rose-950"
+                onClick={() => setError(null)}
+                type="button"
+              >
+                <IconX aria-hidden="true" className="size-4" stroke={2.2} />
+              </button>
             </div>
           ) : null}
-
-          <Button
-            className="h-11 w-full text-base"
-            disabled={!canSubmit}
-            size="lg"
-            type="submit"
-          >
-            {isSubmitting ? "Signing in…" : "Sign in"}
-          </Button>
-        </form>
+        </div>
       </div>
 
       <p className="mt-6 text-center text-sm text-muted-foreground">

@@ -3,8 +3,8 @@ type: context
 status: active
 tags: [area/backend, area/frontend, area/product, priority/high]
 created: 2026-07-01
-updated: 2026-07-09
-related: ["[[Roadmap]]", "[[Architecture-Overview]]", "[[Sage-MVP-Functional-Spec]]", "[[FEAT-sage-mvp]]", "[[FEAT-sign-in]]", "[[FEAT-organization]]", "[[FEAT-app-shell-layout]]", "[[FEAT-file-upload]]", "[[UI-UX-Guidelines]]", "[[BUG-0001-ui-inconsistencies]]", "[[Workspace-UI-Design-Decisions]]", "[[Stacking-Contexts-and-Portals]]"]
+updated: 2026-07-10
+related: ["[[Roadmap]]", "[[Architecture-Overview]]", "[[Sage-MVP-Functional-Spec]]", "[[FEAT-sage-mvp]]", "[[FEAT-sign-in]]", "[[FEAT-organization]]", "[[FEAT-app-shell-layout]]", "[[FEAT-configure-settings]]", "[[FEAT-file-upload]]", "[[UI-UX-Guidelines]]", "[[BUG-0001-ui-inconsistencies]]", "[[Workspace-UI-Design-Decisions]]", "[[Stacking-Contexts-and-Portals]]"]
 ---
 
 # Current Context
@@ -23,8 +23,8 @@ Sage MVP functional spec is **approved for implementation** — [[Sage-MVP-Funct
 
 - **File upload** — [[FEAT-file-upload]] in progress (in-memory UI prototype); FastAPI pipeline next
 - **MVP implementation planning** — backend, auth, files, Sage chat per [[Sage-MVP-Functional-Spec]]
-- **Frontend alignment** — existing shell partially matches MVP layout; reconcile with spec (gear settings, auth screens, file tree, chat UX). Workspace-shell features (dock, tabs) are **out of MVP scope**.
-- **Open UI conflict:** gear (settings) vs avatar (account menu) — working resolution in spec §0; finalize during frontend build.
+- **Frontend alignment** — existing shell partially matches MVP layout; reconcile with spec (auth screens, file tree, chat UX). **Configure modal v1** shipped — [[FEAT-configure-settings]]. Workspace-shell features (dock, tabs) are **out of MVP scope**.
+- **Open UI conflict:** gear (settings) vs avatar (account menu) — **resolved for MVP:** top Settings → `SettingsDialog`; Ask Configure → `ConfigureChatDialog`; Organization stays `/organization`. Avatar identity menu deferred.
 
 ## What's built (UI only)
 
@@ -36,7 +36,7 @@ Sage MVP functional spec is **approved for implementation** — [[Sage-MVP-Funct
 | Empty states (left + right panels) | Done (placeholder) |
 | File upload (in-memory UI prototype) | In progress — [[FEAT-file-upload]] |
 | File tree / preview / real chat | Not started |
-| Auth screens | Sign-in at `/sign-in` ([[FEAT-sign-in]]); Organization at `/organization` ([[FEAT-organization]]); change-PIN + route guards not started |
+| Auth screens | Sign-in at `/sign-in` ([[FEAT-sign-in]] — Apple Passcode + lock.webm, demo `sage`/`1234`); Organization at `/organization` ([[FEAT-organization]]); Configure modal v1 ([[FEAT-configure-settings]]); change-PIN + route guards not started |
 | Backend / sage-agent | Not started |
 
 Full UI inventory + bugs: [[BUG-0001-ui-inconsistencies]].
@@ -61,7 +61,7 @@ Tracked in [[Sage-MVP-Functional-Spec#11. Open Items / Not Yet Decided]]:
 - Final LLM provider (leaning Gemini 2.5 Flash Lite)
 - Pilot pricing
 - When to adopt pgvector
-- Gear vs avatar settings (working resolution documented)
+- Gear vs avatar settings — **resolved:** Settings icon → settings modal; Ask Configure → configure-chat modal; org admin on `/organization` only
 
 ## What NOT to re-explain to Claude
 
@@ -72,6 +72,8 @@ Tracked in [[Sage-MVP-Functional-Spec#11. Open Items / Not Yet Decided]]:
 
 ## Recently changed
 
+- **2026-07-10** — Split Settings vs Configure chat modals. Configure: pill selectors (ghost/primary), intro "Customise your Assistance", Custom → textarea. Settings: General fields only (no instructions textarea). See [[FEAT-configure-settings]].
+- **2026-07-10** — Sign-in: Apple-style Passcode keypad (4 digits, letter sublabels), auto-submit, `lock.webm` (fail 0→1s / success 1s→end → `/`). Local demo stub `sage`/`1234` when no API URL. See [[FEAT-sign-in]].
 - **2026-07-09** — AI panel zero-state: no-docs acknowledges upload-first + CTA; chat input disabled until files exist ([[Workspace-UI-Design-Decisions#6. AI panel zero-state]]).
 - **2026-07-09** — Shell chrome: floating `rounded-2xl` panels on `bg-muted` well, 8px invisible gutters, middle panel same fill, disclaimer footer. Supersedes flush VS Code seams / 2px divider — see [[FEAT-app-shell-layout]], [[UI-UX-Guidelines]].
 - **2026-07-09** — Light-only UI: removed theme boot script, `lib/theme`, `use-theme`, Appearance menu, `.dark` tokens/`dark:` classes. Organization: fixed back Codicon, role chips (active=admin style, inactive=muted+strikethrough), Badge `twMerge`. Primary `Button` soft texture (pill, gradient, shadow). Header/panel icon clusters wrapped in `HeaderIconGroup` pill shells — see [[Reusable-Patterns#HeaderIconGroup (pill shell)]]. Renamed Manage team → Organization (`/organization`).

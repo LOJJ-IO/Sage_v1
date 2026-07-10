@@ -4,18 +4,42 @@ import {
   type LoginResponse,
 } from "@/lib/auth/types";
 
+/** Local demo credentials when NEXT_PUBLIC_API_URL is unset. */
+const DEMO_USERNAME = "sage";
+const DEMO_PIN = "1234";
+
 function getApiBaseUrl() {
   return process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "";
+}
+
+async function loginWithDemoStub(
+  request: LoginRequest
+): Promise<LoginResponse> {
+  await new Promise((resolve) => setTimeout(resolve, 250));
+
+  if (
+    request.username.toLowerCase() === DEMO_USERNAME &&
+    request.pin === DEMO_PIN
+  ) {
+    return {
+      access_token: "demo-access-token",
+      token_type: "bearer",
+      role: "admin",
+      must_change_pin: false,
+    };
+  }
+
+  throw new LoginError(
+    "invalid_credentials",
+    "Incorrect username or passcode."
+  );
 }
 
 export async function login(request: LoginRequest): Promise<LoginResponse> {
   const baseUrl = getApiBaseUrl();
 
   if (!baseUrl) {
-    throw new LoginError(
-      "service_unavailable",
-      "Sign-in is not configured yet. Set NEXT_PUBLIC_API_URL to connect to the backend."
-    );
+    return loginWithDemoStub(request);
   }
 
   const response = await fetch(`${baseUrl}/auth/login`, {
@@ -27,7 +51,7 @@ export async function login(request: LoginRequest): Promise<LoginResponse> {
   if (response.status === 401) {
     throw new LoginError(
       "invalid_credentials",
-      "Incorrect username or PIN. Try again or ask your manager for help."
+      "Incorrect username or passcode."
     );
   }
 

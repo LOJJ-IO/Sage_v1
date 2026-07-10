@@ -1,11 +1,20 @@
 "use client";
 
 import { IconBackspace } from "@tabler/icons-react";
-import { Button } from "@/components/ui/button";
 import { PIN_LENGTH } from "@/lib/auth/types";
 import { cn } from "@/lib/utils";
 
-const KEYPAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"] as const;
+const KEYPAD_KEYS = [
+  { digit: "1", letters: "" },
+  { digit: "2", letters: "ABC" },
+  { digit: "3", letters: "DEF" },
+  { digit: "4", letters: "GHI" },
+  { digit: "5", letters: "JKL" },
+  { digit: "6", letters: "MNO" },
+  { digit: "7", letters: "PQRS" },
+  { digit: "8", letters: "TUV" },
+  { digit: "9", letters: "WXYZ" },
+] as const;
 
 type PinKeypadProps = {
   value: string;
@@ -21,7 +30,7 @@ export function PinKeypad({
   id,
 }: PinKeypadProps) {
   const appendDigit = (digit: string) => {
-    if (value.length >= PIN_LENGTH) {
+    if (disabled || value.length >= PIN_LENGTH) {
       return;
     }
 
@@ -29,88 +38,85 @@ export function PinKeypad({
   };
 
   const removeDigit = () => {
+    if (disabled || value.length === 0) {
+      return;
+    }
+
     onChange(value.slice(0, -1));
   };
 
-  const clearPin = () => {
-    onChange("");
-  };
-
   return (
-    <div className="space-y-3" id={id}>
-      <div
-        aria-label={`PIN, ${value.length} of ${PIN_LENGTH} digits entered`}
-        aria-live="polite"
-        className="flex h-12 items-center justify-center gap-2 rounded-lg border border-input bg-muted/40 px-4"
-        role="status"
-      >
-        {value.length === 0 ? (
-          <span className="text-sm text-muted-foreground">Enter your PIN</span>
-        ) : (
-          Array.from({ length: PIN_LENGTH }, (_, index) => (
+    <div className="space-y-5" id={id}>
+      <div className="flex flex-col items-center gap-3">
+        <p className="text-sm font-medium text-foreground">Enter Passcode</p>
+        <div
+          aria-label={`Passcode, ${value.length} of ${PIN_LENGTH} digits entered`}
+          aria-live="polite"
+          className="flex items-center justify-center gap-3"
+          role="status"
+        >
+          {Array.from({ length: PIN_LENGTH }, (_, index) => (
             <span
               key={index}
               aria-hidden="true"
               className={cn(
-                "size-2.5 rounded-full transition-colors",
-                index < value.length ? "bg-foreground" : "bg-border"
+                "size-3 rounded-full border-2 transition-colors",
+                index < value.length
+                  ? "border-foreground bg-foreground"
+                  : "border-foreground/35 bg-transparent"
               )}
             />
-          ))
-        )}
+          ))}
+        </div>
       </div>
 
       <div
-        aria-label="PIN keypad"
-        className="grid grid-cols-3 gap-2"
+        aria-label="Passcode keypad"
+        className="mx-auto grid w-fit grid-cols-3 gap-x-5 gap-y-3"
         role="group"
       >
-        {KEYPAD_KEYS.map((digit) => (
-          <Button
+        {KEYPAD_KEYS.map(({ digit, letters }) => (
+          <button
             key={digit}
             aria-label={`Digit ${digit}`}
-            className="h-12 text-lg font-medium"
+            className="flex size-16 flex-col items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80 active:bg-muted/70 disabled:pointer-events-none disabled:opacity-50"
             disabled={disabled}
             onClick={() => appendDigit(digit)}
             type="button"
-            variant="outline"
           >
-            {digit}
-          </Button>
+            <span className="text-2xl font-medium leading-none">{digit}</span>
+            {letters ? (
+              <span className="mt-0.5 text-[9px] font-semibold tracking-[0.12em] text-muted-foreground">
+                {letters}
+              </span>
+            ) : (
+              <span className="mt-0.5 h-2.5" aria-hidden="true" />
+            )}
+          </button>
         ))}
 
-        <Button
-          aria-label="Clear PIN"
-          className="h-12 text-sm font-medium"
-          disabled={disabled || value.length === 0}
-          onClick={clearPin}
-          type="button"
-          variant="outline"
-        >
-          Clear
-        </Button>
+        <span aria-hidden="true" className="size-16" />
 
-        <Button
+        <button
           aria-label="Digit 0"
-          className="h-12 text-lg font-medium"
+          className="flex size-16 flex-col items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80 active:bg-muted/70 disabled:pointer-events-none disabled:opacity-50"
           disabled={disabled}
           onClick={() => appendDigit("0")}
           type="button"
-          variant="outline"
         >
-          0
-        </Button>
+          <span className="text-2xl font-medium leading-none">0</span>
+          <span className="mt-0.5 h-2.5" aria-hidden="true" />
+        </button>
 
-        <Button
+        <button
           aria-label="Delete last digit"
-          className="h-12"
+          className="flex size-16 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted/60 active:bg-muted/50 disabled:pointer-events-none disabled:opacity-40"
           disabled={disabled || value.length === 0}
           onClick={removeDigit}
           type="button"
-          variant="outline"
         >
-          <IconBackspace aria-hidden="true" className="size-5" stroke={2.2} />
-        </Button>
+          <IconBackspace aria-hidden="true" className="size-6" stroke={1.8} />
+        </button>
       </div>
     </div>
   );

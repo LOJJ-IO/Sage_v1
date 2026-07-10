@@ -16,6 +16,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileLibraryPanel } from "@/components/files/file-library-panel";
 import { ProfileMenu } from "@/components/auth/profile-menu";
+import { ConfigureChatDialog } from "@/components/settings/configure-chat-dialog";
+import { SettingsDialog } from "@/components/settings/settings-dialog";
 import { Button } from "@/components/ui/button";
 import { useFileLibrary } from "@/hooks/use-file-library";
 import { getUserRole } from "@/lib/auth/session";
@@ -151,10 +153,10 @@ function AskAiChatInput({ hasFiles }: { hasFiles: boolean }) {
   const canSend = hasFiles && message.trim().length > 0;
 
   return (
-    <div className="shrink-0 p-3">
-      <div className="flex items-center gap-0.5 rounded-full border border-border bg-background py-1 pl-4 pr-0.5 shadow-sm">
+    <div className="min-w-0 shrink-0 p-3">
+      <div className="flex min-w-0 items-center gap-0.5 rounded-full border border-border bg-background py-1 pl-4 pr-0.5 shadow-sm focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/50">
         <input
-          className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          className="min-w-0 flex-1 truncate bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
           disabled={!hasFiles}
           onChange={(event) => setMessage(event.target.value)}
           placeholder={
@@ -259,7 +261,17 @@ export default function Home() {
   const [isRightVisible, setIsRightVisible] = useState(true);
   const [chatTitle, setChatTitle] = useState("Title");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [configureChatOpen, setConfigureChatOpen] = useState(false);
   const router = useRouter();
+
+  const openSettings = useCallback(() => {
+    setSettingsOpen(true);
+  }, []);
+
+  const openConfigureChat = useCallback(() => {
+    setConfigureChatOpen(true);
+  }, []);
 
   useEffect(() => {
     const role = getUserRole();
@@ -354,7 +366,7 @@ export default function Home() {
                 <div className="mx-0.5 h-5 w-px shrink-0 bg-border" />
               </>
             ) : null}
-            <ProfileMenu />
+            <ProfileMenu onOpenSettings={openSettings} />
           </HeaderIconGroup>
           <HeaderIconGroup>
             <HeaderIconButton
@@ -450,7 +462,7 @@ export default function Home() {
           ) : null}
         </div>
         <section className={PANEL_SURFACE}>
-          <header className="flex h-14 w-full shrink-0 items-center gap-2 border-b border-border px-2">
+          <header className="flex min-w-0 h-14 w-full shrink-0 items-center gap-2 border-b border-border px-2">
             <input
               aria-label="Chat title"
               className="h-8 w-64 min-w-0 max-w-[calc(100%-7.5rem)] shrink truncate rounded-md border border-border bg-transparent px-2 text-sm font-semibold text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
@@ -468,6 +480,11 @@ export default function Home() {
                   iconClass="codicon-history"
                   label="History"
                 />
+                <HeaderIconButton
+                  iconClass="codicon-settings"
+                  label="Configure"
+                  onClick={openConfigureChat}
+                />
               </HeaderIconGroup>
             </div>
           </header>
@@ -484,6 +501,12 @@ export default function Home() {
       <footer className="shrink-0 px-2 py-1.5 text-center text-xs text-muted-foreground">
         Sage can be inaccurate; please double-check its responses.
       </footer>
+
+      <SettingsDialog onOpenChange={setSettingsOpen} open={settingsOpen} />
+      <ConfigureChatDialog
+        onOpenChange={setConfigureChatOpen}
+        open={configureChatOpen}
+      />
     </main>
   );
 }
