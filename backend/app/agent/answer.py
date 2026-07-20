@@ -69,31 +69,6 @@ async def answer_question(
         business_id=business_id, question=question, scores=hit_scores, user_id=user_id
     )
 
-    # #region agent log
-    try:
-        import json as _json, time as _time
-        with open(r"c:\Users\tolul\Sage_v1\debug-109532.log", "a", encoding="utf-8") as _f:
-            _f.write(_json.dumps({
-                "sessionId": "109532",
-                "runId": "browser-verify",
-                "hypothesisId": "C",
-                "location": "answer.py:after_trust",
-                "message": "retrieve+trust decision",
-                "data": {
-                    "questionPreview": question[:120],
-                    "nHits": len(hits),
-                    "scores": [round(s, 4) for s in hit_scores[:8]],
-                    "trustScore": round(decision.trust_score, 4),
-                    "refused": decision.refused,
-                    "reason": decision.reason,
-                    "topFileIds": [h.file_id for h in hits[:3]],
-                },
-                "timestamp": int(_time.time() * 1000),
-            }) + "\n")
-    except Exception:
-        pass
-    # #endregion
-
     if decision.refused:
         await _persist(business_id=business_id, user_id=user_id, question=question, answer=REFUSAL_MESSAGE, citations=[])
         return AnswerResult(answer=REFUSAL_MESSAGE, citations=[], refused=True, reason=decision.reason)
@@ -106,22 +81,6 @@ async def answer_question(
         result = await agent.run(prompt, deps=AgentDeps(valid_citation_ids=assembled.citation_ids))
     except (ModelHTTPError, UnexpectedModelBehavior) as exc:
         logger.warning("model call failed model=%s business_id=%s error=%s", agent.model.model_name, business_id, exc)
-        # #region agent log
-        try:
-            import json as _json, time as _time
-            with open(r"c:\Users\tolul\Sage_v1\debug-109532.log", "a", encoding="utf-8") as _f:
-                _f.write(_json.dumps({
-                    "sessionId": "109532",
-                    "runId": "browser-verify",
-                    "hypothesisId": "E",
-                    "location": "answer.py:model_fail",
-                    "message": "model call failed",
-                    "data": {"errorType": type(exc).__name__, "errorPreview": str(exc)[:200]},
-                    "timestamp": int(_time.time() * 1000),
-                }) + "\n")
-        except Exception:
-            pass
-        # #endregion
         return AnswerResult(answer=MODEL_UNAVAILABLE_MESSAGE, citations=[], refused=False, reason="MODEL_UNAVAILABLE")
     logger.info("model call succeeded model=%s business_id=%s", agent.model.model_name, business_id)
     output = result.output
@@ -142,24 +101,4 @@ async def answer_question(
         business_id=business_id, user_id=user_id, question=question, answer=output.answer, citations=citation_records
     )
     logger.info("answered business_id=%s hits=%d citations=%d", business_id, len(hits), len(citation_records))
-    # #region agent log
-    try:
-        import json as _json, time as _time
-        with open(r"c:\Users\tolul\Sage_v1\debug-109532.log", "a", encoding="utf-8") as _f:
-            _f.write(_json.dumps({
-                "sessionId": "109532",
-                "runId": "browser-verify",
-                "hypothesisId": "E",
-                "location": "answer.py:success",
-                "message": "grounded answer returned",
-                "data": {
-                    "answerPreview": (output.answer or "")[:300],
-                    "citations": output.citations,
-                    "nCitationRecords": len(citation_records),
-                },
-                "timestamp": int(_time.time() * 1000),
-            }) + "\n")
-    except Exception:
-        pass
-    # #endregion
     return AnswerResult(answer=output.answer, citations=output.citations, refused=False, reason=None)

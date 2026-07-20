@@ -25,6 +25,17 @@ COPY evals ./evals
 
 RUN pip install .
 
+# Bake ML models into the image at build time. Without this, flashrank's
+# reranker and Docling's layout/table models are fetched over the network on
+# the *first* /ask or file upload after every cold deploy — a synchronous,
+# unbounded-latency download sitting directly in the request path (see
+# app/retrieval/rerank.py, app/ingestion/extract.py). A slow/blocked download
+# there stalls the single-worker event loop long enough to fail Railway's
+# healthcheck and get the deploy killed mid-request. Baking them in at build
+# time removes the runtime network dependency entirely.
+RUN python -c "from flashrank import Ranker; Ranker(model_name='ms-marco-MiniLM-L-12-v2')" \
+    && docling-tools models download
+
 # Railway injects PORT. Listen on 0.0.0.0 or public networking fails.
 # Migrations run via railway.toml preDeployCommand; CMD is the local fallback.
 CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}

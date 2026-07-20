@@ -9,6 +9,7 @@ calls this function.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 from dataclasses import dataclass
@@ -57,7 +58,13 @@ async def retrieve(*, business_id: uuid.UUID, query: str, top_k: int = 8) -> lis
         return []
 
     candidates: list[tuple[ChannelHit, float]] = fused[:CANDIDATE_POOL_SIZE]
-    rerank_scores = rerank(query, [(str(hit.chunk_id), hit.content) for hit, _ in candidates])
+    # rerank() loads/runs an ONNX model synchronously (and downloads it on first
+    # use) — off the event loop via to_thread so one slow/cold rerank doesn't
+    # freeze every other concurrent request (and the Railway healthcheck) on
+    # this single-worker uvicorn process.
+    rerank_scores = await asyncio.to_thread(
+        rerank, query, [(str(hit.chunk_id), hit.content) for hit, _ in candidates]
+    )
 
     def final_score(hit: ChannelHit, rrf_score: float) -> float:
         return rerank_scores.get(str(hit.chunk_id), rrf_score)

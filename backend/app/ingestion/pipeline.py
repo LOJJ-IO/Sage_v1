@@ -8,6 +8,7 @@ so this wrapper only needs to log the outcome, never swallow it silently.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 
@@ -23,7 +24,11 @@ async def process_file(*, business_id: uuid.UUID, file_id: str, filename: str, s
     try:
         storage = get_storage()
         content = await storage.download(storage_path)
-        extraction = extract_text(filename, content)
+        # extract_text() is a synchronous Docling call (model load + CPU parse,
+        # network download on first use) — off the event loop so it doesn't
+        # freeze concurrent /ask and /files requests on this single-worker
+        # uvicorn process while one file is being ingested.
+        extraction = await asyncio.to_thread(extract_text, filename, content)
     except Exception as exc:
         # download()/extract_text() failing happens before ingest_text ever
         # runs, so nothing has flipped the file's status yet — without this,

@@ -344,9 +344,6 @@ export default function Home() {
     setMessages((current) => [...current, userMessage]);
 
     const backendOn = isBackendConfigured();
-    // #region agent log
-    fetch('http://127.0.0.1:7310/ingest/1bbb3fe3-4c6d-422f-a4d2-58feb7b2702e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'109532'},body:JSON.stringify({sessionId:'109532',runId:'browser-verify',hypothesisId:'A',location:'page.tsx:handleSendMessage',message:'send path chosen',data:{backendOn,contentPreview:content.slice(0,120)},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
 
     if (!backendOn) {
       const assistantMessage: ChatMessage = {
@@ -370,9 +367,6 @@ export default function Home() {
           role: "assistant",
           content: `${result.answer}${suffix}`,
         };
-        // #region agent log
-        fetch('http://127.0.0.1:7310/ingest/1bbb3fe3-4c6d-422f-a4d2-58feb7b2702e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'109532'},body:JSON.stringify({sessionId:'109532',runId:'browser-verify',hypothesisId:'C',location:'page.tsx:handleSendMessage:ui',message:'assistant message rendered',data:{refused:result.refused,reason:result.reason,uiPreview:assistantMessage.content.slice(0,400)},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
         setMessages((current) => [...current, assistantMessage]);
       })
       .catch((err) => {
@@ -385,9 +379,6 @@ export default function Home() {
           role: "assistant",
           content: message,
         };
-        // #region agent log
-        fetch('http://127.0.0.1:7310/ingest/1bbb3fe3-4c6d-422f-a4d2-58feb7b2702e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'109532'},body:JSON.stringify({sessionId:'109532',runId:'browser-verify',hypothesisId:'B',location:'page.tsx:handleSendMessage:catch',message:'UI showed error',data:{uiMessage:message.slice(0,200)},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
         setMessages((current) => [...current, assistantMessage]);
       });
   }, []);
