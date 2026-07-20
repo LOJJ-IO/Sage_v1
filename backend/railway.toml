@@ -1,11 +1,14 @@
 # Config-as-code for the Sage backend service.
-# In Railway dashboard: Root Directory = backend
-# Prefer Railpack until Dockerfile is on the watched Git branch and proven.
+# Railway dashboard: Root Directory = backend, Config path = /backend/railway.toml
 [build]
-builder = "RAILPACK"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+# Must use /bin/sh -c: Railway runs startCommand in exec form (no env expansion),
+# so bare `$PORT` is passed literally to uvicorn and the healthcheck fails.
+# Keep this in sync with Dockerfile CMD.
+startCommand = "/bin/sh -c 'alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}'"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
