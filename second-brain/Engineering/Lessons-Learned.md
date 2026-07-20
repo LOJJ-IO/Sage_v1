@@ -21,9 +21,9 @@ What to do differently.
 
 ## Entries
 
-### 2026-07-20 — Railway `startCommand` does not expand `$PORT`
-Deploy healthcheck failed with `Invalid value for '--port': '$PORT'`. Dockerfile `CMD` already used shell form (`${PORT:-8000}`), but `railway.toml` `startCommand` overrode it and Railway runs that command in **exec form** (no shell), so `$PORT` stayed a literal string.
-**Fix:** wrap with `/bin/sh -c '...'`, or omit `startCommand` and let Dockerfile `CMD` win. See `backend/railway.toml`.
+### 2026-07-20 — Railway healthcheck 503 while Next.js is running
+After fixing `$PORT`, healthcheck still failed for 5m with "service unavailable". Railway deploy logs showed `next start` / Next.js on `:8080`, not uvicorn — the service was still building the **frontend** while healthcheck hit FastAPI-only `/health`.
+**Fix:** Root Directory = `backend`; deploy a branch that includes `backend/Dockerfile` + `backend/railway.toml`; set `DATABASE_URL` to Supabase. See [[Deployment-Notes]].
 
 ### 2026-07-19 — `NullPool` required for asyncpg + pytest-asyncio on Windows
 Contract tests errored with `RuntimeError: Event loop is closed` / `AttributeError: 'NoneType' object has no attribute 'send'` on every test after the first, but only when they shared a module-level `create_async_engine()` singleton.

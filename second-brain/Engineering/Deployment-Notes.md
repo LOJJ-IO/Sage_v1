@@ -12,17 +12,17 @@ related: ["[[Architecture-Overview]]", "[[Tech-Stack]]", "[[0003-railway-hosting
 ## Environments
 | Env | URL | Purpose | Deploy trigger |
 |---|---|---|---|
-| Railway `production` (`compassionate-serenity`) | public domain TBD (generate in Railway Networking) | Host FastAPI backend | Push to linked GitHub branch (`main` as of 2026-07-20) + manual redeploy |
+| Railway `production` (`compassionate-serenity`) | https://sagev1-production.up.railway.app | Host FastAPI backend | Push to linked GitHub branch (`main` as of 2026-07-20) + manual redeploy |
 
 ## Railway project
 
 - **Project:** `compassionate-serenity` (workspace: tolulase007's Projects)
 - **Service:** `Sage_v1` (single service for now — backend only; frontend can be a second service later)
 - **Repo:** `LOJJ-IO/Sage_v1`
-- **Root Directory:** `backend` (must NOT be `frontend`)
-- **Builder:** Railpack for now; local `backend/Dockerfile` + `backend/railway.toml` exist for a future Dockerfile switch once those files are on the deployed branch
-- **Start command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-- **Healthcheck:** `GET /health` (timeout 120s)
+- **Root Directory:** `backend` (must NOT be `frontend` or repo root — 2026-07-20 logs showed Next.js starting, so healthcheck on `/health` will 503 forever)
+- **Builder:** Dockerfile via `backend/railway.toml` (on `tolu-implementations`; **not yet on `main`** as of 2026-07-20)
+- **Start command:** `backend/railway.toml` → `/bin/sh -c 'alembic upgrade head && uvicorn … --port ${PORT:-8000}'` (shell-wrap required for `$PORT`)
+- **Healthcheck:** `GET /health` (timeout 300s in railway.toml)
 
 CLI: from repo root, `railway link -p compassionate-serenity -e production -s Sage_v1`.
 
@@ -50,8 +50,12 @@ Set on the **Sage_v1** service (Variables tab). Names only here — never commit
 | `CORS_ORIGINS` | Comma-separated frontend origin(s) once frontend has a URL |
 | `ENVIRONMENT` | Prefer `production` on Railway |
 
-## Known gotcha (2026-07-20)
-Service was briefly rooted at `frontend`, so Railpack built Next.js. Fixed to `backend` + uvicorn start command. `DATABASE_URL` was still pointing at local Postgres at fix time — must be swapped to Supabase or the container will crash after a successful build.
+## Known gotchas (2026-07-20)
+
+1. **Wrong app running:** Deploy logs showed `next start` / Next.js 16 — not uvicorn. Railway was building the frontend while healthcheck expected FastAPI `/health`. Fix: Root Directory = `backend`, merge/deploy branch that includes `backend/Dockerfile` + `backend/railway.toml`.
+2. **`$PORT` literal:** Railway `startCommand` in exec form does not expand `$PORT`. Wrap in `/bin/sh -c '…'` (fixed in `backend/railway.toml` on `tolu-implementations`).
+3. **`DATABASE_URL`:** Must be Supabase Postgres with `postgresql+asyncpg://…` — **not** `localhost`. Alembic runs before uvicorn; a bad URL prevents the server from ever starting.
+4. **Branch drift:** Railway watches `main`; Dockerfile/railway.toml fixes are on `tolu-implementations` until merged.
 
 ## Monitoring
 - Railway service logs (`railway logs`)
