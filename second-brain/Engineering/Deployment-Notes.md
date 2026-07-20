@@ -63,6 +63,7 @@ Set on the **Sage_v1** service (Variables tab). Names only here — never commit
 6. **~30min FAILED deploys = image push, not healthcheck:** CUDA torch via default docling install bloated the image; push stalled ~32m. **Fixed 2026-07-20:** CPU torch index + multi-stage Dockerfile (`f01c190` / deploy `b8c66a4d…` SUCCESS).
 7. **PgBouncer + asyncpg:** `statement_cache_size=0` in `app/db.py` — shipped on SUCCESS deploy above.
 8. **`sage-frontend` mis-watch:** Root Directory unset + RAILPACK caused frontend service to attempt building backend commits from `tolu-implementations` and fail. Set Root Directory = `frontend` (user action).
+9. **ML memory on one worker:** Docling/torch + FlashRank MiniLM overlapping (upload BackgroundTask + `/ask`) can OOM the container. Mitigations in image/code (2026-07-20): plain-text extract bypasses Docling; shared converter; `heavy_ml` semaphore; FlashRank bake `ms-marco-TinyBERT-L-2-v2`; `CANDIDATE_POOL_SIZE=14`; runtime `OMP/OPENBLAS/MKL/ORT_NUM_THREADS=1` + `OMP_WAIT_POLICY=PASSIVE`. Locally, set the same thread env vars if OpenBLAS thrash appears. If still OOM after redeploy → raise Railway RAM / workers (ops).
 
 ## Monitoring
 - Railway service logs (`railway logs`)

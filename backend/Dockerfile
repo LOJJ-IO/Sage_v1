@@ -53,12 +53,19 @@ RUN python -c "from flashrank import Ranker; Ranker(model_name='ms-marco-MiniLM-
 # ── runtime ──────────────────────────────────────────────────────────────
 FROM python:3.12-slim-bookworm
 
+# Cap native thread pools so BLAS/ORT/OpenMP don't oversubscribe the single
+# CPU worker under low RAM (local + Railway). Match these locally if you see
+# OpenBLAS "memory allocation still failed" thrash.
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     HF_HOME=/root/.cache/huggingface \
     TORCH_HOME=/root/.cache/torch \
     DOCLING_ARTIFACTS_PATH=/root/.cache/docling/models \
-    OMP_NUM_THREADS=4
+    OMP_NUM_THREADS=1 \
+    OPENBLAS_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1 \
+    ORT_NUM_THREADS=1 \
+    OMP_WAIT_POLICY=PASSIVE
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libmagic1 \

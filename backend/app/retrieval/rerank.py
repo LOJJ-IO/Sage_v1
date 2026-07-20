@@ -17,6 +17,13 @@ def _get_ranker():
     try:
         from flashrank import Ranker
 
+        # ms-marco-TinyBERT-L-2-v2 was tried for its smaller RSS, but its score
+        # scale doesn't match trust.py's threshold (0.35, tuned against
+        # MiniLM-L-12): a textbook-perfect match scored 0.03 under TinyBERT,
+        # causing false refusals (test_relevant_query_proceeds,
+        # test_every_eval_case_reports_a_retrieval_verdict). "Grounding is the
+        # product" (CLAUDE.md) — don't swap the reranker without re-deriving
+        # the threshold via the eval suite first.
         _ranker = Ranker(model_name="ms-marco-MiniLM-L-12-v2")
     except Exception:  # noqa: BLE001 - reranker is an optimization, not a correctness dependency
         logger.warning("FlashRank unavailable; falling back to fusion-score ordering", exc_info=True)

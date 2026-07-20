@@ -15,6 +15,7 @@ import uuid
 from app.files.storage import get_storage
 from app.ingestion import _set_status, ingest_text
 from app.ingestion.extract import extract_text
+from app.ml_gate import heavy_ml
 
 logger = logging.getLogger("app.ingestion.pipeline")
 
@@ -28,7 +29,10 @@ async def process_file(*, business_id: uuid.UUID, file_id: str, filename: str, s
         # network download on first use) — off the event loop so it doesn't
         # freeze concurrent /ask and /files requests on this single-worker
         # uvicorn process while one file is being ingested.
-        extraction = await asyncio.to_thread(extract_text, filename, content)
+        # Serialized with FlashRank via heavy_ml so peak RSS is max(Docling,
+        # FlashRank), not both stacks at once.
+        async with heavy_ml:
+            extraction = await asyncio.to_thread(extract_text, filename, content)
     except Exception as exc:
         # download()/extract_text() failing happens before ingest_text ever
         # runs, so nothing has flipped the file's status yet — without this,

@@ -16,12 +16,15 @@ from dataclasses import dataclass
 
 from app.db import get_session
 from app.ingestion.embed import embed_chunks
+from app.ml_gate import heavy_ml
 from app.retrieval.hybrid import ChannelHit, fts_channel, reciprocal_rank_fusion, tag_channel, vector_channel
 from app.retrieval.rerank import rerank
 
 logger = logging.getLogger("app.retrieval.retriever")
 
-CANDIDATE_POOL_SIZE = 30
+# Kept small so FlashRank ONNX scores fewer passages per /ask (RAM + latency).
+# Hybrid channels + RRF still run at this size; only the rerank input shrinks.
+CANDIDATE_POOL_SIZE = 14
 
 
 @dataclass(frozen=True)
@@ -62,9 +65,12 @@ async def retrieve(*, business_id: uuid.UUID, query: str, top_k: int = 8) -> lis
     # use) — off the event loop via to_thread so one slow/cold rerank doesn't
     # freeze every other concurrent request (and the Railway healthcheck) on
     # this single-worker uvicorn process.
-    rerank_scores = await asyncio.to_thread(
-        rerank, query, [(str(hit.chunk_id), hit.content) for hit, _ in candidates]
-    )
+    # Serialized with Docling extract via heavy_ml so peak RSS is max(Docling,
+    # FlashRank), not both stacks at once.
+    async with heavy_ml:
+        rerank_scores = await asyncio.to_thread(
+            rerank, query, [(str(hit.chunk_id), hit.content) for hit, _ in candidates]
+        )
 
     def final_score(hit: ChannelHit, rrf_score: float) -> float:
         return rerank_scores.get(str(hit.chunk_id), rrf_score)

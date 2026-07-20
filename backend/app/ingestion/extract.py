@@ -8,6 +8,9 @@ citable, instead of losing row/column structure inside one opaque blob.
 OCR is explicitly deferred (build plan §11): we only build the "looks
 scanned" trigger — a low chars-per-page heuristic that flags the file for
 the admin UI. Tesseract itself is not wired in.
+
+Plain text (.txt / .md / …) bypasses Docling entirely so demo uploads never
+pull torch into RSS.
 """
 
 from __future__ import annotations
@@ -20,6 +23,11 @@ from pathlib import Path
 logger = logging.getLogger("app.ingestion.extract")
 
 LOW_CHARS_PER_PAGE_THRESHOLD = 200  # heuristic: below this, the page is probably a scanned image
+
+# Suffixes that are already UTF-8 (or near) prose — no Docling/torch needed.
+_PLAIN_TEXT_SUFFIXES = frozenset({".txt", ".md", ".markdown", ".csv", ".tsv", ".json", ".log"})
+
+_converter = None
 
 
 @dataclass(frozen=True)
@@ -47,6 +55,14 @@ def _linearize_table(table_rows: list[list[str]]) -> str:
     return " ".join(sentences)
 
 
+def _decode_plain_text(content: bytes) -> str:
+    """Decode upload bytes without pulling Docling/torch."""
+    try:
+        return content.decode("utf-8")
+    except UnicodeDecodeError:
+        return content.decode("utf-8", errors="replace")
+
+
 def _build_converter():
     import os
 
@@ -70,8 +86,16 @@ def _build_converter():
     return DocumentConverter(format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)})
 
 
+def _get_converter():
+    """Lazy module-level singleton — one DocumentConverter per process."""
+    global _converter
+    if _converter is None:
+        _converter = _build_converter()
+    return _converter
+
+
 def _extract_with_docling(path: Path) -> tuple[str, int]:
-    converter = _build_converter()
+    converter = _get_converter()
     result = converter.convert(str(path))
     doc = result.document
 
@@ -99,10 +123,16 @@ def _extract_with_docling(path: Path) -> tuple[str, int]:
 def extract_text(filename: str, content: bytes) -> ExtractionResult:
     """Extract text (+ linearized tables) from raw file bytes.
 
-    Docling needs a path, so we write to a temp file with the original
-    extension preserved (it dispatches on suffix).
+    Plain text skips Docling. Binary formats write a temp file (Docling
+    dispatches on suffix) and reuse a process-wide converter.
     """
-    suffix = Path(filename).suffix or ".pdf"
+    suffix = (Path(filename).suffix or "").lower()
+
+    if suffix in _PLAIN_TEXT_SUFFIXES:
+        text = _decode_plain_text(content)
+        return ExtractionResult(text=text, looks_scanned=False, page_count=1)
+
+    suffix = suffix or ".pdf"
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
         tmp.write(content)
         tmp_path = Path(tmp.name)
