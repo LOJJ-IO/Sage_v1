@@ -27,7 +27,23 @@ _settings = get_settings()
 # closed" — NullPool opens a fresh connection every time instead of reusing
 # one tied to a dead loop. This engine is a long-lived module singleton
 # shared across tests specifically because it must NOT pool connections.
-engine = create_async_engine(_settings.database_url, poolclass=NullPool, future=True)
+#
+# statement_cache_size=0: production's DATABASE_URL goes through Supabase's
+# transaction-mode PgBouncer pooler, which hands different client sessions
+# the same backend connection without knowing about asyncpg's per-connection
+# prepared-statement cache. Two sessions landing on the same backend
+# connection then collide on the same generated statement name, raising
+# asyncpg.exceptions.DuplicatePreparedStatementError ("prepared statement
+# __asyncpg_stmt_1__ already exists") — seen live on /ask in production.
+# Disabling the cache is the documented fix for asyncpg behind PgBouncer's
+# transaction/statement pool modes; harmless against a plain (non-pooled)
+# Postgres like the local dev DB.
+engine = create_async_engine(
+    _settings.database_url,
+    poolclass=NullPool,
+    future=True,
+    connect_args={"statement_cache_size": 0},
+)
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
 # Tables truncated on reset_db, in FK-safe order (children before parents).
