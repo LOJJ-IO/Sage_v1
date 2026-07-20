@@ -47,10 +47,24 @@ def _linearize_table(table_rows: list[list[str]]) -> str:
     return " ".join(sentences)
 
 
-def _extract_with_docling(path: Path) -> tuple[str, int]:
-    from docling.document_converter import DocumentConverter
+def _build_converter():
+    from docling.datamodel.base_models import InputFormat
+    from docling.datamodel.pipeline_options import PdfPipelineOptions
+    from docling.document_converter import DocumentConverter, PdfFormatOption
 
-    converter = DocumentConverter()
+    # OCR is explicitly deferred (module docstring) — do_ocr defaults to True
+    # in docling's PdfPipelineOptions, which silently ran full OCR on every
+    # PDF page despite that stated design, and pulled OCR models (both
+    # languages, both backends) into the Docker image for no reason this app
+    # uses. do_table_structure stays on: tables are linearized (see below).
+    pipeline_options = PdfPipelineOptions()
+    pipeline_options.do_ocr = False
+    pipeline_options.do_table_structure = True
+    return DocumentConverter(format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)})
+
+
+def _extract_with_docling(path: Path) -> tuple[str, int]:
+    converter = _build_converter()
     result = converter.convert(str(path))
     doc = result.document
 

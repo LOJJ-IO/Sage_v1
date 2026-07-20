@@ -33,8 +33,12 @@ RUN pip install .
 # there stalls the single-worker event loop long enough to fail Railway's
 # healthcheck and get the deploy killed mid-request. Baking them in at build
 # time removes the runtime network dependency entirely.
+# Only `layout` + `tableformer`: OCR/code-formula/picture models are disabled
+# in the pipeline (app/ingestion/extract.py) and this app never uses them —
+# downloading docling-tools' full default bundle instead bloated the image
+# with ~150MB of unused rapidocr/code-formula models.
 RUN python -c "from flashrank import Ranker; Ranker(model_name='ms-marco-MiniLM-L-12-v2')" \
-    && docling-tools models download
+    && docling-tools models download layout tableformer
 
 # Railway injects PORT. Listen on 0.0.0.0 or public networking fails.
 # Migrations run via railway.toml preDeployCommand; CMD is the local fallback.
