@@ -26,5 +26,5 @@ COPY evals ./evals
 RUN pip install .
 
 # Railway injects PORT. Listen on 0.0.0.0 or public networking fails.
-# Migrate schema before serving so a fresh Postgres is never empty.
-CMD alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Migrations run via railway.toml preDeployCommand; CMD is the local fallback.
+CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}

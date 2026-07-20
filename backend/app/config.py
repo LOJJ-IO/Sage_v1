@@ -72,9 +72,12 @@ class Settings(BaseSettings):
         if not isinstance(value, str):
             return value
         if value.startswith("postgres://"):
-            return "postgresql+asyncpg://" + value.removeprefix("postgres://")
-        if value.startswith("postgresql://"):
-            return "postgresql+asyncpg://" + value.removeprefix("postgresql://")
+            value = "postgresql+asyncpg://" + value.removeprefix("postgres://")
+        elif value.startswith("postgresql://"):
+            value = "postgresql+asyncpg://" + value.removeprefix("postgresql://")
+        # Supabase requires TLS; asyncpg reads `ssl=require` from the query string.
+        if "supabase.co" in value and "ssl=" not in value.lower():
+            value = f"{value}{'&' if '?' in value else '?'}ssl=require"
         return value
 
     @property

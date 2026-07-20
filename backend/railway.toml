@@ -5,10 +5,10 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-# Must use /bin/sh -c: Railway runs startCommand in exec form (no env expansion),
-# so bare `$PORT` is passed literally to uvicorn and the healthcheck fails.
-# Keep this in sync with Dockerfile CMD.
-startCommand = "/bin/sh -c 'alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}'"
+# Railway injects PORT at runtime — do NOT set a manual PORT=8000 variable.
+# Must use /bin/sh -c: Railway runs startCommand in exec form (no env expansion).
+preDeployCommand = "/bin/sh -c 'alembic upgrade head'"
+startCommand = "/bin/sh -c 'exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}'"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
