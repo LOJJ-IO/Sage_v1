@@ -24,7 +24,7 @@ related: ["[[Architecture-Overview]]", "[[Tech-Stack]]", "[[0003-railway-hosting
 - **Backend Builder:** `DOCKERFILE` / `dockerfilePath=Dockerfile` (confirmed on failed deploy `3fb4e4ae…`)
 - **Start command:** `/bin/sh -c 'exec uvicorn … --port ${PORT:-8000}'` + `preDeployCommand` alembic
 - **Healthcheck:** `GET /health` (timeout 300s in railway.toml)
-- **Last successful backend deploy (still serving traffic):** `26a48a94…` @ 2026-07-20 11:19 — **before** PgBouncer `statement_cache_size=0` fix and before CORS restart
+- **Last successful backend deploy:** `b8c66a4d…` @ 2026-07-20 12:55 (commit `f01c190` — CPU torch + multi-stage). Healthcheck OK; CORS allows Railway frontend origin.
 
 CLI: from repo root, `railway link -p compassionate-serenity -e production -s Sage_v1`.
 
@@ -60,9 +60,9 @@ Set on the **Sage_v1** service (Variables tab). Names only here — never commit
 3. **`DATABASE_URL`:** Must be Supabase Postgres with `postgresql+asyncpg://…` — **not** `localhost`. Alembic runs before uvicorn; a bad URL prevents the server from ever starting.
 4. **Branch drift:** Backend fixes live on `tolu-implementations`; `main` is still frontend-heavy historically.
 5. **`CORS_ORIGINS` unset / stale process → silent "Failed to fetch":** defaults to `localhost:3000` only. Live probe 2026-07-20: OPTIONS from Railway frontend origin → `400 Disallowed CORS origin` even though the variable is set — last successful container predates restart. See [[Lessons-Learned]].
-6. **~30min FAILED deploys = image push, not healthcheck:** build of torch/docling/flashrank image succeeds, then stalls on repeated `image push` until Railway kills the deploy (~32m). Trial plan. Shrink image further or avoid baking heavy models into every push.
-7. **PgBouncer + asyncpg:** live SUCCESS deploy still throws `DuplicatePreparedStatementError`; fix (`statement_cache_size=0` in `app/db.py`) is on branch but never shipped because pushes fail.
-8. **`sage-frontend` mis-watch:** Root Directory unset + RAILPACK caused frontend service to attempt building backend commits from `tolu-implementations` and fail. Set Root Directory = `frontend`.
+6. **~30min FAILED deploys = image push, not healthcheck:** CUDA torch via default docling install bloated the image; push stalled ~32m. **Fixed 2026-07-20:** CPU torch index + multi-stage Dockerfile (`f01c190` / deploy `b8c66a4d…` SUCCESS).
+7. **PgBouncer + asyncpg:** `statement_cache_size=0` in `app/db.py` — shipped on SUCCESS deploy above.
+8. **`sage-frontend` mis-watch:** Root Directory unset + RAILPACK caused frontend service to attempt building backend commits from `tolu-implementations` and fail. Set Root Directory = `frontend` (user action).
 
 ## Monitoring
 - Railway service logs (`railway logs`)
