@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -63,6 +64,18 @@ class Settings(BaseSettings):
     # frontend never talks to Supabase directly, but it does call FastAPI
     # cross-origin in local dev (Next.js on :3000, backend on :8000).
     cors_origins: str = "http://localhost:3000"
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def normalize_database_url(cls, value: object) -> object:
+        """Supabase/Railway paste `postgresql://…`; we require asyncpg, not psycopg2."""
+        if not isinstance(value, str):
+            return value
+        if value.startswith("postgres://"):
+            return "postgresql+asyncpg://" + value.removeprefix("postgres://")
+        if value.startswith("postgresql://"):
+            return "postgresql+asyncpg://" + value.removeprefix("postgresql://")
+        return value
 
     @property
     def cors_origins_list(self) -> list[str]:
