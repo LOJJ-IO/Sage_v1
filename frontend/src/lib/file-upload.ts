@@ -1,11 +1,20 @@
 export type SageFileType = "pdf" | "docx" | "txt" | "md" | "image";
 
+/** Backend ingestion status (`app/models.py` `File.status`). */
+export type FileIngestStatus = "pending" | "processing" | "indexed" | "failed";
+
 export type LibraryFile = {
+  /** Backend `file_id` — stable across replace, unlike a client-generated id. */
   id: string;
   file: File;
   fileType: SageFileType;
+  /** Client-only for now — the backend has no per-file tags column yet. */
   tags: string[];
+  /** Client-only for now — not persisted server-side. */
   isBookmarked: boolean;
+  status: FileIngestStatus;
+  looksScanned: boolean;
+  error: string | null;
 };
 
 export const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
@@ -39,6 +48,13 @@ const EXTENSION_TO_TYPE: Record<AllowedExtension, SageFileType> = {
   webp: "image",
   gif: "image",
 };
+
+/** Best-effort mapping for filenames coming back from the backend, which
+ * accepts a couple of MIME types (csv, xlsx) with no matching SageFileType. */
+export function fileTypeFromFilename(filename: string): SageFileType {
+  const extension = getExtension(filename) as AllowedExtension;
+  return EXTENSION_TO_TYPE[extension] ?? "txt";
+}
 
 const SYSTEM_JUNK_NAMES = new Set([
   ".ds_store",

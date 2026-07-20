@@ -3,14 +3,14 @@ type: bug
 status: open
 tags: [area/frontend, area/design]
 created: 2026-07-03
-updated: 2026-07-07
+updated: 2026-07-19
 related: ["[[Current-Context]]", "[[UI-UX-Guidelines]]", "[[FEAT-app-shell-layout]]"]
 ---
 
 # BUG-0001: Frontend UI inconsistencies (prototype debt)
 
 ## Status
-`open`
+`open` — chat send handler landed locally; remaining items still open
 
 ## Symptom
 The app shell looks and behaves inconsistently across toolbars, panels, and docs. Individual pieces work, but patterns don't align — icons vary in weight, buttons use three different implementations, vault docs don't match code, and placeholder UI isn't wired up.
@@ -60,8 +60,8 @@ No shared focus, hover, size, or dark-mode contract across these.
 - No persistence, no system preference sync.
 
 ### Non-functional placeholder UI
-- "Upload files" `Button` — no `onClick`.
-- Chat voice / send — no handlers; message state goes nowhere.
+- ~~"Upload files" `Button` — no `onClick`.~~ **Fixed earlier** (wires `openFilePicker`).
+- ~~Chat voice / send — no handlers; message state goes nowhere.~~ **Partial fix (2026-07-19):** send + Enter append a local user/assistant thread; New chat clears it. Assistant reply is an honest local stub — FastAPI `POST /ask` still not wired (needs JWT + `NEXT_PUBLIC_API_URL`). Voice input still no-op.
 
 ### Config / metadata leftovers
 - `components.json` → `iconLibrary: "lucide"` but app uses Tabler + Codicons.

@@ -10,6 +10,7 @@ Open this folder (`second-brain/`) directly as an Obsidian vault (`File → Open
 2. **Claude writes as it goes.** When Claude makes an architecture decision, fixes a bug, ships a feature, or learns something non-obvious, it appends/updates the relevant note — not just this conversation's memory.
 3. **You correct in the vault, not just in chat.** If a note is wrong, edit it or tell Claude to update it. Stale docs are worse than no docs, so correctness here is the highest-leverage thing you can maintain.
 4. **The repo's `CLAUDE.md` is the entry point.** It tells any agent working in this repo that this vault exists and how to use it. See [/CLAUDE.md](../CLAUDE.md).
+5. **Cursor always-applies this too.** `.cursor/rules/second-brain.mdc` makes read-before / write-after mandatory for every session — not optional, not "when convenient."
 
 ## Folder map
 

@@ -1,0 +1,48 @@
+---
+description: Non-negotiable retrieval/ingestion contracts for Sage — tenant isolation + file lifecycle. Never weaken the contract tests.
+globs: backend/**/*
+alwaysApply: true
+---
+
+# Sage retrieval contracts (law on `tolu-implementations`)
+
+Two contract suites define what retrieval/ingestion MUST do. They live in `backend/tests/contracts/`. **Adjust imports and helpers — never assertions.** If code does not compile, build the implementation; do not soften the test.
+
+## 1. Tenant isolation (highest priority)
+
+A business can **never** retrieve another business's content. Invisible with one store; appears at store #2 in production.
+
+- `retrieve(business_id, query, ...)` is the **only** retrieval chokepoint. Every path (HTTP, agent, internal) goes through it.
+- `business_id` is **required**, non-defaulted. Calling without it must raise `TypeError`.
+- Same `file_id` across tenants is allowed; isolation must not depend on unique filenames.
+- Unknown / empty business → `[]`, never "all rows" fallback.
+- Every hit must carry `business_id` matching the query.
+
+Seed **two** businesses with deliberately confusable content in every isolation test.
+
+## 2. File lifecycle (grounding)
+
+Deleted/replaced files must not remain retrievable. Orphaned content = grounding bug.
+
+| Op | Must |
+|---|---|
+| upload / ingest | queryable; status ends `"indexed"` |
+| delete | chunks/content **gone**; retrieve must not surface them |
+| replace | old gone, new queryable (same `file_id`) — **swap, not append** |
+| failed ingest | status in `{"failed","pending"}` — **never** `"indexed"` |
+
+## Forbidden when implementing
+
+- Optional / defaulted `business_id` on retrieve or DB reads
+- SQL/filters that omit `WHERE business_id = …`
+- Delete that only removes the `files` row and leaves indexed content
+- Marking a file `"indexed"` before the indexing step succeeds
+- Skipping, deleting, or `# xfail`-ing contract tests to "ship"
+
+## Build order
+
+1. Land / keep contract tests (expected red / ImportError).
+2. Implement helpers: `new_business`, `reset_db`, `ingest_text`, `retrieve`, `delete_file`, `replace_file`, `get_file_status`, `count_chunks`.
+3. Make contracts green. Then wire HTTP/agent on top of the same functions.
+
+MVP may use keyword retrieval ([[ADR-0006]]); the failure-test monkeypatch targets whatever step must succeed before `"indexed"` (e.g. `embed_chunks` or extract/index). **Assertions stay.**

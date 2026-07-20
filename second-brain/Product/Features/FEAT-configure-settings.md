@@ -3,7 +3,7 @@ type: feature
 status: in-progress
 tags: [area/frontend, area/product]
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-19
 related: ["[[FEAT-app-shell-layout]]", "[[FEAT-sign-in]]", "[[UI-UX-Guidelines]]", "[[Workspace-UI-Design-Decisions]]", "[[Sage-MVP-Functional-Spec]]"]
 ---
 
@@ -16,7 +16,7 @@ related: ["[[FEAT-app-shell-layout]]", "[[FEAT-sign-in]]", "[[UI-UX-Guidelines]]
 Staff need workspace settings (profile, account) and per-chat configuration (goal, response length) without leaving the shell. Organization admin stays on `/organization`.
 
 ## Solution
-**Two modals** (Sage light):
+**Two modals**:
 
 | Trigger | Modal | Size |
 |---|---|---|
@@ -31,16 +31,18 @@ Staff need workspace settings (profile, account) and per-chat configuration (goa
 - Local state only
 
 ### Settings
-- Sidebar: General, Account — no Organization
+- Sidebar: General, Theme, Account — no Organization
 - General: display name, nickname, work description (no instructions textarea)
+- Theme: Light / Dark / System (localStorage `sage_theme`; boot script in `layout.tsx`)
 - Account: Reset PIN stub, Learn more link
 
 ## Out of scope (v1)
-- Sidebar search, Appearance/theme, Organization in modal
-- Backend persistence
+- Sidebar search, Organization in modal
+- Backend persistence of theme (local only for now)
 
 ## Technical approach
 - `settings-dialog.tsx`, `configure-chat-dialog.tsx`, shared `settings-fields.tsx`
+- Theme: `lib/theme.ts` + root `ThemeProvider` (`useTheme`); boot script in `layout.tsx`; `:root.dark` CSS tokens in `globals.css` (after `:root`, higher specificity)
 - `settingsOpen` + `configureChatOpen` in `page.tsx`
 - `ProfileMenu` → `onOpenSettings`
 

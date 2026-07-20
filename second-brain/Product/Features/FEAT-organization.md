@@ -3,7 +3,7 @@ type: feature
 status: in-progress
 tags: [area/frontend, area/product, priority/high]
 created: 2026-07-08
-updated: 2026-07-09
+updated: 2026-07-19
 related: ["[[Sage-MVP-Functional-Spec#3.4.3 Admins creating additional accounts]]", "[[Sage-MVP-Functional-Spec#3.4.7 UI shape, concretely]]", "[[0004-username-pin-modular-auth]]", "[[API-Documentation#Accounts (Admin)]]", "[[FEAT-sage-mvp]]", "[[FEAT-sign-in]]", "[[UI-UX-Guidelines]]"]
 ---
 
@@ -28,9 +28,10 @@ Admin-only **Organization** page at **`/organization`** (spec historically calle
 - Reset PIN — opens modal to set a new temporary 4-digit PIN
 - Deactivate — disabled for primary admin; confirmation dialog
 - Reactivate — shown for inactive accounts
+- Grant / revoke admin privileges — confirmation dialogs
 
 **+ Add account** (top-right):
-- Username
+- Name + username
 - Temporary PIN (4 digits)
 - Grant admin privileges toggle (off by default)
 - Confirm your PIN — only when admin toggle is on ([[Sage-MVP-Functional-Spec#3.4.4]])
@@ -40,18 +41,17 @@ Spec authority: [[Sage-MVP-Functional-Spec#3.4.3]]–[[Sage-MVP-Functional-Spec#
 ## Out of scope (this feature)
 - Admin-only route guard / middleware
 - Unlock locked accounts UI beyond reset PIN
-- Revoking admin role on existing accounts (not in MVP spec)
 
 ## UI/UX
 - Route: `frontend/src/app/organization/`
-- Components: `OrganizationView`, `AccountsTable`, `AddAccountDialog`, `ResetPinDialog`, `AccountRowMenu`
+- Components: `OrganizationView`, `AccountsTable`, `AddAccountDialog`, `ResetPinDialog`, `AdminPrivilegesDialog`, `AccountRowMenu`
 - Entry: admin-only header button (`codicon-organization`) next to Profile
-- Demo/preview mode when `NEXT_PUBLIC_API_URL` unset — sample accounts, local mutations
-- Palette matches sign-in + [[UI-UX-Guidelines]]
+- Demo mode when `NEXT_PUBLIC_API_URL` unset — in-memory `DEMO_ACCOUNTS` in `lib/accounts/api.ts` (starts **empty**; local create/mutate still works). Empty state: "No accounts yet"
+- Page well uses `bg-muted` (theme-aware) — see [[UI-UX-Guidelines]]
 - In-app label spelling: **Organization** (US)
 
 ## Technical approach
-- API client: `frontend/src/lib/accounts/api.ts` → `GET/POST /accounts`, reset-pin, deactivate, reactivate
+- API client: `frontend/src/lib/accounts/api.ts` → `GET/POST /accounts`, reset-pin, deactivate, reactivate, grant/revoke admin
 - JWT via `Authorization` header from `sessionStorage` ([[API-Documentation#Accounts (Admin)]])
 - Shared `frontend/src/lib/api/client.ts` for authenticated fetch
 

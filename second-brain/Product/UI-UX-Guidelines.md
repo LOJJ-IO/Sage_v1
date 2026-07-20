@@ -3,7 +3,7 @@ type: product
 status: active
 tags: [area/frontend, area/design]
 created: 2026-07-01
-updated: 2026-07-09
+updated: 2026-07-19
 related: ["[[Product-Vision]]", "[[FEAT-app-shell-layout]]", "[[Reusable-Patterns]]", "[[Workspace-UI-Design-Decisions]]"]
 ---
 
@@ -28,7 +28,7 @@ Feature-level detail for the current shell: [[FEAT-app-shell-layout]].
 | Resize gutter | Invisible — well color only (no divider line) |
 | Disclaimer footer | `text-xs text-muted-foreground` |
 
-Theme switching / dark mode was removed (2026-07-09) — UI is **light-only** for now (`:root` tokens only; no `.dark` class or Appearance control).
+Theme: Settings → **Theme** tab (Light / Dark / System). Preference stored in `localStorage` (`sage_theme`); boot script + root `ThemeProvider` on `<html>` prevent flash and keep System in sync. Dark tokens use `:root.dark` **after** `:root` (higher specificity — see [[Lessons-Learned#2026-07-19 — `:root` after `.dark` cancels dark mode]]). Structure matches light — `muted` = recessed page well, `background` = elevated panels — with stronger `muted-foreground` for secondary text. Prefer semantic tokens (`bg-background`, `text-muted-foreground`, `border-border`); avoid hardcoded `neutral-*` page wells.
 
 ### Spacing & sizing
 | Element | Size |

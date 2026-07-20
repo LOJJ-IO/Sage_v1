@@ -3,7 +3,7 @@ type: pattern
 status: active
 tags: [area/frontend]
 created: 2026-07-01
-updated: 2026-07-09
+updated: 2026-07-19
 related: ["[[Coding-Standards]]", "[[UI-UX-Guidelines]]", "[[FEAT-app-shell-layout]]", "[[Lessons-Learned]]", "[[Stacking-Contexts-and-Portals]]"]
 ---
 
@@ -61,6 +61,26 @@ const MIN_MIDDLE_WIDTH = 16;
 ```
 **Why:** prevents `min-h-screen` + header from exceeding viewport and stops resize-handle overflow from creating global scrollbars.
 **Don't use when:** the page is meant to scroll as a normal document (marketing pages, long forms).
+
+### ThemeProvider (app-wide appearance)
+**Use when:** any UI needs light / dark / system preference.
+**Example:** `frontend/src/components/theme/theme-provider.tsx` wraps the app in `layout.tsx`; Settings → Theme calls `useTheme()`.
+**Shape:**
+```tsx
+// layout.tsx — boot script + provider
+<html suppressHydrationWarning>
+  <head>{/* sage_theme boot script toggles .dark on <html> */}</head>
+  <body>
+    <ThemeProvider><TooltipProvider>{children}</TooltipProvider></ThemeProvider>
+  </body>
+</html>
+
+// globals.css — dark tokens AFTER :root, higher specificity
+:root { /* light */ }
+:root.dark { /* dark — must beat :root */ }
+```
+**Why:** preference is shared state (not Settings-local); System listens to `prefers-color-scheme` on every route. `:root.dark` after `:root` avoids light tokens winning at equal specificity — [[Lessons-Learned#2026-07-19 — `:root` after `.dark` cancels dark mode]].
+**Don't use when:** a one-off decorative color that isn't part of the design-token system.
 
 ### HeaderIconGroup (pill shell)
 **Use when:** clustering related header / panel toolbar icon buttons into one control surface.

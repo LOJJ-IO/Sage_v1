@@ -1,16 +1,16 @@
 ---
 type: decision
-status: active
+status: superseded
 tags: [area/backend]
 created: 2026-07-06
-updated: 2026-07-06
-related: ["[[Sage-MVP-Functional-Spec]]", "[[0005-voltagent-ai-microservice]]", "[[Database-Schema]]"]
+updated: 2026-07-19
+related: ["[[Sage-MVP-Functional-Spec]]", "[[0005-voltagent-ai-microservice]]", "[[Database-Schema]]", "[[0008-fastapi-owned-pgvector-rag-backend]]"]
 ---
 
 # ADR-0006: Keyword/tag-based retrieval for MVP (not vector RAG)
 
 ## Status
-`active`
+`superseded` by [[0008-fastapi-owned-pgvector-rag-backend]] — the locked build plan went straight to hybrid pgvector + FTS + tags retrieval (RRF-fused, FlashRank-reranked) instead of keyword-only MVP. The "upgrade path" this ADR anticipated is the path actually taken from day one.
 
 ## Context
 Sending all files to the LLM on every query is cost-prohibitive. Vector RAG is the long-term answer but adds chunking, embedding infra, and complexity. MVP needs cheap, shippable retrieval with a clear upgrade path.

@@ -1,0 +1,12 @@
+# Config-as-code for the Sage backend service.
+# In Railway dashboard: Root Directory = backend
+# Prefer Railpack until Dockerfile is on the watched Git branch and proven.
+[build]
+builder = "RAILPACK"
+
+[deploy]
+startCommand = "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5

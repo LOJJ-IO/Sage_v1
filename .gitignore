@@ -42,3 +42,14 @@ frontend/.data/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# backend (Python)
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/.pytest_cache/
+backend/pytest-cache-files-*/
+backend/.devdb/
+backend/.devdb/storage/
+*.pyc
+

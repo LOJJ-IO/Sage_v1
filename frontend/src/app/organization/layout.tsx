@@ -12,7 +12,7 @@ export default function OrganizationLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="min-h-full overflow-y-auto bg-neutral-100">
+    <div className="min-h-full overflow-y-auto bg-muted">
       {children}
     </div>
   );
