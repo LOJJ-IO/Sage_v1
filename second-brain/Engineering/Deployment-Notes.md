@@ -47,7 +47,7 @@ Set on the **Sage_v1** service (Variables tab). Names only here — never commit
 | `GEMINI_API_KEY` and/or `OPENROUTER_API_KEY` | LLM |
 | `JWT_SECRET` | Change from dev default before any real users |
 | `INTERNAL_SERVICE_TOKEN` | Change from dev default |
-| `CORS_ORIGINS` | Comma-separated frontend origin(s) once frontend has a URL |
+| `CORS_ORIGINS` | Comma-separated frontend origin(s). Set to `http://localhost:3000` as of 2026-07-20 (local dev frontend testing against prod backend) — update when frontend gets a real deployed URL |
 | `ENVIRONMENT` | Prefer `production` on Railway |
 
 ## Known gotchas (2026-07-20)
@@ -56,6 +56,7 @@ Set on the **Sage_v1** service (Variables tab). Names only here — never commit
 2. **`$PORT` literal:** Railway `startCommand` in exec form does not expand `$PORT`. Wrap in `/bin/sh -c '…'` (fixed in `backend/railway.toml` on `tolu-implementations`).
 3. **`DATABASE_URL`:** Must be Supabase Postgres with `postgresql+asyncpg://…` — **not** `localhost`. Alembic runs before uvicorn; a bad URL prevents the server from ever starting.
 4. **Branch drift:** Railway watches `main`; Dockerfile/railway.toml fixes are on `tolu-implementations` until merged.
+5. **`CORS_ORIGINS` unset → silent "Failed to fetch":** with no `CORS_ORIGINS` variable, the app defaults to `http://localhost:3000` only (`backend/app/config.py`). Any other frontend origin gets blocked client-side by CORS with no status code and no server log entry — shows up as a bare `TypeError: Failed to fetch`, easy to mistake for the backend being down. See [[Lessons-Learned#2026-07-20 — CORS_ORIGINS unset on Railway defaults to localhost:3000 only, breaks any other frontend origin as an unhelpful "Failed to fetch"]].
 
 ## Monitoring
 - Railway service logs (`railway logs`)

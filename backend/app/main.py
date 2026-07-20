@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from app.agent.answer import answer_question
@@ -47,6 +48,17 @@ if settings.logfire_token:
 app.include_router(auth_router)
 app.include_router(files_router)
 app.include_router(internal_router)
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Starlette's default 500 path bypasses CORSMiddleware (ServerErrorMiddleware
+    sits outside it), so an unhandled exception reaches the browser with no
+    Access-Control-Allow-Origin header and shows up as a bare "Failed to fetch"
+    instead of the real error. Routing through ExceptionMiddleware via this
+    handler keeps the response inside CORSMiddleware so the header is applied."""
+    logging.getLogger("app.main").exception("Unhandled exception on %s %s", request.method, request.url.path)
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
 class AskRequest(BaseModel):

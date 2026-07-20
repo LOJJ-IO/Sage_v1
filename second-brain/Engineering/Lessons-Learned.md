@@ -21,6 +21,15 @@ What to do differently.
 
 ## Entries
 
+### 2026-07-20 — `{"detail":"Not Found"}` at the bare root URL is expected, not a bug
+Hitting `https://sagev1-production.up.railway.app/` (no path) returns `{"detail":"Not Found"}`. This is normal FastAPI behavior — `app/main.py` never registers a `/` route, only `/health`, `/ask`, `/auth/*`, `/files/*`, `/internal/*`. Confirmed via Railway logs: `GET /` 404s repeatedly right alongside `GET /health` 200s on the same healthy deployment.
+**Don't debug this as a deploy failure** — check `/health` specifically before assuming the service is down.
+
+### 2026-07-20 — CORS_ORIGINS unset on Railway defaults to `localhost:3000` only, breaks any other frontend origin as an unhelpful "Failed to fetch"
+File upload from the local Next dev frontend against the freshly-shipped Railway backend failed with a bare `TypeError: Failed to fetch` (browser fetch's generic network-error message — no HTTP status, no server-side log entry) shown in the UI as `"<filename>: Failed to fetch"` (`frontend/src/hooks/use-file-library.ts`'s `uploadFailures.push`). Railway logs confirmed the `POST /files` never arrived — not a backend bug.
+**Why:** `Settings.cors_origins` (`backend/app/config.py`) defaults to `"http://localhost:3000"` and `CORS_ORIGINS` was never set as a Railway variable. `POST /files` requires an `Authorization` header, which forces a CORS preflight; any frontend origin other than exactly `http://localhost:3000` (a Vercel URL, `127.0.0.1:3000` vs `localhost:3000`, etc.) gets silently blocked client-side with zero diagnostic info beyond "Failed to fetch".
+**Fix:** set `CORS_ORIGINS` explicitly on Railway (`railway variables --set "CORS_ORIGINS=http://localhost:3000" --service Sage_v1`, comma-separated for multiple origins) to match whatever origin(s) the frontend is actually served from, and point `frontend/.env.local`'s `NEXT_PUBLIC_API_URL` at the Railway URL when testing the shipped backend locally. **Whenever a fetch fails with no status code and no server log entry for the request, suspect CORS before anything else** — it's indistinguishable from a network outage in browser JS. See [[Deployment-Notes#Secrets / config]].
+
 ### 2026-07-20 — Railway healthcheck 503 while Next.js is running
 After fixing `$PORT`, healthcheck still failed for 5m with "service unavailable". Railway deploy logs showed `next start` / Next.js on `:8080`, not uvicorn — the service was still building the **frontend** while healthcheck hit FastAPI-only `/health`.
 **Fix:** Root Directory = `backend`; deploy a branch that includes `backend/Dockerfile` + `backend/railway.toml`; set `DATABASE_URL` to Supabase. See [[Deployment-Notes]].
