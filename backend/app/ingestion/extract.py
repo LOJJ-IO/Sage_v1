@@ -48,6 +48,8 @@ def _linearize_table(table_rows: list[list[str]]) -> str:
 
 
 def _build_converter():
+    import os
+
     from docling.datamodel.base_models import InputFormat
     from docling.datamodel.pipeline_options import PdfPipelineOptions
     from docling.document_converter import DocumentConverter, PdfFormatOption
@@ -60,6 +62,11 @@ def _build_converter():
     pipeline_options = PdfPipelineOptions()
     pipeline_options.do_ocr = False
     pipeline_options.do_table_structure = True
+    # Prefer baked-in weights from the Docker image (DOCLING_ARTIFACTS_PATH)
+    # so cold deploys don't download models on the first upload request.
+    artifacts_path = os.environ.get("DOCLING_ARTIFACTS_PATH")
+    if artifacts_path:
+        pipeline_options.artifacts_path = artifacts_path
     return DocumentConverter(format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)})
 
 

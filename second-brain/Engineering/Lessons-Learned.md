@@ -21,6 +21,14 @@ What to do differently.
 
 ## Entries
 
+### 2026-07-20 — 32-minute Railway FAILED deploys died on `image push`, not app startup
+Deploy `3fb4e4ae…` (commit `85fc022`, Dockerfile builder, root `/backend`) built successfully — apt purge, pip install, flashrank + Docling model bake all completed — then log-spammed `image push` until the deploy failed (~32 minutes). Healthcheck never got a chance; the bottleneck is shipping a torch/docling-heavy image on the trial plan.
+**Fix direction:** keep shrinking the image (CPU torch wheel, fewer baked models, multi-stage), or push less often / use a lighter “API-only” image for deploys and load models from a volume/cache. Do not debug as a `/health` or `$PORT` failure when build logs end in endless `image push`.
+
+### 2026-07-20 — CORS variable set in Railway but live API still returns `Disallowed CORS origin`
+`CORS_ORIGINS` on `Sage_v1` includes `https://sage-frontend-production.up.railway.app`, but a live OPTIONS preflight from that origin still returns `400` body `Disallowed CORS origin` (localhost origin returns `200`). Last SUCCESS deployment (`26a48a94…`) is still serving; later deploys all FAILED at image push, so the running container never restarted with the updated env.
+**Fix:** `railway restart -s Sage_v1 -y` (reloads env without rebuild) or get a successful redeploy. Frontend *is* calling the backend (`NEXT_PUBLIC_API_URL` present in the JS bundle) — the browser blocks it at CORS.
+
 ### 2026-07-20 — `{"detail":"Not Found"}` at the bare root URL is expected, not a bug
 Hitting `https://sagev1-production.up.railway.app/` (no path) returns `{"detail":"Not Found"}`. This is normal FastAPI behavior — `app/main.py` never registers a `/` route, only `/health`, `/ask`, `/auth/*`, `/files/*`, `/internal/*`. Confirmed via Railway logs: `GET /` 404s repeatedly right alongside `GET /health` 200s on the same healthy deployment.
 **Don't debug this as a deploy failure** — check `/health` specifically before assuming the service is down.
