@@ -47,7 +47,12 @@ RUN pip install --upgrade pip \
 # for Railway's healthcheck to kill the deploy.
 # Only layout + tableformer: OCR/code-formula/picture models are disabled
 # in app/ingestion/extract.py.
-RUN python -c "from flashrank import Ranker; Ranker(model_name='ms-marco-MiniLM-L-12-v2')" \
+# flashrank's own default cache_dir is `/tmp`, which this multi-stage build
+# never copies into the runtime stage (only /root/.cache is) — explicit
+# cache_dir here must match the one passed to Ranker(...) in
+# app/retrieval/rerank.py, or the baked model is silently discarded and
+# re-downloaded over the network on every cold container start.
+RUN python -c "from flashrank import Ranker; Ranker(model_name='ms-marco-MiniLM-L-12-v2', cache_dir='/root/.cache/flashrank')" \
     && docling-tools models download layout tableformer
 
 # ── runtime ──────────────────────────────────────────────────────────────

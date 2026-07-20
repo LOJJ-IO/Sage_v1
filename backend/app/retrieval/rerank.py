@@ -24,7 +24,13 @@ def _get_ranker():
         # test_every_eval_case_reports_a_retrieval_verdict). "Grounding is the
         # product" (CLAUDE.md) — don't swap the reranker without re-deriving
         # the threshold via the eval suite first.
-        _ranker = Ranker(model_name="ms-marco-MiniLM-L-12-v2")
+        # cache_dir explicit: flashrank's own default is `/tmp`, which the
+        # multi-stage Dockerfile's runtime stage never receives (only
+        # /root/.cache is copied from the builder) — every cold container
+        # start silently re-downloaded the model over the network instead of
+        # using the one baked into the image at build time. Must match the
+        # cache_dir passed to Ranker(...) in the Dockerfile's bake step.
+        _ranker = Ranker(model_name="ms-marco-MiniLM-L-12-v2", cache_dir="/root/.cache/flashrank")
     except Exception:  # noqa: BLE001 - reranker is an optimization, not a correctness dependency
         logger.warning("FlashRank unavailable; falling back to fusion-score ordering", exc_info=True)
         _load_failed = True
