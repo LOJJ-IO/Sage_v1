@@ -25,6 +25,13 @@ COPY evals ./evals
 
 RUN pip install .
 
+# build-essential (gcc/g++/make) is only needed to compile wheels during
+# `pip install .` above — nothing at runtime invokes a compiler. Purging it
+# (and its dependency tree) after install trims a large chunk of dead weight
+# off an image that's already heavy from torch/docling/flashrank, which has
+# been causing very slow/failing image pushes to Railway.
+RUN apt-get purge -y --auto-remove build-essential && rm -rf /var/lib/apt/lists/*
+
 # Bake ML models into the image at build time. Without this, flashrank's
 # reranker and Docling's layout/table models are fetched over the network on
 # the *first* /ask or file upload after every cold deploy — a synchronous,
