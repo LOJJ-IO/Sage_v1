@@ -18,8 +18,10 @@ from app.db import get_session
 from app.limits import DailyCapExceeded, check_and_increment, validate_question
 from app.models import ChatHistory
 from app.retrieval import retrieve
-from app.retrieval.assemble import assemble_context
+from app.retrieval.assemble import AssembledContext, assemble_context
 from app.retrieval.trust import evaluate_trust
+
+NO_CONTEXT_PLACEHOLDER = "(no relevant passages found)"
 
 logger = logging.getLogger("app.agent.answer")
 
@@ -69,18 +71,26 @@ async def answer_question(
         business_id=business_id, question=question, scores=hit_scores, user_id=user_id
     )
 
-    if decision.refused:
-        await _persist(business_id=business_id, user_id=user_id, question=question, answer=REFUSAL_MESSAGE, citations=[])
-        return AnswerResult(answer=REFUSAL_MESSAGE, citations=[], refused=True, reason=decision.reason)
-
-    assembled = assemble_context(hits)
+    # Below the trust threshold, the retrieved hits aren't reliable enough to
+    # hand to the model as fact — but the model still runs, with an empty
+    # context, so it can tell a greeting/chitchat message apart from a real
+    # unanswerable store question instead of every low-score message getting
+    # the identical canned refusal regardless of what was actually asked.
+    # SYSTEM_PROMPT rule 5 instructs it: chat naturally for the former, refuse
+    # plainly for the latter, and never state a store-specific fact either way.
+    assembled = assemble_context(hits) if not decision.refused else AssembledContext(
+        context_text="", citation_ids=frozenset(), citation_lookup={}
+    )
     agent = get_agent()
-    prompt = f"Context:\n{assembled.context_text}\n\nQuestion: {question}"
-    logger.info("calling model=%s business_id=%s", agent.model.model_name, business_id)
+    context_section = assembled.context_text or NO_CONTEXT_PLACEHOLDER
+    prompt = f"Context:\n{context_section}\n\nQuestion: {question}"
+    logger.info("calling model=%s business_id=%s grounded=%s", agent.model.model_name, business_id, not decision.refused)
     try:
         result = await agent.run(prompt, deps=AgentDeps(valid_citation_ids=assembled.citation_ids))
     except (ModelHTTPError, UnexpectedModelBehavior) as exc:
         logger.warning("model call failed model=%s business_id=%s error=%s", agent.model.model_name, business_id, exc)
+        if decision.refused:
+            return AnswerResult(answer=REFUSAL_MESSAGE, citations=[], refused=True, reason=decision.reason)
         return AnswerResult(answer=MODEL_UNAVAILABLE_MESSAGE, citations=[], refused=False, reason="MODEL_UNAVAILABLE")
     logger.info("model call succeeded model=%s business_id=%s", agent.model.model_name, business_id)
     output = result.output
@@ -100,5 +110,11 @@ async def answer_question(
     await _persist(
         business_id=business_id, user_id=user_id, question=question, answer=output.answer, citations=citation_records
     )
-    logger.info("answered business_id=%s hits=%d citations=%d", business_id, len(hits), len(citation_records))
-    return AnswerResult(answer=output.answer, citations=output.citations, refused=False, reason=None)
+    logger.info(
+        "answered business_id=%s hits=%d citations=%d refused=%s",
+        business_id,
+        len(hits),
+        len(citation_records),
+        decision.refused,
+    )
+    return AnswerResult(answer=output.answer, citations=output.citations, refused=decision.refused, reason=decision.reason)
