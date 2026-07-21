@@ -33,6 +33,25 @@ async def process_file(*, business_id: uuid.UUID, file_id: str, filename: str, s
         # FlashRank), not both stacks at once.
         async with heavy_ml:
             extraction = await asyncio.to_thread(extract_text, filename, content)
+
+        # OCR is deferred (extract.py). A "scanned" file with almost no
+        # extractable text would index as Ready and then every /ask about it
+        # would look like a grounding refusal — same user-facing message as
+        # "wrong store / wrong question". Fail loudly so the Files UI can show
+        # why, instead of a false Ready state.
+        if extraction.looks_scanned and len(extraction.text.strip()) < 80:
+            msg = (
+                "This file looks like a scanned PDF/image with almost no extractable text. "
+                "OCR is not enabled yet — upload a text-based PDF, .docx, or .txt instead."
+            )
+            logger.warning(
+                "rejecting near-empty scanned extract business_id=%s file_id=%s chars=%d",
+                business_id,
+                file_id,
+                len(extraction.text.strip()),
+            )
+            await _set_status(business_id, file_id, "failed", error=msg, looks_scanned=True)
+            return
     except Exception as exc:
         # download()/extract_text() failing happens before ingest_text ever
         # runs, so nothing has flipped the file's status yet — without this,
