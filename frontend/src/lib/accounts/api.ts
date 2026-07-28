@@ -8,44 +8,7 @@ import type {
   ResetPinResponse,
 } from "@/lib/accounts/types";
 
-export const DEMO_ACCOUNTS: Account[] = [
-  {
-    id: "demo-1",
-    name: "Alex Chen",
-    username: "alex",
-    role: "admin",
-    is_primary_admin: true,
-    is_active: true,
-    created_at: "2026-06-01T10:00:00.000Z",
-  },
-  {
-    id: "demo-2",
-    name: "Maria Lopez",
-    username: "maria",
-    role: "staff",
-    is_primary_admin: false,
-    is_active: true,
-    created_at: "2026-06-15T14:30:00.000Z",
-  },
-  {
-    id: "demo-3",
-    name: "Jordan Kim",
-    username: "jordan",
-    role: "admin",
-    is_primary_admin: false,
-    is_active: true,
-    created_at: "2026-07-01T09:00:00.000Z",
-  },
-  {
-    id: "demo-4",
-    name: "Sam Rivera",
-    username: "sam",
-    role: "staff",
-    is_primary_admin: false,
-    is_active: false,
-    created_at: "2026-05-20T11:00:00.000Z",
-  },
-];
+export const DEMO_ACCOUNTS: Account[] = [];
 
 export function isDemoMode() {
   return !getApiBaseUrl();

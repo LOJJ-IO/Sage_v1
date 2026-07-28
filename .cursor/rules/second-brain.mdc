@@ -1,0 +1,36 @@
+---
+description: Always read and write second-brain — vault is mandatory memory, not optional docs
+alwaysApply: true
+---
+
+# Second Brain — Mandatory Memory
+
+`second-brain/` is **authoritative external memory**. Do not skip it. Do not treat it as optional documentation.
+
+Full protocol lives in `CLAUDE.md` and `second-brain/README.md`. This rule enforces the habit.
+
+## Before any non-trivial task
+
+1. Read `second-brain/Current/Current-Context.md`.
+2. Open linked feature / ADR / bug / pattern notes that the task touches.
+3. Prefer vault facts over asking the user to re-explain. Link with `[[Note-Name]]` — do not duplicate vault content in chat or code comments.
+
+## After any non-trivial task
+
+Write back before ending the turn (pick what applies; bump `updated` frontmatter):
+
+| What happened | Where to write |
+|---|---|
+| Priorities / active work changed | `Current/Current-Context.md` |
+| Feature shipped or spec changed | `Product/Features/FEAT-*.md` |
+| Architecture decision | New ADR under `Architecture/Decisions/` (supersede, don't rewrite old) |
+| Bug found or fixed | `Engineering/Bugs/BUG-*.md` |
+| Non-obvious gotcha | Append `Engineering/Lessons-Learned.md` |
+| Real session progress | Append today's `Daily/YYYY-MM-DD.md` |
+
+## Non-negotiables
+
+- Pure logistics (yes/no, tiny typo) may skip write-back; everything else must update the vault.
+- Prefer editing an existing note over creating a new one.
+- Keep YAML frontmatter (`type`, `status`, `tags`, `created`, `updated`, `related`).
+- Teaching stays in chat — never dump lessons into a root `FOR_*.md`; durable project facts go in the vault.

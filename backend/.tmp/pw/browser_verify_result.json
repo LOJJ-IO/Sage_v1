@@ -1,0 +1,28 @@
+{
+  "question": "What is the return window for Lavender Body Mist?",
+  "indexedFile": {
+    "file_id": "505c450cbfe647bdae0b808153ff548c",
+    "filename": "lavender-return-policy.txt",
+    "status": "indexed",
+    "looks_scanned": false,
+    "error": null
+  },
+  "assistantText": "The return window for Lavender Body Mist is 45 days from the purchase date. Opened bottles are accepted if at least half of the product remains. Sources: 505c450cbfe647bdae0b808153ff548c#92a502",
+  "networkAsk": [
+    {
+      "status": 200,
+      "body": {
+        "answer": "The return window for Lavender Body Mist is 45 days from the purchase date. Opened bottles are accepted if at least half of the product remains.",
+        "citations": [
+          "505c450cbfe647bdae0b808153ff548c#92a502"
+        ],
+        "refused": false,
+        "reason": null,
+        "limited": false
+      }
+    }
+  ],
+  "consoleErrors": [],
+  "screenshot": "C:\\Users\\tolul\\Sage_v1\\backend\\.tmp\\pw\\browser_verify.png",
+  "url": "http://localhost:3000/"
+}

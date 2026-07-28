@@ -3,14 +3,14 @@ type: feature
 status: in-progress
 tags: [area/frontend, area/backend, area/product]
 created: 2026-07-07
-updated: 2026-07-08
-related: ["[[Sage-MVP-Functional-Spec]]", "[[FEAT-sage-mvp]]", "[[FEAT-app-shell-layout]]", "[[API-Documentation]]", "[[Database-Schema]]", "[[Lessons-Learned]]"]
+updated: 2026-07-19
+related: ["[[Sage-MVP-Functional-Spec]]", "[[FEAT-sage-mvp]]", "[[FEAT-app-shell-layout]]", "[[API-Documentation]]", "[[Database-Schema]]", "[[Lessons-Learned]]", "[[Known-Issues]]"]
 ---
 
 # FEAT: File upload
 
 ## Status
-`in-progress` — **in-memory prototype** in the shell UI (no API, no disk). FastAPI + Supabase pipeline not yet built.
+`in-progress` — **wired to the real backend as of 2026-07-19** (`frontend/src/hooks/use-file-library.ts` calls `backend/app/files/routes.py` via `frontend/src/lib/files/api.ts`: upload, list, delete, replace all real). Falls back to the old in-memory-only behavior when `NEXT_PUBLIC_API_URL` is unset. Tags and bookmarks remain **client-only** — no backend columns for them yet (see [[Known-Issues]]).
 
 ## Problem
 Admins need to populate the shared knowledge base with SOPs, policies, and product docs. The left file tree and center preview/tabs depend on real files existing. Upload is the entry point for the whole document workflow ([[Sage-MVP-Functional-Spec#4.6]]).

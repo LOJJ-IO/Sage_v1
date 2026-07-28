@@ -33,3 +33,46 @@ This repo has an Obsidian vault at [`second-brain/`](second-brain/00-Home.md) th
 - `second-brain/` — persistent engineering memory (see above)
 
 See [`second-brain/Architecture/Tech-Stack.md`](second-brain/Architecture/Tech-Stack.md) for stack details and [`second-brain/Architecture/Architecture-Overview.md`](second-brain/Architecture/Architecture-Overview.md) for how the pieces connect.
+
+---
+
+## Sage backend — architecture invariants (non-negotiable)
+
+These are locked design decisions, not defaults. When a common RAG pattern
+conflicts with an invariant below, **the invariant wins** — do not silently
+substitute the common pattern. If an invariant seems wrong or ambiguous,
+**stop and ask**, don't "improve" it unilaterally.
+
+1. **FastAPI owns everything** — auth, authorization, orchestration, storage
+   access. It is the single chokepoint. Nothing else touches the DB or storage.
+2. **Supabase is dumb infrastructure only**: managed Postgres + blob storage.
+   No Supabase Auth. No Row-Level Security. No frontend Supabase SDK. Tenant
+   isolation is enforced in application code, in **one place** (the retrieval
+   chokepoint below).
+3. **One shared Postgres, partitioned by `business_id`.** Not one project per
+   tenant.
+4. **Every tenant-data query is scoped by `business_id`. No cross-tenant read,
+   ever.** `business_id` is a **required, non-defaulted** argument on every
+   data-access function. All retrieval flows through **one** retriever
+   function: `app.retrieval.retrieve(business_id, query, ...)`
+   ([`backend/app/retrieval/retriever.py`](backend/app/retrieval/retriever.py)).
+   If you find yourself writing a second retrieval path, stop — route it
+   through here instead.
+5. **Grounding is the product.** If nothing clears the trust threshold, Sage
+   returns an explicit refusal (logged to `fallback_events`), never an
+   improvised answer. See [`backend/app/retrieval/trust.py`](backend/app/retrieval/trust.py).
+6. **Secrets from env only.** Never hardcode keys. Never log prompt text or
+   retrieved chunk content at info level — that is tenant data. Log ids/counts.
+
+Locked stack: FastAPI (async) · Supabase Postgres+Storage with pgvector,
+brute-force (no HNSW/IVFFlat until ~50k chunks/tenant) · Docling extraction
+(MIT, not PyMuPDF/AGPL) · 650-token/15%-overlap chunking · OpenAI
+text-embedding-3-small (1536 dims, pinned) · hybrid retrieval (vector + FTS +
+tags, fused with RRF) · FlashRank rerank (in-process CPU) · Pydantic AI agent
+(not LangChain/LlamaIndex) · Gemini 2.5 Flash Lite, thinking off · FastAPI
+BackgroundTasks for ingestion (no Celery/Redis) · Logfire observability.
+
+Full build plan and phase-by-phase acceptance criteria: see
+[`second-brain/Architecture/Decisions/0008-fastapi-owned-pgvector-rag-backend.md`](second-brain/Architecture/Decisions/0008-fastapi-owned-pgvector-rag-backend.md)
+(supersedes [[0005-voltagent-ai-microservice]] and [[0006-keyword-retrieval-mvp]]).
+Local dev DB (no Docker on this machine): [`backend/.devdb/README.md`](backend/.devdb/README.md).

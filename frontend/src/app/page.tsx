@@ -22,6 +22,8 @@ import { ToastViewport } from "@/components/providers/toast-provider";
 import { Button } from "@/components/ui/button";
 import { useFileLibrary } from "@/hooks/use-file-library";
 import { getUserRole } from "@/lib/auth/session";
+import { askSage, isBackendConfigured } from "@/lib/ask/api";
+import { ApiError } from "@/lib/api/client";
 import {
   Tooltip,
   TooltipContent,
@@ -149,9 +151,61 @@ function AskAiEmptyState({
   );
 }
 
-function AskAiChatInput({ hasFiles }: { hasFiles: boolean }) {
+type ChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+};
+
+function createMessageId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+/** Local-only reply when NEXT_PUBLIC_API_URL isn't set (standalone UI demo). */
+function buildLocalAssistantReply(question: string): string {
+  const trimmed = question.trim();
+  return (
+    `I received your question (“${trimmed.length > 120 ? `${trimmed.slice(0, 117)}…` : trimmed}”), ` +
+    "but no backend is configured (NEXT_PUBLIC_API_URL is unset) — so I can’t look up your uploaded docs."
+  );
+}
+
+function AskAiMessageList({ messages }: { messages: ChatMessage[] }) {
+  return (
+    <div className="flex flex-col gap-3 p-2">
+      {messages.map((message) => (
+        <div
+          className={
+            message.role === "user"
+              ? "ml-8 rounded-2xl bg-secondary px-3 py-2 text-sm text-secondary-foreground"
+              : "mr-8 rounded-2xl bg-muted px-3 py-2 text-sm text-foreground"
+          }
+          key={message.id}
+        >
+          {message.content}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AskAiChatInput({
+  hasFiles,
+  onSend,
+}: {
+  hasFiles: boolean;
+  onSend: (message: string) => void;
+}) {
   const [message, setMessage] = useState("");
   const canSend = hasFiles && message.trim().length > 0;
+
+  const send = () => {
+    if (!canSend) {
+      return;
+    }
+    onSend(message.trim());
+    setMessage("");
+  };
 
   return (
     <div className="min-w-0 shrink-0 p-3">
@@ -160,6 +214,12 @@ function AskAiChatInput({ hasFiles }: { hasFiles: boolean }) {
           className="min-w-0 flex-1 truncate bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
           disabled={!hasFiles}
           onChange={(event) => setMessage(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              send();
+            }
+          }}
           placeholder={
             hasFiles
               ? "Ask about return policy, pricing, or store procedures..."
@@ -184,6 +244,7 @@ function AskAiChatInput({ hasFiles }: { hasFiles: boolean }) {
               : "flex size-8 shrink-0 cursor-not-allowed items-center justify-center rounded-full text-muted-foreground"
           }
           disabled={!canSend}
+          onClick={send}
           type="button"
         >
           <TablerIcon icon={IconArrowUp} />
@@ -261,6 +322,7 @@ export default function Home() {
   const [isLeftVisible, setIsLeftVisible] = useState(true);
   const [isRightVisible, setIsRightVisible] = useState(true);
   const [chatTitle, setChatTitle] = useState("Title");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [configureChatOpen, setConfigureChatOpen] = useState(false);
@@ -272,6 +334,59 @@ export default function Home() {
 
   const openConfigureChat = useCallback(() => {
     setConfigureChatOpen(true);
+  }, []);
+
+  const handleSendMessage = useCallback((content: string) => {
+    const userMessage: ChatMessage = {
+      id: createMessageId(),
+      role: "user",
+      content,
+    };
+    setMessages((current) => [...current, userMessage]);
+
+    const backendOn = isBackendConfigured();
+
+    if (!backendOn) {
+      const assistantMessage: ChatMessage = {
+        id: createMessageId(),
+        role: "assistant",
+        content: buildLocalAssistantReply(content),
+      };
+      setMessages((current) => [...current, assistantMessage]);
+      return;
+    }
+
+    void askSage(content)
+      .then((result) => {
+        const suffix = result.limited
+          ? ""
+          : result.citations.length > 0
+            ? `\n\nSources: ${result.citations.join(", ")}`
+            : "";
+        const assistantMessage: ChatMessage = {
+          id: createMessageId(),
+          role: "assistant",
+          content: `${result.answer}${suffix}`,
+        };
+        setMessages((current) => [...current, assistantMessage]);
+      })
+      .catch((err) => {
+        const message =
+          err instanceof ApiError
+            ? err.message
+            : "Something went wrong reaching Sage. Try again.";
+        const assistantMessage: ChatMessage = {
+          id: createMessageId(),
+          role: "assistant",
+          content: message,
+        };
+        setMessages((current) => [...current, assistantMessage]);
+      });
+  }, []);
+
+  const handleNewChat = useCallback(() => {
+    setMessages([]);
+    setChatTitle("Title");
   }, []);
 
   useEffect(() => {
@@ -474,7 +589,11 @@ export default function Home() {
             />
             <div className="ml-auto shrink-0">
               <HeaderIconGroup>
-                <HeaderIconButton iconClass="codicon-add" label="New chat" />
+                <HeaderIconButton
+                  iconClass="codicon-add"
+                  label="New chat"
+                  onClick={handleNewChat}
+                />
                 <HeaderIconButton
                   iconClass="codicon-search"
                   label="Search chats"
@@ -492,12 +611,19 @@ export default function Home() {
             </div>
           </header>
           <div className="min-h-0 flex-1 overflow-auto p-2">
-            <AskAiEmptyState
-              hasFiles={files.length > 0}
-              onUpload={openFilePicker}
-            />
+            {messages.length > 0 ? (
+              <AskAiMessageList messages={messages} />
+            ) : (
+              <AskAiEmptyState
+                hasFiles={files.length > 0}
+                onUpload={openFilePicker}
+              />
+            )}
           </div>
-          <AskAiChatInput hasFiles={files.length > 0} />
+          <AskAiChatInput
+            hasFiles={files.length > 0}
+            onSend={handleSendMessage}
+          />
         </section>
         </div>
       </div>

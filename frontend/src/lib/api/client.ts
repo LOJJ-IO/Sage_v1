@@ -39,7 +39,13 @@ export async function apiFetch<T>(
 
   const requestHeaders = new Headers(headers);
 
-  if (!requestHeaders.has("Content-Type") && init.body) {
+  // FormData sets its own multipart boundary in the Content-Type header —
+  // letting fetch do it. Only JSON bodies need an explicit Content-Type.
+  if (
+    !requestHeaders.has("Content-Type") &&
+    init.body &&
+    !(init.body instanceof FormData)
+  ) {
     requestHeaders.set("Content-Type", "application/json");
   }
 

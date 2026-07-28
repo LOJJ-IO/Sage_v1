@@ -13,8 +13,10 @@ import {
   useDialogOpenSync,
 } from "@/hooks/use-dialog-draft";
 import { useToast } from "@/components/providers/toast-provider";
+import { useTheme } from "@/hooks/use-theme";
+import type { ThemePreference } from "@/lib/theme";
 
-type SettingsSection = "general" | "account";
+type SettingsSection = "general" | "theme" | "account";
 
 type SettingsDraft = {
   displayName: string;
@@ -34,7 +36,30 @@ const NAV_ITEMS: {
   iconClass: string;
 }[] = [
   { id: "general", label: "General", iconClass: "codicon-settings-gear" },
+  { id: "theme", label: "Theme", iconClass: "codicon-color-mode" },
   { id: "account", label: "Account", iconClass: "codicon-account" },
+];
+
+const THEME_OPTIONS: {
+  id: ThemePreference;
+  label: string;
+  description: string;
+}[] = [
+  {
+    id: "light",
+    label: "Light",
+    description: "Always use the light appearance.",
+  },
+  {
+    id: "dark",
+    label: "Dark",
+    description: "Always use the dark appearance.",
+  },
+  {
+    id: "system",
+    label: "System",
+    description: "Match your device's light or dark setting.",
+  },
 ];
 
 type SettingsDialogProps = {
@@ -64,13 +89,37 @@ function SettingsRow({
   );
 }
 
+function ThemePill({
+  selected,
+  onClick,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <Button
+      onClick={onClick}
+      size="sm"
+      type="button"
+      variant={selected ? "default" : "ghost"}
+    >
+      {children}
+    </Button>
+  );
+}
+
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const [section, setSection] = useState<SettingsSection>("general");
   const toast = useToast();
+  const { theme, setTheme } = useTheme();
   const { draft, setDraft, resetDraft, syncOnOpen, isSaving, save } =
     useDialogDraft(INITIAL_DRAFT);
 
   useDialogOpenSync(open, syncOnOpen);
+
+  const selectedTheme = THEME_OPTIONS.find((option) => option.id === theme)!;
 
   const handleSave = useCallback(async () => {
     await save(async () => {
@@ -161,6 +210,37 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   placeholder="e.g. Floor associate"
                   value={draft.workDescription}
                 />
+              </SettingsRow>
+            </div>
+          ) : section === "theme" ? (
+            <div>
+              <h2 className="mb-1 font-heading text-lg font-semibold text-foreground">
+                Theme
+              </h2>
+              <p className="mb-4 text-sm text-muted-foreground">
+                Choose how Sage looks on this device.
+              </p>
+
+              <SettingsRow
+                description="Applies immediately and is remembered locally."
+                label="Appearance"
+              >
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    {THEME_OPTIONS.map((option) => (
+                      <ThemePill
+                        key={option.id}
+                        onClick={() => setTheme(option.id)}
+                        selected={theme === option.id}
+                      >
+                        {option.label}
+                      </ThemePill>
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedTheme.description}
+                  </p>
+                </div>
               </SettingsRow>
             </div>
           ) : (

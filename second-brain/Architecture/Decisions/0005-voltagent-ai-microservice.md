@@ -1,16 +1,16 @@
 ---
 type: decision
-status: active
+status: superseded
 tags: [area/backend, area/infra]
 created: 2026-07-06
-updated: 2026-07-06
-related: ["[[Sage-MVP-Functional-Spec]]", "[[0001-fastapi-python-backend]]", "[[0006-keyword-retrieval-mvp]]"]
+updated: 2026-07-19
+related: ["[[Sage-MVP-Functional-Spec]]", "[[0001-fastapi-python-backend]]", "[[0006-keyword-retrieval-mvp]]", "[[0008-fastapi-owned-pgvector-rag-backend]]"]
 ---
 
 # ADR-0005: VoltAgent microservice for the Sage AI agent
 
 ## Status
-`active`
+`superseded` by [[0008-fastapi-owned-pgvector-rag-backend]] — the agent runs **in-process** inside FastAPI via Pydantic AI, not as a separate Node/VoltAgent microservice. Kept for history; do not build against this.
 
 ## Context
 The backend is Python (FastAPI) but VoltAgent (`@voltagent/core`) is TypeScript-only. The agent needs model abstraction, retriever abstraction, guardrails, observability, and evals — without rearchitecting when swapping LLM providers or upgrading retrieval.

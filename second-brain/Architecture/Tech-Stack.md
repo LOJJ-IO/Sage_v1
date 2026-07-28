@@ -3,8 +3,8 @@ type: architecture
 status: active
 tags: [area/backend, area/frontend, area/infra]
 created: 2026-07-01
-updated: 2026-07-06
-related: ["[[Architecture-Overview]]", "[[Sage-MVP-Functional-Spec]]", "[[Deployment-Notes]]"]
+updated: 2026-07-19
+related: ["[[Architecture-Overview]]", "[[Sage-MVP-Functional-Spec]]", "[[Deployment-Notes]]", "[[0008-fastapi-owned-pgvector-rag-backend]]"]
 ---
 
 # Tech Stack
@@ -25,31 +25,39 @@ Full MVP detail: [[Sage-MVP-Functional-Spec#2. Stack & Infrastructure]].
 
 **MVP constraint:** no Supabase client SDK in frontend — all data via FastAPI.
 
-## Backend (`backend/`)
+## Backend (`backend/`) — **built**, see [[0008-fastapi-owned-pgvector-rag-backend]]
+
+Everything below runs **in one FastAPI process** — no separate agent microservice. `backend/app/` layout: `auth.py`, `files/`, `ingestion/`, `retrieval/`, `agent/`, `internal/`, `limits.py`, `main.py`.
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Framework | FastAPI (Python) | [[0001-fastapi-python-backend]] |
-| Auth | Username + PIN (JWT sessions) | Modular interface; see [[0004-username-pin-modular-auth]] |
-| Text extraction | `pypdf`/`pdfplumber`, `python-docx` | At upload time → `files.extracted_text` |
+| Framework | FastAPI (Python, async) | [[0001-fastapi-python-backend]] |
+| DB driver / ORM | `asyncpg` + SQLAlchemy async + Alembic | `NullPool` on the engine — required for pytest-asyncio's per-test event loops on Windows, see [[Lessons-Learned]] |
+| Auth | Username + PIN (JWT), `bcrypt` directly | [[0004-username-pin-modular-auth]]. **Not** `passlib` — incompatible with `bcrypt` 4.1+, see [[Lessons-Learned]] |
+| Extraction | Docling (MIT) + table linearization | Not PyMuPDF (AGPL). OCR (Tesseract) explicitly deferred — only a "looks scanned" flag |
+| Chunking | `tiktoken`, 650 tokens / 15% overlap | Preserves char offsets for citations |
+| Embeddings | OpenAI `text-embedding-3-small`, 1536 dims (pinned) | Deterministic local feature-hashing fallback when `OPENAI_API_KEY` unset (dev/CI only) |
+| Retrieval | pgvector (cosine) + Postgres FTS + tags, fused with RRF | **Not** keyword-only — supersedes [[0006-keyword-retrieval-mvp]]. Single chokepoint: `app.retrieval.retrieve(business_id, query, ...)` |
+| Rerank | FlashRank (in-process, CPU) | No external call |
+| Trust/refusal | Score threshold → refuse + log `fallback_events` | Never an improvised answer |
+| Agent | **Pydantic AI, in-process** | Supersedes [[0005-voltagent-ai-microservice]] (no Node/VoltAgent service) |
+| LLM | Gemini 2.5 Flash Lite, thinking budget 0 | Via `pydantic_ai.providers.google.GoogleProvider` (renamed from `google_gla`, see [[Lessons-Learned]]) |
+| Ingestion jobs | FastAPI `BackgroundTasks` | No Celery/Redis |
+| Per-tenant limits | Daily query cap (atomic upsert), per `business_id` not per-user | |
+| Observability | Logfire (FastAPI + Pydantic AI instrumentation) | Conditional on `LOGFIRE_TOKEN` |
 | Hosting | Railway | |
 
-## AI layer (`sage-agent/`)
+## AI layer
 
-| Layer | Choice | Notes |
-|---|---|---|
-| Framework | VoltAgent (`@voltagent/core`, `@voltagent/server-hono`) | TypeScript microservice |
-| LLM | Env-configured; leaning **Gemini 2.5 Flash Lite** | Not locked — model abstraction required |
-| Retrieval (MVP) | Keyword/tag via FastAPI `/internal/retrieve` | [[0006-keyword-retrieval-mvp]] |
-| Hosting | Railway (internal-only) | Shared service token with FastAPI |
+Not a separate service — see "Agent" row above. `sage-agent/` as a standalone TypeScript/VoltAgent microservice ([[0005-voltagent-ai-microservice]]) was **not built**; superseded before implementation.
 
 ## Data store
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Database | Supabase PostgreSQL | Managed Postgres only; FastAPI connects directly |
-| File storage | Supabase Storage | Blob store; backend proxies all access |
-| Vector search | Not in MVP | pgvector upgrade path when keyword matching insufficient |
+| Database | Supabase PostgreSQL + `pgvector` | Managed Postgres; FastAPI connects directly; local dev uses a portable Postgres 16 + pgvector build (no Docker/WSL on this dev machine) — see `backend/.devdb/README.md` |
+| File storage | Supabase Storage | Blob store; backend proxies all access. Local-disk fallback (`app.files.storage.LocalDiskStorage`) when Supabase env vars are unset |
+| Vector search | `pgvector`, brute-force scan | From day one, not deferred. HNSW/IVFFlat index only once a tenant exceeds ~50k chunks |
 
 ## Infra / deployment
 
