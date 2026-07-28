@@ -1,8 +1,17 @@
 import { apiFetch, getApiBaseUrl } from "@/lib/api/client";
 
+export type AskCitation = {
+  id: string;
+  file_id: string;
+  filename: string;
+  chunk_index: number;
+  char_start: number;
+  char_end: number;
+};
+
 export type AskResponse = {
   answer: string;
-  citations: string[];
+  citations: AskCitation[];
   refused: boolean;
   reason: string | null;
   limited: boolean;

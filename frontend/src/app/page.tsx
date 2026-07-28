@@ -16,6 +16,10 @@ import { useCallback, useEffect, useState } from "react";
 import { FileLibraryPanel } from "@/components/files/file-library-panel";
 import { OrganizationDialog } from "@/components/accounts/organization-dialog";
 import { ProfileMenu } from "@/components/auth/profile-menu";
+import {
+  CitationSources,
+  type CitationSource,
+} from "@/components/ask/citation-sources";
 import { PreviewCenterPanel } from "@/components/preview-tabs";
 import { ConfigureChatDialog } from "@/components/settings/configure-chat-dialog";
 import { SettingsDialog } from "@/components/settings/settings-dialog";
@@ -23,9 +27,11 @@ import { Button } from "@/components/ui/button";
 import { useFileLibrary } from "@/hooks/use-file-library";
 import { useSyncRemovedPreviewTabs } from "@/hooks/use-sync-removed-preview-tabs";
 import { getUserRole } from "@/lib/auth/session";
-import type { LibraryFile } from "@/lib/file-upload";
-import { usePreviewTabsStore } from "@/lib/preview-tabs/store";
+import type { AskCitation } from "@/lib/ask/api";
 import { askSage, isBackendConfigured } from "@/lib/ask/api";
+import type { LibraryFile } from "@/lib/file-upload";
+import { fileTypeFromFilename } from "@/lib/file-upload";
+import { usePreviewTabsStore } from "@/lib/preview-tabs/store";
 import { ApiError } from "@/lib/api/client";
 import {
   Tooltip,
@@ -158,6 +164,7 @@ type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  citations?: AskCitation[];
 };
 
 function createMessageId() {
@@ -173,7 +180,13 @@ function buildLocalAssistantReply(question: string): string {
   );
 }
 
-function AskAiMessageList({ messages }: { messages: ChatMessage[] }) {
+function AskAiMessageList({
+  messages,
+  onOpenSource,
+}: {
+  messages: ChatMessage[];
+  onOpenSource: (source: CitationSource) => void;
+}) {
   return (
     <div className="flex flex-col gap-3 p-2">
       {messages.map((message) => (
@@ -185,7 +198,13 @@ function AskAiMessageList({ messages }: { messages: ChatMessage[] }) {
           }
           key={message.id}
         >
-          {message.content}
+          <div className="whitespace-pre-wrap">{message.content}</div>
+          {message.role === "assistant" && message.citations && message.citations.length > 0 ? (
+            <CitationSources
+              citations={message.citations}
+              onOpenSource={onOpenSource}
+            />
+          ) : null}
         </div>
       ))}
     </div>
@@ -334,6 +353,24 @@ export default function Home() {
     [openTab],
   );
 
+  const handleOpenCitationSource = useCallback(
+    (source: CitationSource) => {
+      openTab({
+        resourceKey: source.fileId,
+        title: source.filename,
+        fileType: fileTypeFromFilename(source.filename),
+        viewState: {
+          highlight: {
+            citationId: source.citationId,
+            charStart: source.charStart,
+            charEnd: source.charEnd,
+          },
+        },
+      });
+    },
+    [openTab],
+  );
+
   const [leftWidth, setLeftWidth] = useState(DEFAULT_SIDE_WIDTH);
   const [rightWidth, setRightWidth] = useState(DEFAULT_SIDE_WIDTH);
   const [isLeftVisible, setIsLeftVisible] = useState(true);
@@ -379,15 +416,11 @@ export default function Home() {
 
     void askSage(content)
       .then((result) => {
-        const suffix = result.limited
-          ? ""
-          : result.citations.length > 0
-            ? `\n\nSources: ${result.citations.join(", ")}`
-            : "";
         const assistantMessage: ChatMessage = {
           id: createMessageId(),
           role: "assistant",
-          content: `${result.answer}${suffix}`,
+          content: result.answer,
+          citations: result.limited ? undefined : result.citations,
         };
         setMessages((current) => [...current, assistantMessage]);
       })
@@ -633,7 +666,10 @@ export default function Home() {
           </header>
           <div className="min-h-0 flex-1 overflow-auto p-2">
             {messages.length > 0 ? (
-              <AskAiMessageList messages={messages} />
+              <AskAiMessageList
+                messages={messages}
+                onOpenSource={handleOpenCitationSource}
+              />
             ) : (
               <AskAiEmptyState
                 hasFiles={files.length > 0}

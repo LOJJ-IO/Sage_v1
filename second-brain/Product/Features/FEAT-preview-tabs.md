@@ -30,7 +30,7 @@ related: ["[[FEAT-app-shell-layout]]", "[[Current-Context]]", "[[Lessons-Learned
 | Follow-up | Status | Scope |
 | --- | --- | --- |
 | **8 — Lifecycle sync** | ✅ Done | `markResourceRemoved` wired by diffing `useFileLibrary().files` against open tab `resourceKey`s; title/fileType refresh on poll when file still exists (already handled by `OPEN_TAB`). |
-| **9 — File viewers** | 🔲 Next | PDF / image / text-markdown / docx-text preview renderers; debounced `updateViewState`; download via `downloadBackendFile`. |
+| **9 — File viewers** | 🔲 Next | PDF / image / text-markdown / docx-text preview renderers; debounced `updateViewState`; download via `downloadBackendFile`; consume `viewState.highlight` from [[FEAT-citation-sources]] (scroll + highlight char range for text; PDF mapping later). |
 | **10 — CI gate** | 🔲 Blocked | GitHub Actions: `lint`, `test`, `tsc`, `build` on frontend PRs; required check before merge/deploy. Blocked on repo-wide `react-hooks` lint sweep. |
 
 ## Problem

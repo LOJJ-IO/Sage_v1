@@ -4,7 +4,7 @@ status: active
 tags: [priority/high, area/infra, area/frontend]
 created: 2026-07-20
 updated: 2026-07-28
-related: ["[[Deployment-Notes]]", "[[Known-Issues]]", "[[Lessons-Learned]]", "[[UI-UX-Guidelines]]", "[[Workspace-UI-Design-Decisions]]", "[[FEAT-preview-tabs]]"]
+related: ["[[Deployment-Notes]]", "[[Known-Issues]]", "[[Lessons-Learned]]", "[[UI-UX-Guidelines]]", "[[Workspace-UI-Design-Decisions]]", "[[FEAT-preview-tabs]]", "[[FEAT-citation-sources]]"]
 ---
 
 # Current Context
@@ -12,7 +12,7 @@ related: ["[[Deployment-Notes]]", "[[Known-Issues]]", "[[Lessons-Learned]]", "[[
 ## Active priority
 False "not enough grounded information" refusals on production — usually sparse/scanned extracts (OCR deferred), not a dead retriever. Files UI now shows status + scanned warning; near-empty scanned uploads fail ingest. User should re-upload text-native files for the store that was refusing.
 
-## What's true right now (2026-07-20)
+## What's true right now (2026-07-28)
 - Backend deploy live at commit `ca02e92` (memory mitigations + FlashRank cache_dir fix). Healthcheck passing; uvicorn on `:8080`.
 - Live CORS: OPTIONS from `https://sage-frontend-production.up.railway.app` → **200** + `access-control-allow-origin`.
 - PgBouncer `statement_cache_size=0` is on this image (ancestor commit `26a10a4`).
@@ -29,6 +29,7 @@ False "not enough grounded information" refusals on production — usually spars
 - Preview-tabs **Phase 7 (tab-strip UI) shipped**: `frontend/src/components/preview-tabs/` (strip, pinned/unpinned lanes with compression + pagination/scroll, tab kebab, strip-settings kebab, stage placeholder/removed states, center panel), wired into `page.tsx`'s center panel and `FileList` row click → `openTab`. Reducer untouched (no bugs found). Verified: `npm run test` (65/65), `tsc --noEmit` clean, `npm run build` succeeds, and the new `preview-tabs/` files are individually eslint-clean. Could not do a live browser pass — no browser automation tool (chromium-cli/playwright) available in this environment; `npx playwright` stalled resolving packages and was abandoned. Two known caveats: an `overflowMode` SSR-hydration edge case, and pre-existing repo-wide `npm run lint` failures (10 errors, unrelated files, predate this work — see [[FEAT-preview-tabs#Known caveats from Phase 7]]).
 - Preview-tabs tab-strip visual polish (uncommitted, working tree): Chrome-style rounded tab chrome, uniform tab widths per compression stage, shared `panel-header.ts` classes, new `truncated-filename.tsx`. Verified `tsc`/`eslint`/`npm run test` (65/65)/`npm run build` all clean before Phase 8 work started on top of it.
 - Preview-tabs **Phase 8 (lifecycle sync) shipped**: new pure selector `getResourceKeysToMarkRemoved(tabs, presentResourceKeys)` in `selectors.ts` (+4 tests, 69 total now) and a new hook `frontend/src/hooks/use-sync-removed-preview-tabs.ts` wired into `page.tsx` right after `useFileLibrary()`. Diffs `files` against open tabs on every `files`/`tabs` change and calls `markResourceRemoved` for anything missing — covers both explicit delete (synchronous) and the 2s poll (external disappearance). Title/fileType refresh on replace was already handled by `OPEN_TAB`, so nothing further was needed there. Verified: `tsc --noEmit`, `eslint` (new files clean; page.tsx's one pre-existing `getUserRole` lint error is unrelated, see caveats above), `npm run test` (69/69), `npm run build`. See [[FEAT-preview-tabs#Phase 8 — Lifecycle sync (implemented)]].
+- **Citation sources infra shipped** ([[FEAT-citation-sources]]): `/ask` returns structured citations with `filename` + char offsets; chat shows Gurubase-style Sources badges (file-type icon + filename); click opens/focuses the preview tab and seeds `viewState.highlight` for Phase 9 viewers. No real scroll/highlight yet (preview stage still placeholder).
 
 ## Still open
 1. User: re-upload **text-based** policy docs (`.txt` / `.md` / text PDF / `.docx`) for any store still refusing; delete scanned "Ready" files that can't be answered.
@@ -37,4 +38,5 @@ False "not enough grounded information" refusals on production — usually spars
 4. Optional cleanup: `front.html` and `.railway-config-pull-*` landed in `f01c190` — remove in a follow-up commit if undesired.
 5. Dockerfile still reinstalls all dependencies (including CPU torch) from scratch on every deploy — `COPY app ./app` happens before `RUN pip install .`, invalidating Docker's build cache on every code change. Not urgent now that images push quickly, but worth reordering (stub-package install trick) if build times become annoying.
 6. Local dev DB (`backend/.devdb`, port 55432) needs to be started manually (`pgsql/bin/pg_ctl.exe -D ./data -l ./pg.log -o "-p 55432" start`) before running the backend test suite locally — it doesn't survive a machine restart.
-7. Preview-tabs: Phases 1–8 done, all uncommitted (working tree). Next up — **Phase 9**: real PDF/image/text/docx viewers + debounced `updateViewState`. **Phase 10**: CI gate (`lint`/`test`/`tsc`/`build`) — blocked on a repo-wide `react-hooks` lint sweep first (see [[FEAT-preview-tabs#Known caveats from Phase 7]]). A live browser QA pass of the Phase 7 UI (and the subsequent visual polish + Phase 8) is still owed — do it next session if a browser automation tool becomes available. Nothing in this feature has been committed yet — consider committing before starting Phase 9.
+7. Preview-tabs: Phases 1–8 done, all uncommitted (working tree). Next up — **Phase 9**: real PDF/image/text/docx viewers + debounced `updateViewState` (consume `viewState.highlight` from citation clicks). **Phase 10**: CI gate (`lint`/`test`/`tsc`/`build`) — blocked on a repo-wide `react-hooks` lint sweep first (see [[FEAT-preview-tabs#Known caveats from Phase 7]]). A live browser QA pass of the Phase 7 UI (and the subsequent visual polish + Phase 8) is still owed — do it next session if a browser automation tool becomes available. Nothing in this feature has been committed yet — consider committing before starting Phase 9.
+8. Citation Sources badges + enriched `/ask` (uncommitted) — verify against a live backend; Phase 9 will make badge clicks scroll/highlight.
