@@ -56,3 +56,17 @@ export function canUnpinTab(tab: PreviewTab): boolean {
 export function isRemovedTab(tab: PreviewTab): boolean {
   return tab.lifecycle === "removed";
 }
+
+/** Resource keys with a non-removed tab open whose resource is absent from `presentResourceKeys`. */
+export function getResourceKeysToMarkRemoved(
+  tabs: PreviewTab[],
+  presentResourceKeys: ReadonlySet<ResourceKey>,
+): ResourceKey[] {
+  const keys = new Set<ResourceKey>();
+  for (const tab of tabs) {
+    if (tab.lifecycle !== "removed" && !presentResourceKeys.has(tab.resourceKey)) {
+      keys.add(tab.resourceKey);
+    }
+  }
+  return [...keys];
+}

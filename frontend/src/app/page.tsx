@@ -21,6 +21,7 @@ import { ConfigureChatDialog } from "@/components/settings/configure-chat-dialog
 import { SettingsDialog } from "@/components/settings/settings-dialog";
 import { Button } from "@/components/ui/button";
 import { useFileLibrary } from "@/hooks/use-file-library";
+import { useSyncRemovedPreviewTabs } from "@/hooks/use-sync-removed-preview-tabs";
 import { getUserRole } from "@/lib/auth/session";
 import type { LibraryFile } from "@/lib/file-upload";
 import { usePreviewTabsStore } from "@/lib/preview-tabs/store";
@@ -318,6 +319,8 @@ export default function Home() {
     inputProps,
     replaceInputProps,
   } = useFileLibrary();
+
+  useSyncRemovedPreviewTabs(files);
 
   const openTab = usePreviewTabsStore((state) => state.openTab);
   const handleOpenFile = useCallback(

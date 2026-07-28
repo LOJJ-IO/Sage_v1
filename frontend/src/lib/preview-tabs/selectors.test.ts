@@ -10,6 +10,7 @@ import {
   getActiveTab,
   getOrderedTabs,
   getPinnedTabs,
+  getResourceKeysToMarkRemoved,
   getUnpinnedTabs,
   isRemovedTab,
 } from "./selectors";
@@ -64,6 +65,30 @@ describe("findMatchingTabsByResource", () => {
   it("returns all tabs sharing a resourceKey regardless of lifecycle", () => {
     const matches = findMatchingTabsByResource(fixtureState, "file-a");
     expect(matches.map((t) => t.tabId).sort()).toEqual(["removed-1", "unpinned-1", "unpinned-2"]);
+  });
+});
+
+describe("getResourceKeysToMarkRemoved", () => {
+  it("returns resource keys with a non-removed tab that are absent from the present set", () => {
+    const keys = getResourceKeysToMarkRemoved(fixtureState.tabs, new Set(["file-p"]));
+    expect(keys).toEqual(["file-a"]);
+  });
+
+  it("dedupes across multiple tabs sharing a resourceKey", () => {
+    const keys = getResourceKeysToMarkRemoved(fixtureState.tabs, new Set([]));
+    expect(keys.sort()).toEqual(["file-a", "file-p"]);
+  });
+
+  it("ignores resource keys already fully removed", () => {
+    const onlyRemovedTabs = [
+      makeTab({ tabId: "removed-1", resourceKey: "file-a", lifecycle: "removed" }),
+    ];
+    expect(getResourceKeysToMarkRemoved(onlyRemovedTabs, new Set([]))).toEqual([]);
+  });
+
+  it("returns nothing when every open resource is present", () => {
+    const keys = getResourceKeysToMarkRemoved(fixtureState.tabs, new Set(["file-p", "file-a"]));
+    expect(keys).toEqual([]);
   });
 });
 

@@ -11,7 +11,7 @@ related: ["[[FEAT-app-shell-layout]]", "[[Current-Context]]", "[[Lessons-Learned
 # FEAT: Middle-pane file preview tabs
 
 ## Status
-`in-progress` — **Phases 1–7 complete** (pure state + 65 tests + vitest, tab-strip UI wired into the app shell). Phases 8+ (removal-poll sync, real viewers, CI gate) not started.
+`in-progress` — **Phases 1–8 complete** (pure state + tab-strip UI + removal-poll sync, 69 tests + vitest). Phase 9 (real viewers) and Phase 10 (CI gate) not started.
 
 ## Phases (master roadmap)
 
@@ -27,11 +27,11 @@ related: ["[[FEAT-app-shell-layout]]", "[[Current-Context]]", "[[Lessons-Learned
 
 ### Post–Phase 7 (not numbered in the 7-phase core plan)
 
-| Follow-up | Scope |
-|---|---|
-| **8 — Lifecycle sync** | `markResourceRemoved` wired by diffing `useFileLibrary().files` against open tab `resourceKey`s; title/fileType refresh on poll when file still exists. |
-| **9 — File viewers** | PDF / image / text-markdown / docx-text preview renderers; debounced `updateViewState`; download via `downloadBackendFile`. |
-| **10 — CI gate** | GitHub Actions: `lint`, `test`, `tsc`, `build` on frontend PRs; required check before merge/deploy. |
+| Follow-up | Status | Scope |
+| --- | --- | --- |
+| **8 — Lifecycle sync** | ✅ Done | `markResourceRemoved` wired by diffing `useFileLibrary().files` against open tab `resourceKey`s; title/fileType refresh on poll when file still exists (already handled by `OPEN_TAB`). |
+| **9 — File viewers** | 🔲 Next | PDF / image / text-markdown / docx-text preview renderers; debounced `updateViewState`; download via `downloadBackendFile`. |
+| **10 — CI gate** | 🔲 Blocked | GitHub Actions: `lint`, `test`, `tsc`, `build` on frontend PRs; required check before merge/deploy. Blocked on repo-wide `react-hooks` lint sweep. |
 
 ## Problem
 The middle pane of the app shell ([frontend/src/app/page.tsx](frontend/src/app/page.tsx)) is an empty `<section>` — there's no way to preview an opened file. The subsystem needed to support this (tabs, pinning, duplication, removed-file handling, overflow) is meaningfully stateful and was scoped out as its own design pass rather than bolted onto UI code, to avoid re-deriving pinning/duplication/removal rules ad hoc mid-implementation.
@@ -58,10 +58,17 @@ Notable resolved judgment calls (not obvious from a first read of the rules):
 - `closeAllUnpinned` only reselects the active tab if it was itself unpinned (and thus just removed); an active *pinned* tab stays active even if its lifecycle is `removed`, since pinned tabs are never touched by this action.
 - If only a `removed` tab exists for a `resourceKey`, `OPEN_TAB` opens a fresh tab rather than reviving the stale one (treated as "the file came back").
 
-## Out of scope (Phase 1–7, done)
+### Phase 8 — Lifecycle sync (implemented)
+
+- New pure selector `getResourceKeysToMarkRemoved(tabs, presentResourceKeys)` in `frontend/src/lib/preview-tabs/selectors.ts` — returns the deduped `resourceKey`s of non-removed tabs absent from a "currently present" set. Framework-agnostic, unit-tested (4 cases) without touching the reducer.
+- New hook `frontend/src/hooks/use-sync-removed-preview-tabs.ts` (`useSyncRemovedPreviewTabs(files)`) — a `useEffect` keyed on `[files, tabs, markResourceRemoved]` that diffs `useFileLibrary().files` (the existing 2s poll's output) against `usePreviewTabsStore`'s open tabs each time either changes, and calls `markResourceRemoved` for anything missing. Covers both explicit delete (`removeFile` mutates `files` synchronously, no poll wait) and external disappearance (poll refresh).
+- Wired into `frontend/src/app/page.tsx`: `useSyncRemovedPreviewTabs(files)` right after `useFileLibrary()`.
+- Title/fileType refresh on file replace was already covered by `OPEN_TAB`'s refresh-on-focus behavior (see resolved judgment calls above) — nothing further needed for that half of Phase 8.
+- No race on mount: tabs only exist once a user has opened one, by which point `files` has already loaded — so there's no window where an empty initial `files` list would spuriously mark a tab removed.
+
+## Out of scope (Phase 1–8, done)
 
 - Actual file viewers (PDF/docx/image rendering) — don't exist in the repo at all yet; Phase 9. Stage shows a placeholder/empty/removed state only.
-- Wiring `markResourceRemoved` to the real removal signal. Decision made but not implemented: diff `frontend/src/hooks/use-file-library.ts`'s existing 2s poll against open tabs' `resourceKey`s. Phase 8.
 - Debounced `updateViewState` syncing from a real viewer (viewer responds immediately; store write is debounced) — needs a real viewer to attach to. Phase 9.
 - Version-aware `resourceKey` — would need a backend version/etag field that doesn't exist today.
 - `closeAllUnpinned()` has no UI entry point yet (spec marks it optional for Phase 7); reducer/tests already cover it.
@@ -507,7 +514,7 @@ cd frontend && npm run build
 Reducer/selectors are framework-agnostic pure functions, independently tested without React or zustand. `store.ts` is the only place zustand appears — chosen because this session introduced it as the app's first non-`useState` state container (see [[Current-Context]]). No ADR needed yet; this isn't a cross-cutting architecture decision, just this one subsystem's internal state management choice.
 
 ## Open questions
-- How should the UI trigger `markResourceRemoved` — a `useEffect` diffing `use-file-library`'s polled list against `usePreviewTabsStore`'s tabs, on every poll tick or only on transitions?
+- Resolved (Phase 8): `markResourceRemoved` triggers via `useSyncRemovedPreviewTabs`, a `useEffect` re-running the diff whenever `files` *or* `tabs` changes (not gated to poll ticks only) — see Phase 8 section above.
 - Should duplicate/pin/close actions be reachable from more than the tab kebab (e.g. file-tree right-click) once UI wiring starts?
 
 ## Related
