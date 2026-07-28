@@ -30,8 +30,99 @@
               "icon": "lucide-file",
               "title": "New tab"
             }
+          },
+          {
+            "id": "887f36f891983e78",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          },
+          {
+            "id": "e665510da5249290",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          },
+          {
+            "id": "e1d1a30eacb4df2f",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          },
+          {
+            "id": "1298a2628e1b1c8d",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          },
+          {
+            "id": "ca1138abf2610d58",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          },
+          {
+            "id": "968d2ff814683ca7",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          },
+          {
+            "id": "f0e72e910cd3a1c7",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          },
+          {
+            "id": "4fa26f4b231985e1",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          },
+          {
+            "id": "b8f4b094949cc8b7",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
           }
-        ]
+        ],
+        "currentTab": 10
       }
     ],
     "direction": "vertical"
@@ -179,8 +270,10 @@
       "bases:Create new base": false
     }
   },
-  "active": "b2649c847a6770ea",
+  "active": "b8f4b094949cc8b7",
   "lastOpenFiles": [
+    "Product/UI-UX-Guidelines.md",
+    "Product/Features/FEAT-preview-tabs.md",
     "Architecture/Architecture-Overview.md",
     "Templates/Daily-Note.md",
     "Untitled.base",
@@ -206,8 +299,6 @@
     "Engineering/Lessons-Learned.md",
     "Engineering/Bugs/BUG-0001-ui-inconsistencies.md",
     "Engineering/Bugs.md",
-    "BUG-NNNN-xxx.md",
-    "Templates/Bug-Report.md",
     "Inbox"
   ]
 }

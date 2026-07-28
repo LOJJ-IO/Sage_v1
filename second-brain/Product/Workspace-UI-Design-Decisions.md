@@ -153,3 +153,4 @@ Patterns to design against — validate against firsthand front-desk experience:
 - Shell layout spec: [[FEAT-app-shell-layout]]
 - Visual conventions: [[UI-UX-Guidelines]]
 - Active priorities: [[Current-Context]]
+- §2's tab model is being implemented as [[FEAT-preview-tabs]] — pure state layer (`frontend/src/lib/preview-tabs/`) shipped 2026-07-28; UI/viewers not started.
