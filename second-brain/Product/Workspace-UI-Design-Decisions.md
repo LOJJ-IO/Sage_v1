@@ -79,6 +79,14 @@ The app is a **workspace shell**, not a document viewer. Three panels (file tree
   - kebab menu
   - full filename available via tooltip
   - Pinned tabs may shrink only down to the minimum width that still fits the elements above.
+- **Visual / crowded layout (2026-07-28, Chrome/Obsidian inspo)**
+  - Active tab: visually connected to preview stage below; higher contrast; **wider than inactive neighbors** even when strip is crowded.
+  - Inactive tabs: flatter, lower contrast; compress more aggressively than active.
+  - Pinned cluster: fixed left, non-scrollable by default; **compresses before** unpinned region loses readability; may degrade to icon-only (tooltip for full name; kebab always available).
+  - Divider between pinned and unpinned regions **only when** at least one pinned tab exists — no divider or reserved gap when zero pins.
+  - **Fallback only:** if pinned cluster still overflows after compression, pinned region becomes independently horizontally scrollable; active pinned tab auto-reveals inside that region.
+  - Unpinned region: normal overflow (`pagination` or free scroll); active tab always brought into view.
+  - Principle: **state truth and visual truth stay synchronized under compression** — don't show structural chrome (divider, scroll regions) without underlying state.
 
 ### 3. Apps in the workspace — tabs vs. replace
 - **Original plan:** dragging an app into the middle removes the file previewer.

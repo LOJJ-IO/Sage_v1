@@ -157,23 +157,42 @@ Collapse all:
 
 ## Preview tab strip
 
-- Ownership split:
-  - **Tab-strip / workspace-level controls** live outside individual tab menus (example: overflow mode).
-  - **Tab-level controls** stay inside the tab or its kebab (pin/unpin, duplicate, close).
-- Overflow mode is a workspace preference with two options: `pagination` and `free horizontal scroll`. It should be changed from a **tab-strip** button/kebab, not a single tab's menu.
-- Clicking a file that's already open focuses the **most recently active** matching tab instance; duplication is explicit only.
-- Pinned tabs:
-  - stay left-aligned
-  - are protected from direct close
-  - survive `close all`
-  - show **Close** in the kebab as **disabled** (discoverability), rather than hiding the action entirely
-- Pinned-tab minimum visible contract before pinning is blocked:
-  - file-type icon
-  - truncated filename
-  - pin/unpin affordance
-  - kebab menu
-  - full filename recoverable by tooltip
-- Tooltip reveals the full filename for truncated tabs. On touch devices, provide a tap/long-press equivalent — don't rely on mouse-hover-only discovery.
+Visual reference: Chrome/Obsidian — active tab attached to content surface; crowded strip compresses by truncation, not by hiding semantics.
+
+### Ownership
+- **Tab-strip / workspace-level controls** live outside individual tab menus (overflow mode).
+- **Tab-level controls** stay inside the tab or its kebab (pin/unpin, duplicate, close).
+
+### Behavior (state from `frontend/src/lib/preview-tabs/`)
+- Overflow mode: `pagination` | `free horizontal scroll`; changed from **tab-strip settings** kebab, not per-tab menu. Persisted in `localStorage` (`sage_preview_tab_overflow_mode`).
+- Clicking a file that's already open focuses the **most recently active** matching tab; duplication is explicit only.
+- Pinned tabs: left cluster; protected from direct close; survive `close all`; kebab shows **Close** as **disabled** while pinned.
+
+### Layout: two regions
+```txt
+[ pinned lane ][ divider? ][ unpinned lane ][ strip settings ]
+```
+- Divider renders **only** when pinned tabs exist.
+- Pinned lane: fixed left; compresses first; may become icon-only; **last resort** independent horizontal scroll with auto-reveal for active pinned tab.
+- Unpinned lane: overflow per workspace preference; active tab always visible.
+
+### Width under pressure
+| Priority | Rule |
+|---|---|
+| Active tab | Stays wider than neighbors |
+| Pinned cluster | Compresses before unpinned region |
+| Pinned minimum | Icon-only acceptable at extreme compression; full name via tooltip; kebab always reachable |
+| Unpinned minimum | Icon + truncated filename longer than pinned icon-only stage |
+
+### Tab visuals
+- **Active:** elevated, connected to preview stage (`bg-background` continuity with panel body).
+- **Inactive:** lower contrast.
+- **Removed:** same tab shell; error styling; stage shows empty-state with destructive treatment.
+
+### Tooltips
+- Full filename on truncated tabs. Touch: long-press or focus equivalent — don't rely on hover-only.
+
+Implementation brief: [[FEAT-preview-tabs#Phase 7 — Tab-strip UI implementation brief (no viewers)]].
 
 ## Styling stack
 - Tailwind CSS 4 utility-first.
