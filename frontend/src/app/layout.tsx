@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "@vscode/codicons/dist/codicon.css";
+import { ToastProvider } from "@/components/providers/toast-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
@@ -16,7 +17,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="flex h-full flex-col overflow-hidden">
-        <TooltipProvider>{children}</TooltipProvider>
+        <TooltipProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </TooltipProvider>
       </body>
     </html>
   );

@@ -3,7 +3,7 @@ type: context
 status: active
 tags: [area/backend, area/frontend, area/product, priority/high]
 created: 2026-07-01
-updated: 2026-07-10
+updated: 2026-07-19
 related: ["[[Roadmap]]", "[[Architecture-Overview]]", "[[Sage-MVP-Functional-Spec]]", "[[FEAT-sage-mvp]]", "[[FEAT-sign-in]]", "[[FEAT-organization]]", "[[FEAT-app-shell-layout]]", "[[FEAT-configure-settings]]", "[[FEAT-file-upload]]", "[[UI-UX-Guidelines]]", "[[BUG-0001-ui-inconsistencies]]", "[[Workspace-UI-Design-Decisions]]", "[[Stacking-Contexts-and-Portals]]"]
 ---
 
@@ -72,7 +72,9 @@ Tracked in [[Sage-MVP-Functional-Spec#11. Open Items / Not Yet Decided]]:
 
 ## Recently changed
 
-- **2026-07-10** — Split Settings vs Configure chat modals. Configure: pill selectors (ghost/primary), intro "Customise your Assistance", Custom → textarea. Settings: General fields only (no instructions textarea). See [[FEAT-configure-settings]].
+- **2026-07-19** — Compact toasts: iOS-style `[icon | title + description]`, `py-2`, 2px icon gap, no muted disc; hover-only `X` overlay (top-left, slight overlap); toast action CTAs removed. See [[UI-UX-Guidelines#Toasts (application-owned)]].
+- **2026-07-12** — Pass B: global `ToastProvider`, `ToastViewport` (workspace ①), skeleton primitives + org table skeleton; Save → success toasts. Persistence TODO: [[TODO-settings-persistence]].
+- **2026-07-12** — Dialog shell Pass A: `FormDialog` / `ConfirmDialog`, `kind` form|confirm, sizes sm|lg, `SegmentedControl`, `Field*`, `useDialogDraft`. Settings floating panels; Configure chat migrated. See [[FEAT-configure-settings]], [[UI-UX-Guidelines#Surfaces (dialogs)]].
 - **2026-07-10** — Sign-in: Apple-style Passcode keypad (4 digits, letter sublabels), auto-submit, `lock.webm` (fail 0→1s / success 1s→end → `/`). Local demo stub `sage`/`1234` when no API URL. See [[FEAT-sign-in]].
 - **2026-07-09** — AI panel zero-state: no-docs acknowledges upload-first + CTA; chat input disabled until files exist ([[Workspace-UI-Design-Decisions#6. AI panel zero-state]]).
 - **2026-07-09** — Shell chrome: floating `rounded-2xl` panels on `bg-muted` well, 8px invisible gutters, middle panel same fill, disclaimer footer. Supersedes flush VS Code seams / 2px divider — see [[FEAT-app-shell-layout]], [[UI-UX-Guidelines]].

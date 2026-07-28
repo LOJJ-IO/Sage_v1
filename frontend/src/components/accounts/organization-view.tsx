@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AdminPrivilegesDialog } from "@/components/accounts/admin-privileges-dialog";
 import { AddAccountDialog } from "@/components/accounts/add-account-dialog";
+import { AccountsTableSkeleton } from "@/components/accounts/accounts-table-skeleton";
 import {
   AccountsTable,
   AddAccountButton,
 } from "@/components/accounts/accounts-table";
 import { ResetPinDialog } from "@/components/accounts/reset-pin-dialog";
+import { useToast } from "@/components/providers/toast-provider";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -35,10 +37,11 @@ import type {
 } from "@/lib/accounts/types";
 
 export function OrganizationView() {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const toast = useToast();
+  /** `undefined` = never loaded successfully; skeleton uses this, not fetch flags. */
+  const [accounts, setAccounts] = useState<Account[] | undefined>(undefined);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [bannerMessage, setBannerMessage] = useState<string | null>(null);
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [resetPinAccount, setResetPinAccount] = useState<Account | null>(null);
@@ -49,45 +52,51 @@ export function OrganizationView() {
   const [adminPrivilegesMode, setAdminPrivilegesMode] =
     useState<AdminPrivilegesMode | null>(null);
   const [isDeactivating, setIsDeactivating] = useState(false);
+  const hasAccountsRef = useRef(false);
 
   const refreshAccounts = useCallback(async () => {
-    setIsLoading(true);
+    if (hasAccountsRef.current) {
+      setIsRefreshing(true);
+    }
     setLoadError(null);
 
     try {
       const nextAccounts = await listAccounts();
       setAccounts(nextAccounts);
+      hasAccountsRef.current = true;
     } catch (error) {
       setLoadError(
         error instanceof Error ? error.message : "Unable to load accounts."
       );
+      toast.error({
+        title: "Could not load accounts",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+      });
     } finally {
-      setIsLoading(false);
+      setIsRefreshing(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     void refreshAccounts();
   }, [refreshAccounts]);
 
-  useEffect(() => {
-    if (!bannerMessage) {
-      return;
-    }
-
-    const timeout = window.setTimeout(() => setBannerMessage(null), 4000);
-    return () => window.clearTimeout(timeout);
-  }, [bannerMessage]);
-
   const handleCreateAccount = async (request: CreateAccountRequest) => {
     const account = await createAccount(request);
     await refreshAccounts();
-    setBannerMessage(`Created account for ${account.name}.`);
+    toast.success({
+      title: "Account created",
+      description: `${account.name} can sign in with their temporary PIN.`,
+    });
   };
 
   const handleResetPin = async (accountId: string, temporaryPin: string) => {
     await resetAccountPin(accountId, { temporary_pin: temporaryPin });
-    setBannerMessage("PIN reset. The account must change it on next sign-in.");
+    toast.info({
+      title: "PIN reset",
+      description: "The account must change it on next sign-in.",
+    });
   };
 
   const handleDeactivate = async () => {
@@ -100,12 +109,19 @@ export function OrganizationView() {
     try {
       await deactivateAccount(deactivateAccountTarget.id);
       await refreshAccounts();
-      setBannerMessage(`${deactivateAccountTarget.username} was deactivated.`);
+      toast.success({
+        title: "Account deactivated",
+        description: `${deactivateAccountTarget.username} can no longer sign in.`,
+      });
       setDeactivateAccountTarget(null);
     } catch (error) {
-      setLoadError(
-        error instanceof Error ? error.message : "Unable to deactivate account."
-      );
+      const message =
+        error instanceof Error ? error.message : "Unable to deactivate account.";
+      setLoadError(message);
+      toast.error({
+        title: "Could not deactivate account",
+        description: message,
+      });
     } finally {
       setIsDeactivating(false);
     }
@@ -115,11 +131,18 @@ export function OrganizationView() {
     try {
       await reactivateAccount(account.id);
       await refreshAccounts();
-      setBannerMessage(`${account.username} was reactivated.`);
+      toast.success({
+        title: "Account reactivated",
+        description: `${account.username} can sign in again.`,
+      });
     } catch (error) {
-      setLoadError(
-        error instanceof Error ? error.message : "Unable to reactivate account."
-      );
+      const message =
+        error instanceof Error ? error.message : "Unable to reactivate account.";
+      setLoadError(message);
+      toast.error({
+        title: "Could not reactivate account",
+        description: message,
+      });
     }
   };
 
@@ -135,7 +158,10 @@ export function OrganizationView() {
     if (adminPrivilegesMode === "grant") {
       const account = await grantAdminPrivileges(accountId, { admin_pin: adminPin });
       await refreshAccounts();
-      setBannerMessage(`${account.name} now has admin privileges.`);
+      toast.success({
+        title: "Admin privileges granted",
+        description: `${account.name} can manage organization settings.`,
+      });
       return;
     }
 
@@ -144,7 +170,10 @@ export function OrganizationView() {
         admin_pin: adminPin,
       });
       await refreshAccounts();
-      setBannerMessage(`${account.name} no longer has admin privileges.`);
+      toast.success({
+        title: "Admin privileges removed",
+        description: `${account.name} is now a staff account.`,
+      });
     }
   };
 
@@ -154,7 +183,7 @@ export function OrganizationView() {
         <div className="space-y-2">
           <Link
             aria-label="Back to workspace"
-            className="-ml-2 inline-flex size-8 items-center justify-center rounded-md text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="-ml-2 inline-flex size-8 items-center justify-center rounded-md text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             href="/"
           >
             <span
@@ -175,15 +204,6 @@ export function OrganizationView() {
         <AddAccountButton onClick={() => setAddDialogOpen(true)} />
       </div>
 
-      {bannerMessage ? (
-        <div
-          className="mb-4 rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground"
-          role="status"
-        >
-          {bannerMessage}
-        </div>
-      ) : null}
-
       {loadError ? (
         <div
           className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
@@ -203,22 +223,30 @@ export function OrganizationView() {
         </div>
       ) : null}
 
-      {isLoading ? (
-        <div className="rounded-2xl border border-border bg-card px-4 py-12 text-center text-sm text-muted-foreground">
-          Loading accounts…
+      {accounts === undefined && loadError === null ? (
+        <div role="status">
+          <span className="sr-only">Loading accounts</span>
+          <AccountsTableSkeleton />
         </div>
-      ) : (
-        <AccountsTable
-          accounts={accounts}
-          onDeactivate={setDeactivateAccountTarget}
-          onGrantAdmin={(account) => openAdminPrivilegesDialog(account, "grant")}
-          onReactivate={handleReactivate}
-          onResetPin={setResetPinAccount}
-          onRevokeAdmin={(account) =>
-            openAdminPrivilegesDialog(account, "revoke")
-          }
-        />
-      )}
+      ) : accounts !== undefined ? (
+        <>
+          {isRefreshing ? (
+            <p className="mb-2 text-xs text-muted-foreground" role="status">
+              Syncing accounts…
+            </p>
+          ) : null}
+          <AccountsTable
+            accounts={accounts}
+            onDeactivate={setDeactivateAccountTarget}
+            onGrantAdmin={(account) => openAdminPrivilegesDialog(account, "grant")}
+            onReactivate={handleReactivate}
+            onResetPin={setResetPinAccount}
+            onRevokeAdmin={(account) =>
+              openAdminPrivilegesDialog(account, "revoke")
+            }
+          />
+        </>
+      ) : null}
 
       <AddAccountDialog
         onOpenChange={setAddDialogOpen}

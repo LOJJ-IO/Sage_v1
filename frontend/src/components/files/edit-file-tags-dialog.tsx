@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import type { FormEvent } from "react";
+import { useEffect, useState } from "react";
+
+import { useToast } from "@/components/providers/toast-provider";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +46,7 @@ export function EditFileTagsDialog({
   onOpenChange,
   onSubmit,
 }: EditFileTagsDialogProps) {
+  const toast = useToast();
   const [tagsInput, setTagsInput] = useState("");
 
   useEffect(() => {
@@ -67,6 +71,7 @@ export function EditFileTagsDialog({
     }
 
     onSubmit(file.id, parseTagsInput(tagsInput));
+    toast.success({ title: "Tags saved" });
     handleOpenChange(false);
   };
 

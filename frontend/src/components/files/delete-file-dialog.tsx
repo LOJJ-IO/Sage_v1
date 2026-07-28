@@ -1,14 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/components/providers/toast-provider";
 import type { LibraryFile } from "@/lib/file-upload";
 
 type DeleteFileDialogProps = {
@@ -24,42 +17,31 @@ export function DeleteFileDialog({
   onOpenChange,
   onConfirm,
 }: DeleteFileDialogProps) {
-  return (
-    <Dialog onOpenChange={onOpenChange} open={open}>
-      {open && file ? (
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete file</DialogTitle>
-            <DialogDescription>
-              <span className="font-medium text-foreground">
-                {file.file.name}
-              </span>{" "}
-              will be removed for everyone, including bookmarks and personal
-              folder placements. This cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
+  const toast = useToast();
 
-          <DialogFooter>
-            <Button
-              onClick={() => onOpenChange(false)}
-              type="button"
-              variant="outline"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                onConfirm(file.id);
-                onOpenChange(false);
-              }}
-              type="button"
-              variant="destructive"
-            >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      ) : null}
-    </Dialog>
+  if (!open || !file) {
+    return null;
+  }
+
+  return (
+    <ConfirmDialog
+      confirmLabel="Delete"
+      description={
+        <>
+          <span className="font-medium text-foreground">
+            {file.file.name}
+          </span>{" "}
+          will be removed for everyone, including bookmarks and personal folder
+          placements. This cannot be undone.
+        </>
+      }
+      onConfirm={() => {
+        onConfirm(file.id);
+        toast.success({ title: "File deleted" });
+      }}
+      onOpenChange={onOpenChange}
+      open={open}
+      title="Delete file"
+    />
   );
 }

@@ -3,7 +3,7 @@ type: product
 status: active
 tags: [area/frontend, area/design]
 created: 2026-07-01
-updated: 2026-07-09
+updated: 2026-07-19
 related: ["[[Product-Vision]]", "[[FEAT-app-shell-layout]]", "[[Reusable-Patterns]]", "[[Workspace-UI-Design-Decisions]]"]
 ---
 
@@ -158,6 +158,49 @@ Collapse all:
 ## Styling stack
 - Tailwind CSS 4 utility-first.
 - Do not introduce a second styling system without an ADR.
+
+## Surfaces (dialogs)
+
+**Primary axis: `kind`** — not size.
+
+| Kind | Footer | X button |
+|---|---|---|
+| `form` | **Discard** + **Save** | Discards draft |
+| `confirm` | **Cancel** + `{Verb}` | Cancel (safe exit) |
+
+**Secondary axis: `size`**
+
+| Size | Width | Use |
+|---|---|---|
+| `sm` | `max-w-md` | Configure chat, confirms |
+| `lg` | `max-w-2xl` | Settings (floating nav + content panels) |
+
+**Shell structure:** Header (fixed) → Body (scroll) → Footer (fixed). Legacy `DialogContent` (no `variant="shell"`) unchanged for older dialogs until migrated.
+
+**Fields:** `FieldInput` / `FieldTextArea` — `rounded-full`, `border-border`, `shadow-sm`, `ring-2` on focus.
+
+**Segmented control:** `outline` unselected / `default` selected; 2 options → `HeaderIconGroup`-style shell + divider; 3+ → wrap row.
+
+**Copy:** American English.
+
+## Toasts (application-owned)
+
+- **Provider:** `ToastProvider` in `layout.tsx` — global, not Ask-panel-owned
+- **Viewport:** `ToastViewport` in workspace right column (position ①); fallback `fixed top-14 right-4` on other routes
+- **Stack:** max 3; 4s auto-dismiss (hover pauses); **errors sticky**
+- **Layout:** compact iOS-style row — `[icon | title + description]`; `py-2`; icon↔text gap `2px`; no muted icon disc; `rounded-2xl`; fixed width, height grows with content; stack grows downward
+- **Dismiss:** hover-only `X` overlay, slightly overlapping top-left corner (`aria-label="Dismiss"`; visible on focus too)
+- **No toast action buttons** — keep CTAs in-page / dialogs
+- **Variants:** `success`, `error`, `info`, `progress` (+ `update` for progress)
+- **API:** `useToast()` → `.success()`, `.error()`, `.info()`, `.progress()`, `.dismiss()`
+
+## Skeletons
+
+- **Primitive:** `Skeleton` — `animate-pulse`, `rounded-full`, `aria-hidden`
+- **Pairs:** `FileListSkeleton`, `SettingsFormSkeleton`, `AccountsTableSkeleton`
+- **Rule:** parent owns fetch/state; skeleton is UI-only. Branch on **data state** (`data === undefined` → skeleton); use `isRefreshing` only when data already exists. Never `isLoading` flags in `try/finally`.
+
+**Deferred:** popover forms. Persistence: [[TODO-settings-persistence]].
 
 ## Design principles (emerging)
 - **Floating panel chrome** — rounded panels on a muted well with invisible gutters (NotebookLM-inspired); icons/tooltips/resize behavior still lean VS Code / Cursor.

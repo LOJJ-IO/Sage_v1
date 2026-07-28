@@ -25,7 +25,7 @@ export function ProfileMenu({ onOpenSettings }: ProfileMenuProps) {
         render={
           <button
             aria-label="Settings"
-            className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             onClick={() => {
               setTooltipOpen(false);
               onOpenSettings();

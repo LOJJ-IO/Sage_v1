@@ -3,7 +3,7 @@ type: pattern
 status: active
 tags: [area/frontend]
 created: 2026-07-01
-updated: 2026-07-09
+updated: 2026-07-12
 related: ["[[Coding-Standards]]", "[[UI-UX-Guidelines]]", "[[FEAT-app-shell-layout]]", "[[Lessons-Learned]]", "[[Stacking-Contexts-and-Portals]]"]
 ---
 
@@ -110,6 +110,49 @@ const { files, error, openFilePicker, inputRef, inputProps } = useFileLibrary();
 **Supported (v1):** PDF, DOCX, TXT, MD, JPEG/PNG/WebP/GIF — 25 MB each. Legacy `.doc` rejected. See [[FEAT-file-upload]].
 **Note:** `File` objects in React state only — lost on refresh. No API/disk until FastAPI.
 **Don't use when:** persistence, extraction, or admin gating is required — need backend.
+
+### Form dialog shell (`kind="form"`)
+**Use when:** any editable modal with Discard + Save.
+**Example:** `FormDialog` in `frontend/src/components/ui/form-dialog.tsx`; `ConfigureChatDialog`, `SettingsDialog`.
+**Shape:**
+```tsx
+<FormDialog
+  open={open}
+  onOpenChange={setOpen}
+  title="…"
+  description="…"
+  size="sm" | "lg"
+  onDiscard={resetDraft}
+  onSave={handleSave}
+  isSaving={isSaving}
+>
+  {children}
+</FormDialog>
+```
+**Draft:** `useDialogDraft` + `useDialogOpenSync` — snapshot on open, Discard/X reverts, Save commits.
+**Don't use when:** destructive confirm only — use `ConfirmDialog`.
+
+### Confirm dialog shell (`kind="confirm"`)
+**Use when:** irreversible or high-stakes action with no user draft.
+**Example:** `ConfirmDialog` in `frontend/src/components/ui/confirm-dialog.tsx`; `DeleteFileDialog`.
+**Footer:** Cancel (autoFocus, safe) + destructive `{Verb}`.
+**Don't use when:** user edited fields — use `FormDialog`.
+
+### SegmentedControl
+**Use when:** mutually exclusive pill options in a form.
+**Example:** `frontend/src/components/ui/segmented-control.tsx` — Configure chat goal/length.
+**2 options:** single pill shell + inner divider (like Organization | Settings). **3+:** wrap row of outline/default buttons.
+
+### Toast notifications
+**Use when:** post-commit feedback (Save succeeded), background info, or sticky errors.
+**Example:** `ToastProvider` + `useToast()`; viewport in `page.tsx` right column.
+**Don't use when:** in-form validation — use inline errors; destructive confirms — use `ConfirmDialog`.
+
+### Skeleton pairs
+**Use when:** a data boundary has no initial data yet.
+**Example:** `AccountsTableSkeleton` when `accounts === undefined` in `OrganizationView`; `FileListSkeleton` when `files === undefined` (future API).
+**Rule:** branch on **data availability** (`undefined` = not ready), not `isLoading` flags tied to fetch start/end. Use `isRefreshing` only when cached data exists. Skeleton components never fetch.
+**Don't put fetch logic inside skeleton components.**
 
 ### Tabler icon in Codicon toolbar
 **Use when:** Codicons doesn't have the icon you need.

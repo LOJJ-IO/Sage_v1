@@ -18,6 +18,7 @@ import { FileLibraryPanel } from "@/components/files/file-library-panel";
 import { ProfileMenu } from "@/components/auth/profile-menu";
 import { ConfigureChatDialog } from "@/components/settings/configure-chat-dialog";
 import { SettingsDialog } from "@/components/settings/settings-dialog";
+import { ToastViewport } from "@/components/providers/toast-provider";
 import { Button } from "@/components/ui/button";
 import { useFileLibrary } from "@/hooks/use-file-library";
 import { getUserRole } from "@/lib/auth/session";
@@ -221,7 +222,7 @@ function HeaderIconButton({
         render={
           <button
             aria-label={label}
-            className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             onClick={onClick}
             type="button"
           />
@@ -461,7 +462,9 @@ export default function Home() {
             />
           ) : null}
         </div>
-        <section className={PANEL_SURFACE}>
+        <div className="relative min-h-0 min-w-0">
+          <ToastViewport />
+          <section className={PANEL_SURFACE}>
           <header className="flex min-w-0 h-14 w-full shrink-0 items-center gap-2 border-b border-border px-2">
             <input
               aria-label="Chat title"
@@ -496,6 +499,7 @@ export default function Home() {
           </div>
           <AskAiChatInput hasFiles={files.length > 0} />
         </section>
+        </div>
       </div>
 
       <footer className="shrink-0 px-2 py-1.5 text-center text-xs text-muted-foreground">
