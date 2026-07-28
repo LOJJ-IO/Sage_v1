@@ -3,7 +3,7 @@ type: product
 status: active
 tags: [area/frontend, area/design]
 created: 2026-07-01
-updated: 2026-07-27
+updated: 2026-07-28
 related: ["[[Product-Vision]]", "[[FEAT-app-shell-layout]]", "[[Reusable-Patterns]]", "[[Workspace-UI-Design-Decisions]]"]
 ---
 
@@ -154,6 +154,26 @@ Centered horizontally (`flex justify-center`) — stays centered as panel resize
 Collapse all:
 - `codicon-collapse-all`, tooltip **Collapse all**
 - Collapses all folders in the file tree (VS Code convention). UI only until file tree exists; no `onClick` wired yet.
+
+## Preview tab strip
+
+- Ownership split:
+  - **Tab-strip / workspace-level controls** live outside individual tab menus (example: overflow mode).
+  - **Tab-level controls** stay inside the tab or its kebab (pin/unpin, duplicate, close).
+- Overflow mode is a workspace preference with two options: `pagination` and `free horizontal scroll`. It should be changed from a **tab-strip** button/kebab, not a single tab's menu.
+- Clicking a file that's already open focuses the **most recently active** matching tab instance; duplication is explicit only.
+- Pinned tabs:
+  - stay left-aligned
+  - are protected from direct close
+  - survive `close all`
+  - show **Close** in the kebab as **disabled** (discoverability), rather than hiding the action entirely
+- Pinned-tab minimum visible contract before pinning is blocked:
+  - file-type icon
+  - truncated filename
+  - pin/unpin affordance
+  - kebab menu
+  - full filename recoverable by tooltip
+- Tooltip reveals the full filename for truncated tabs. On touch devices, provide a tap/long-press equivalent — don't rely on mouse-hover-only discovery.
 
 ## Styling stack
 - Tailwind CSS 4 utility-first.

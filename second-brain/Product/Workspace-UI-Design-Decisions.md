@@ -3,7 +3,7 @@ type: product
 status: active
 tags: [area/product, area/design, area/frontend]
 created: 2026-07-03
-updated: 2026-07-06
+updated: 2026-07-28
 related: ["[[Product-Vision]]", "[[UI-UX-Guidelines]]", "[[FEAT-app-shell-layout]]", "[[Current-Context]]", "[[Sage-MVP-Functional-Spec]]", "[[0007-boutique-retail-mvp-beachhead]]"]
 ---
 
@@ -52,10 +52,33 @@ The app is a **workspace shell**, not a document viewer. Three panels (file tree
 - **Also:** the empty center should be a drag-and-drop target for files.
 - **Note:** if the dock isn't visible on first load, the workspace concept is invisible — dock visibility is a prerequisite for users intuiting "drag apps into panels."
 
-### 2. Tab model (center panel)
-- Cursor/VS Code-style tabs. An empty tab bar (or "+" tab) on first load signals "things open here" without copy.
-- **Tab cap:** groups of 3 visible, navigate left/right between groups. (Chosen over VS Code preview-tab behavior — simpler to build, closer to browser expectations for non-technical users.)
-- Hotel staff are not tab-hygiene people; the cap prevents 15-tab sprawl.
+### 2. Tab model (center panel / file previewer)
+- Cursor/Chrome-inspired tabs in the middle preview stage. An empty tab bar on first load still helps signal "opened things live here," but the operational model is now explicit:
+  - Clicking a file that's already open **focuses** the most recently active matching tab instance; it does **not** duplicate automatically.
+  - **Duplicate tab** is explicit only (menu action), never implicit.
+  - Multiple tab instances may point at the same underlying file resource, but each tab instance owns independent `viewState` (zoom / page / scroll). Duplicating copies the source tab's current `viewState`.
+  - Closing the active tab activates the nearest tab to the **left**, else the nearest tab to the **right**.
+- **Pinned tabs**
+  - Pinned tabs stay on the left.
+  - Pinning is a **tab-instance** property, not a file/resource property.
+  - Pinned tabs are protected: they survive `close all`, cannot be directly closed, and must be explicitly unpinned before close.
+  - For discoverability, pinned-tab kebab menus still show **Close**, but in a disabled state.
+  - No arbitrary numeric cap for now; pinning is allowed until pinned-tab layout would violate the minimum usable render contract below.
+- **Removed files**
+  - If an open file is deleted/replaced out from under the tab, the tab becomes a removed/error state instead of auto-closing.
+  - Removed tabs cannot be duplicated.
+- **Overflow behavior**
+  - Active tab must always be brought into view.
+  - Overflow mode is a **tab-strip/workspace preference**, not a per-tab setting.
+  - MVP supports two overflow modes: `pagination` and `free horizontal scroll`.
+  - Overflow preference should survive refresh via browser storage; open tabs themselves do **not** need refresh persistence in MVP.
+- **Minimum usable pinned-tab render contract**
+  - file-type icon
+  - truncated filename
+  - pin/unpin affordance
+  - kebab menu
+  - full filename available via tooltip
+  - Pinned tabs may shrink only down to the minimum width that still fits the elements above.
 
 ### 3. Apps in the workspace — tabs vs. replace
 - **Original plan:** dragging an app into the middle removes the file previewer.
@@ -89,8 +112,9 @@ The app is a **workspace shell**, not a document viewer. Three panels (file tree
 - **Leave room for a property/team switcher** in this menu — needed once multi-property groups (Hotel Equities-type) sign.
 
 ### 8. State persistence
-- Reopening the workspace must restore the tab set. Invisible feature; its absence is felt immediately in an all-shift daily driver.
-- **Open question (decide before building):** persistence per *login* vs. per *desk*. Front desk terminals are shared workstations — "restore your state" needs a data-model answer: user-tied state with real login switching, or a shared per-desk "property workspace."
+- Reopening the workspace does **not** need to restore the open tab set in MVP.
+- What *does* persist in MVP: the tab-strip overflow preference (`pagination` vs `free horizontal scroll`) via browser storage, because re-selecting it on every refresh is needless friction.
+- Per-login vs. per-desk persistence remains a future design question for richer workspace state, but it is intentionally out of scope for the preview-tab MVP.
 
 ### 9. Highest-leverage overall fix
 - Design the zero-state as **one coherent flow** across all three panels (empty viewer points to upload → AI panel explains it activates after upload) instead of three panels each pretending the others don't exist. Zero-state is the beta hotels' first impression.
@@ -114,7 +138,7 @@ Patterns to design against — validate against firsthand front-desk experience:
 ## Open items
 
 - [ ] Final call: apps as tabs (option 1) vs. stage-takeover with surviving tab strip (option 2)
-- [ ] Per-desk vs. per-login state persistence data model
+- [ ] If/when tab restoration returns post-MVP, decide per-login vs. per-desk workspace persistence data model
 - [ ] Dock visibility on first load
 - [ ] Demo/sample SOP seeded for new workspaces
 - [x] Replace collapse-all icon — `codicon-collapse-all` in left panel header (2026-07-06)

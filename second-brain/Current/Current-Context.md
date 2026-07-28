@@ -1,10 +1,10 @@
 ---
 type: current-context
 status: active
-tags: [priority/high, area/infra]
+tags: [priority/high, area/infra, area/frontend]
 created: 2026-07-20
-updated: 2026-07-27
-related: ["[[Deployment-Notes]]", "[[Known-Issues]]", "[[Lessons-Learned]]", "[[UI-UX-Guidelines]]"]
+updated: 2026-07-28
+related: ["[[Deployment-Notes]]", "[[Known-Issues]]", "[[Lessons-Learned]]", "[[UI-UX-Guidelines]]", "[[Workspace-UI-Design-Decisions]]"]
 ---
 
 # Current Context
@@ -24,6 +24,7 @@ False "not enough grounded information" refusals on production — usually spars
 - Merged `origin/tolu-implementations` into `main` (2026-07-27): kept compact toasts + FormDialog settings shell; added ThemeProvider / Settings Theme tab.
 - Toasts now portal to `document.body` at `z-[100]` (were invisible under dialogs / clipped in Ask column). See [[UI-UX-Guidelines#Toasts (application-owned)]].
 - Toast host right inset fixed: `right-4` → `right-2` in `toast-provider.tsx`, to match the `px-2` inset shared by the header icon row and content grid — toast right edge was visibly misaligned with them. See [[Lessons-Learned]].
+- Preview-stage tab design direction clarified for MVP: client-owned workspace tab store; clicking an already-open file focuses the existing tab; duplication is explicit only; duplicate tab instances may share a resource but own independent `viewState` (zoom/page/scroll); pinned tabs stay left and are protected (must unpin before close, survive `close all`); removed files become removed/error tabs instead of auto-closing; overflow mode is a tab-strip/workspace preference (`scroll` vs `pagination`) persisted via `localStorage`; pinned tabs may compress only down to icon + truncated filename + pin/unpin affordance + kebab, with full filename via tooltip. Durable note: [[Workspace-UI-Design-Decisions]].
 
 ## Still open
 1. User: re-upload **text-based** policy docs (`.txt` / `.md` / text PDF / `.docx`) for any store still refusing; delete scanned "Ready" files that can't be answered.
@@ -32,3 +33,4 @@ False "not enough grounded information" refusals on production — usually spars
 4. Optional cleanup: `front.html` and `.railway-config-pull-*` landed in `f01c190` — remove in a follow-up commit if undesired.
 5. Dockerfile still reinstalls all dependencies (including CPU torch) from scratch on every deploy — `COPY app ./app` happens before `RUN pip install .`, invalidating Docker's build cache on every code change. Not urgent now that images push quickly, but worth reordering (stub-package install trick) if build times become annoying.
 6. Local dev DB (`backend/.devdb`, port 55432) needs to be started manually (`pgsql/bin/pg_ctl.exe -D ./data -l ./pg.log -o "-p 55432" start`) before running the backend test suite locally — it doesn't survive a machine restart.
+7. Translate the tab-previewer design into an implementation-ready reducer/state-machine plan + tests before coding the middle-pane preview tabs, so the rules for pinning, duplication, removed tabs, and overflow ownership don't get re-derived ad hoc during implementation.

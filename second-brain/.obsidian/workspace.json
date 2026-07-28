@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Architecture/Tech-Stack.md",
+                "file": "Product/UI-UX-Guidelines.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Tech-Stack"
+              "title": "UI-UX-Guidelines"
             }
           },
           {
@@ -181,12 +181,16 @@
   },
   "active": "b2649c847a6770ea",
   "lastOpenFiles": [
+    "Architecture/Architecture-Overview.md",
+    "Templates/Daily-Note.md",
+    "Untitled.base",
+    "Current/Current-Context.md",
+    "Architecture/Tech-Stack.md",
+    "Daily/2026-07-28.md",
     "00-Home.md",
     "Engineering/Prompt-Library.md",
     "Architecture/Database-Schema.md",
     "Product/Features/FEAT-file-upload.md",
-    "Current/Current-Context.md",
-    "Templates/Daily-Note.md",
     "Daily/2026-07-07.md",
     "Engineering/Stacking-Contexts-and-Portals.md",
     "Product/Features/FEAT-sage-mvp.md",
@@ -204,9 +208,6 @@
     "Engineering/Bugs.md",
     "BUG-NNNN-xxx.md",
     "Templates/Bug-Report.md",
-    "Templates/ADR.md",
-    "Product/UI-UX-Guidelines.md",
-    "Daily/2026-07-03.md",
     "Inbox"
   ]
 }
