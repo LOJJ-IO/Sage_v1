@@ -13,7 +13,7 @@ related: ["[[FEAT-app-shell-layout]]", "[[FEAT-sign-in]]", "[[UI-UX-Guidelines]]
 `in-progress` — split modals shipped; Reset PIN flow pending.
 
 ## Problem
-Staff need workspace settings (profile, account) and per-chat configuration (goal, response length) without leaving the shell. Organization admin stays on `/organization`.
+Staff need workspace settings (profile, account) and per-chat configuration (goal, response length) without leaving the shell. Organization admin opens as a header dialog (same shell as Settings).
 
 ## Solution
 **Two modals**:

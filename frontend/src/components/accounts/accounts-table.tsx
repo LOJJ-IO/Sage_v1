@@ -11,6 +11,14 @@ import {
 } from "@/components/accounts/account-role-badge";
 import { AccountRowMenu } from "@/components/accounts/account-row-menu";
 import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import type { Account } from "@/lib/accounts/types";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +29,44 @@ type AccountsTableProps = {
   onRevokeAdmin: (account: Account) => void;
   onDeactivate: (account: Account) => void;
   onReactivate: (account: Account) => void;
+  onAddAccount?: () => void;
 };
+
+const EMPTY_ICON_SIZE = 16;
+const EMPTY_ICON_STROKE = 2.2;
+
+function AccountsEmptyState({ onAddAccount }: { onAddAccount?: () => void }) {
+  return (
+    <Empty className="border-none px-4 py-10">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <IconUsers
+            aria-hidden="true"
+            size={EMPTY_ICON_SIZE}
+            stroke={EMPTY_ICON_STROKE}
+          />
+        </EmptyMedia>
+        <EmptyTitle>No accounts yet</EmptyTitle>
+        <EmptyDescription>
+          Add your first team member to give them access to Sage on the store
+          floor.
+        </EmptyDescription>
+      </EmptyHeader>
+      {onAddAccount ? (
+        <EmptyContent>
+          <Button onClick={onAddAccount} size="sm" type="button">
+            <IconPlus
+              aria-hidden="true"
+              className="size-3.5"
+              stroke={EMPTY_ICON_STROKE}
+            />
+            Add account
+          </Button>
+        </EmptyContent>
+      ) : null}
+    </Empty>
+  );
+}
 
 function rowCellClass(extra?: string) {
   return cn("px-4 py-3", extra);
@@ -34,20 +79,12 @@ export function AccountsTable({
   onRevokeAdmin,
   onDeactivate,
   onReactivate,
+  onAddAccount,
 }: AccountsTableProps) {
   if (accounts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border px-6 py-16 text-center">
-        <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-muted text-foreground">
-          <IconUsers aria-hidden="true" className="size-6" stroke={2.2} />
-        </div>
-        <h2 className="font-heading text-base font-medium text-foreground">
-          No accounts yet
-        </h2>
-        <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-          Add your first team member to give them access to Sage on the store
-          floor.
-        </p>
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        <AccountsEmptyState onAddAccount={onAddAccount} />
       </div>
     );
   }
@@ -64,13 +101,13 @@ export function AccountsTable({
               <th className="px-4 py-3 font-medium text-muted-foreground">
                 Username
               </th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">
+              <th className="whitespace-nowrap px-4 py-3 font-medium text-muted-foreground">
                 Role
               </th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">
+              <th className="whitespace-nowrap px-4 py-3 font-medium text-muted-foreground">
                 Created
               </th>
-              <th className="px-4 py-3 text-right font-medium text-muted-foreground">
+              <th className="w-0 whitespace-nowrap py-3 pl-2 pr-3 text-right font-medium text-muted-foreground">
                 <span className="sr-only">Actions</span>
               </th>
             </tr>
@@ -98,7 +135,7 @@ export function AccountsTable({
                 >
                   {account.username}
                 </td>
-                <td className={rowCellClass()}>
+                <td className={rowCellClass("whitespace-nowrap")}>
                   <AccountRoleBadges
                     account={account}
                     inactive={!account.is_active}
@@ -106,12 +143,12 @@ export function AccountsTable({
                 </td>
                 <td
                   className={rowCellClass(
-                    inactiveTextClass(account.is_active)
+                    cn("whitespace-nowrap", inactiveTextClass(account.is_active))
                   )}
                 >
                   {formatAccountDate(account.created_at)}
                 </td>
-                <td className="px-4 py-3">
+                <td className="w-0 whitespace-nowrap py-3 pl-2 pr-3 text-right">
                   <AccountRowMenu
                     account={account}
                     onDeactivate={onDeactivate}

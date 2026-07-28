@@ -2,13 +2,11 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-
-import { AdminPrivilegesDialog } from "@/components/accounts/admin-privileges-dialog";
 import { AddAccountDialog } from "@/components/accounts/add-account-dialog";
+import { AdminPrivilegesDialog } from "@/components/accounts/admin-privileges-dialog";
 import { AccountsTableSkeleton } from "@/components/accounts/accounts-table-skeleton";
 import {
   AccountsTable,
-  AddAccountButton,
 } from "@/components/accounts/accounts-table";
 import { ResetPinDialog } from "@/components/accounts/reset-pin-dialog";
 import { useToast } from "@/components/providers/toast-provider";
@@ -36,7 +34,12 @@ import type {
   CreateAccountRequest,
 } from "@/lib/accounts/types";
 
-export function OrganizationView() {
+type OrganizationViewProps = {
+  /** When false, skip fetching (dialog closed). */
+  active?: boolean;
+};
+
+export function OrganizationView({ active = true }: OrganizationViewProps) {
   const toast = useToast();
   /** `undefined` = never loaded successfully; skeleton uses this, not fetch flags. */
   const [accounts, setAccounts] = useState<Account[] | undefined>(undefined);
@@ -79,8 +82,12 @@ export function OrganizationView() {
   }, [toast]);
 
   useEffect(() => {
+    if (!active) {
+      return;
+    }
+
     void refreshAccounts();
-  }, [refreshAccounts]);
+  }, [active, refreshAccounts]);
 
   const handleCreateAccount = async (request: CreateAccountRequest) => {
     const account = await createAccount(request);
@@ -177,33 +184,44 @@ export function OrganizationView() {
     }
   };
 
-  return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
-      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-2">
-          <Link
-            aria-label="Back to workspace"
-            className="-ml-2 inline-flex size-8 items-center justify-center rounded-md text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-            href="/"
-          >
-            <span
-              aria-hidden="true"
-              className="codicon codicon-chevron-left text-foreground [-webkit-text-stroke:0.35px_currentColor]"
-              style={{ fontSize: 20 }}
-            />
-          </Link>
-          <div>
-            <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground">
-              Organization
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Create accounts, reset PINs, and deactivate staff access.
-            </p>
-          </div>
-        </div>
-        <AddAccountButton onClick={() => setAddDialogOpen(true)} />
-      </div>
+  const renderAccountsContent = () => {
+    if (accounts === undefined) {
+      if (loadError) {
+        return null;
+      }
 
+      return (
+        <div role="status">
+          <span className="sr-only">Loading accounts</span>
+          <AccountsTableSkeleton />
+        </div>
+      );
+    }
+
+    return (
+      <>
+        {isRefreshing ? (
+          <p className="mb-2 text-xs text-muted-foreground" role="status">
+            Syncing accounts…
+          </p>
+        ) : null}
+        <AccountsTable
+          accounts={accounts}
+          onAddAccount={() => setAddDialogOpen(true)}
+          onDeactivate={setDeactivateAccountTarget}
+          onGrantAdmin={(account) => openAdminPrivilegesDialog(account, "grant")}
+          onReactivate={handleReactivate}
+          onResetPin={setResetPinAccount}
+          onRevokeAdmin={(account) =>
+            openAdminPrivilegesDialog(account, "revoke")
+          }
+        />
+      </>
+    );
+  };
+
+  return (
+    <>
       {loadError ? (
         <div
           className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
@@ -223,30 +241,7 @@ export function OrganizationView() {
         </div>
       ) : null}
 
-      {accounts === undefined && loadError === null ? (
-        <div role="status">
-          <span className="sr-only">Loading accounts</span>
-          <AccountsTableSkeleton />
-        </div>
-      ) : accounts !== undefined ? (
-        <>
-          {isRefreshing ? (
-            <p className="mb-2 text-xs text-muted-foreground" role="status">
-              Syncing accounts…
-            </p>
-          ) : null}
-          <AccountsTable
-            accounts={accounts}
-            onDeactivate={setDeactivateAccountTarget}
-            onGrantAdmin={(account) => openAdminPrivilegesDialog(account, "grant")}
-            onReactivate={handleReactivate}
-            onResetPin={setResetPinAccount}
-            onRevokeAdmin={(account) =>
-              openAdminPrivilegesDialog(account, "revoke")
-            }
-          />
-        </>
-      ) : null}
+      {renderAccountsContent()}
 
       <AddAccountDialog
         onOpenChange={setAddDialogOpen}
@@ -317,6 +312,6 @@ export function OrganizationView() {
           </DialogContent>
         ) : null}
       </Dialog>
-    </div>
+    </>
   );
 }

@@ -192,7 +192,34 @@ Visual reference: Chrome/Obsidian — active tab attached to content surface; cr
 ### Tooltips
 - Full filename on truncated tabs. Touch: long-press or focus equivalent — don't rely on hover-only.
 
-Implementation brief: [[FEAT-preview-tabs#Phase 7 — Tab-strip UI implementation brief (no viewers)]].
+### Empty states (all panels / standalone views)
+Use the shared `Empty` primitives from `@/components/ui/empty` — same structure everywhere:
+
+```tsx
+<Empty className="h-full border-none px-4">  // h-full when filling a panel body
+  <EmptyHeader>
+    <EmptyMedia variant="icon">{icon}</EmptyMedia>
+    <EmptyTitle>…</EmptyTitle>
+    <EmptyDescription>…</EmptyDescription>
+  </EmptyHeader>
+  <EmptyContent>{optional CTA Button}</EmptyContent>
+</Empty>
+```
+
+Canonical examples: `FilesEmptyState` / `AskAiEmptyState` in `page.tsx`; `AccountsEmptyState` in `accounts-table.tsx`. Do **not** hand-roll dashed boxes with custom heading sizes — icon disc, title weight, and description color come from the shared component.
+
+**Organization accounts — three mutually exclusive states** (see `organization-view.tsx`):
+
+| State | Condition | UI |
+|---|---|---|
+| Loading | `accounts === undefined` && no load error | `AccountsTableSkeleton` (pulse) |
+| Empty | `accounts.length === 0` after load | `AccountsEmptyState` in bordered card — **no ghost rows** |
+| Populated | `accounts.length > 0` | Real table |
+
+Use `accounts === undefined` for first load — not `accounts.length === 0` — so an empty array never renders while data is still in flight.
+
+- **Loading skeleton** (`AccountsTableSkeleton`) = data incoming → `animate-pulse`.
+- **Empty** = shared `Empty` only; do not stack an empty overlay on ghost/skeleton rows.
 
 ## Styling stack
 - Tailwind CSS 4 utility-first.

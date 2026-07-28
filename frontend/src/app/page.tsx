@@ -13,14 +13,17 @@ import {
 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { FileLibraryPanel } from "@/components/files/file-library-panel";
+import { OrganizationDialog } from "@/components/accounts/organization-dialog";
 import { ProfileMenu } from "@/components/auth/profile-menu";
+import { PreviewCenterPanel } from "@/components/preview-tabs";
 import { ConfigureChatDialog } from "@/components/settings/configure-chat-dialog";
 import { SettingsDialog } from "@/components/settings/settings-dialog";
 import { Button } from "@/components/ui/button";
 import { useFileLibrary } from "@/hooks/use-file-library";
 import { getUserRole } from "@/lib/auth/session";
+import type { LibraryFile } from "@/lib/file-upload";
+import { usePreviewTabsStore } from "@/lib/preview-tabs/store";
 import { askSage, isBackendConfigured } from "@/lib/ask/api";
 import { ApiError } from "@/lib/api/client";
 import {
@@ -316,6 +319,18 @@ export default function Home() {
     replaceInputProps,
   } = useFileLibrary();
 
+  const openTab = usePreviewTabsStore((state) => state.openTab);
+  const handleOpenFile = useCallback(
+    (file: LibraryFile) => {
+      openTab({
+        resourceKey: file.id,
+        title: file.file.name,
+        fileType: file.fileType,
+      });
+    },
+    [openTab],
+  );
+
   const [leftWidth, setLeftWidth] = useState(DEFAULT_SIDE_WIDTH);
   const [rightWidth, setRightWidth] = useState(DEFAULT_SIDE_WIDTH);
   const [isLeftVisible, setIsLeftVisible] = useState(true);
@@ -324,11 +339,15 @@ export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [organizationOpen, setOrganizationOpen] = useState(false);
   const [configureChatOpen, setConfigureChatOpen] = useState(false);
-  const router = useRouter();
 
   const openSettings = useCallback(() => {
     setSettingsOpen(true);
+  }, []);
+
+  const openOrganization = useCallback(() => {
+    setOrganizationOpen(true);
   }, []);
 
   const openConfigureChat = useCallback(() => {
@@ -476,7 +495,7 @@ export default function Home() {
                 <HeaderIconButton
                   iconClass="codicon-organization"
                   label="Organization"
-                  onClick={() => router.push("/organization")}
+                  onClick={openOrganization}
                 />
                 <div className="mx-0.5 h-5 w-px shrink-0 bg-border" />
               </>
@@ -541,6 +560,7 @@ export default function Home() {
                 files={files}
                 onDeleteFile={removeFile}
                 onEditTags={updateTags}
+                onOpenFile={handleOpenFile}
                 onReplaceFile={openReplacePicker}
                 onToggleBookmark={toggleBookmark}
               />
@@ -562,7 +582,7 @@ export default function Home() {
             />
           ) : null}
         </div>
-        <section className={PANEL_SURFACE} />
+        <PreviewCenterPanel filesEmpty={files.length === 0} />
         <div className="relative h-full">
           {isRightVisible ? (
             <button
@@ -631,6 +651,10 @@ export default function Home() {
       </footer>
 
       <SettingsDialog onOpenChange={setSettingsOpen} open={settingsOpen} />
+      <OrganizationDialog
+        onOpenChange={setOrganizationOpen}
+        open={organizationOpen}
+      />
       <ConfigureChatDialog
         onOpenChange={setConfigureChatOpen}
         open={configureChatOpen}

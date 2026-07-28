@@ -11,6 +11,7 @@ type FileLibraryPanelProps = {
   files: LibraryFile[];
   onDeleteFile: (fileId: string) => void;
   onEditTags: (fileId: string, tags: string[]) => void;
+  onOpenFile: (file: LibraryFile) => void;
   onReplaceFile: (fileId: string) => void;
   onToggleBookmark: (fileId: string) => void;
 };
@@ -19,6 +20,7 @@ export function FileLibraryPanel({
   files,
   onDeleteFile,
   onEditTags,
+  onOpenFile,
   onReplaceFile,
   onToggleBookmark,
 }: FileLibraryPanelProps) {
@@ -33,6 +35,7 @@ export function FileLibraryPanel({
         files={files}
         onDelete={setDeleteTarget}
         onEditTags={setEditTagsTarget}
+        onOpenFile={onOpenFile}
         onReplace={(file) => onReplaceFile(file.id)}
         onToggleBookmark={onToggleBookmark}
       />

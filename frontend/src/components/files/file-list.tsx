@@ -10,6 +10,7 @@ type FileListProps = {
   files: LibraryFile[];
   onDelete: (file: LibraryFile) => void;
   onEditTags: (file: LibraryFile) => void;
+  onOpenFile: (file: LibraryFile) => void;
   onReplace: (file: LibraryFile) => void;
   onToggleBookmark: (fileId: string) => void;
 };
@@ -40,6 +41,7 @@ export function FileList({
   files,
   onDelete,
   onEditTags,
+  onOpenFile,
   onReplace,
   onToggleBookmark,
 }: FileListProps) {
@@ -57,6 +59,7 @@ export function FileList({
             <div className="flex min-w-0 items-center gap-1">
               <button
                 className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1 py-1 text-left text-sm text-foreground"
+                onClick={() => onOpenFile(entry)}
                 type="button"
               >
                 <FileTypeIcon entry={entry} />

@@ -7,7 +7,7 @@ import { createContext, useContext, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export type DialogKind = "form" | "confirm";
-export type DialogSize = "sm" | "lg";
+export type DialogSize = "sm" | "lg" | "xl";
 type DialogVariant = "shell" | "legacy";
 
 const DialogVariantContext = createContext<DialogVariant>("legacy");
@@ -33,6 +33,7 @@ function useDialogVariant() {
 const DIALOG_SIZE_CLASS: Record<DialogSize, string> = {
   sm: "max-w-md",
   lg: "max-w-2xl",
+  xl: "max-w-5xl",
 };
 
 const DIALOG_SHELL_CLASS =
