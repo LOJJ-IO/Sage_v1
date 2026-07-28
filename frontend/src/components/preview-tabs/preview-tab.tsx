@@ -3,7 +3,9 @@
 import { IconPin } from "@tabler/icons-react";
 
 import { PreviewFileTypeIcon } from "@/components/preview-tabs/preview-file-type-icon";
+import "./preview-tab-chrome.css";
 import { PreviewTabMenu } from "@/components/preview-tabs/preview-tab-menu";
+import { TruncatedFilenameText } from "@/components/preview-tabs/truncated-filename";
 import type { TabCompression } from "@/components/preview-tabs/use-tab-lane-compression";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -14,9 +16,18 @@ import {
 import type { PreviewTab as PreviewTabType } from "@/lib/preview-tabs/types";
 import { cn } from "@/lib/utils";
 
+/** Uniform tab chrome width — active and inactive share the same footprint. */
+const TAB_WIDTH_CLASS: Record<TabCompression, string> = {
+  normal: "w-[7.75rem] max-w-[7.75rem]",
+  compact: "w-[6.5rem] max-w-[6.5rem]",
+  "icon-only": "w-14 max-w-14",
+};
+
 type PreviewTabProps = {
   tab: PreviewTabType;
   isActive: boolean;
+  /** Rightmost visible tab before settings — omit bottom-right fillet. */
+  trailsViewport?: boolean;
   compression: TabCompression;
   onSelect: () => void;
   onPin: () => void;
@@ -25,22 +36,10 @@ type PreviewTabProps = {
   onClose: () => void;
 };
 
-function tabMaxWidth(
-  isActive: boolean,
-  compression: TabCompression,
-): string {
-  if (compression === "icon-only") {
-    return "max-w-20";
-  }
-  if (compression === "compact") {
-    return isActive ? "max-w-44" : "max-w-32";
-  }
-  return isActive ? "max-w-64" : "max-w-40";
-}
-
 export function PreviewTab({
   tab,
   isActive,
+  trailsViewport = false,
   compression,
   onSelect,
   onPin,
@@ -56,17 +55,18 @@ export function PreviewTab({
   return (
     <div
       className={cn(
-        "group flex min-w-0 items-center gap-0.5 rounded-t-md border border-transparent",
-        tabMaxWidth(isActive, compression),
+        "group relative shrink-0",
+        TAB_WIDTH_CLASS[compression],
         isActive
-          ? "z-10 -mb-px min-w-24 border-border border-b-0 bg-background text-foreground"
-          : "min-w-16 bg-transparent text-muted-foreground hover:bg-muted/60",
+          ? "preview-tab-shaped"
+          : "preview-tab-inactive h-9 self-end border-r border-border bg-transparent text-muted-foreground last:border-r-0",
+        trailsViewport && isActive && "preview-tab--no-right-fillet",
         isRemoved && "opacity-70",
         isIconOnly
-          ? "px-1 py-1.5"
+          ? "text-sm"
           : compression === "compact"
-            ? "px-2 py-1 text-xs"
-            : "px-2.5 py-1.5 text-sm",
+            ? "text-xs"
+            : "text-sm",
       )}
     >
       <Tooltip>
@@ -74,7 +74,10 @@ export function PreviewTab({
           render={
             <button
               aria-selected={isActive}
-              className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden text-left"
+              className={cn(
+                "absolute inset-y-0 left-0 right-7 z-0 flex min-w-0 cursor-pointer items-center gap-1 overflow-hidden text-left",
+                isIconOnly ? "px-1" : compression === "compact" ? "px-1.5" : "px-2",
+              )}
               onClick={onSelect}
               role="tab"
               type="button"
@@ -92,7 +95,9 @@ export function PreviewTab({
               className={
                 isRemoved
                   ? "shrink-0 text-destructive"
-                  : "shrink-0 text-muted-foreground"
+                  : isActive
+                    ? "shrink-0 text-foreground"
+                    : "shrink-0 text-muted-foreground"
               }
               fileType={tab.fileType}
               title={tab.title}
@@ -106,7 +111,10 @@ export function PreviewTab({
             />
           ) : null}
           {showTitle ? (
-            <span className="min-w-0 flex-1 truncate">{tab.title}</span>
+            <TruncatedFilenameText
+              className="min-w-0 flex-1"
+              title={tab.title}
+            />
           ) : null}
         </TooltipTrigger>
         <TooltipContent side="bottom" sideOffset={6} variant="compact">
@@ -114,17 +122,19 @@ export function PreviewTab({
         </TooltipContent>
       </Tooltip>
 
-      <PreviewTabMenu
-        canClose={canCloseTab(tab)}
-        canDuplicate={canDuplicateTab(tab)}
-        canUnpin={canUnpinTab(tab)}
-        onClose={onClose}
-        onDuplicate={onDuplicate}
-        onPin={onPin}
-        onUnpin={onUnpin}
-        pinned={tab.pinned}
-        title={tab.title}
-      />
+      <div className="absolute inset-y-0 right-0 z-10 flex w-7 items-center justify-center">
+        <PreviewTabMenu
+          canClose={canCloseTab(tab)}
+          canDuplicate={canDuplicateTab(tab)}
+          canUnpin={canUnpinTab(tab)}
+          onClose={onClose}
+          onDuplicate={onDuplicate}
+          onPin={onPin}
+          onUnpin={onUnpin}
+          pinned={tab.pinned}
+          title={tab.title}
+        />
+      </div>
     </div>
   );
 }

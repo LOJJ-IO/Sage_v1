@@ -2,7 +2,7 @@
 
 import {
   IconCopy,
-  IconDots,
+  IconDotsVertical,
   IconPin,
   IconPinnedOff,
   IconX,
@@ -220,7 +220,7 @@ export function PreviewTabMenu({
         type="button"
         variant="ghost"
       >
-        <IconDots aria-hidden className="size-3.5" stroke={2.2} />
+        <IconDotsVertical aria-hidden className="size-3.5" stroke={2.2} />
       </Button>
 
       {menu ? createPortal(menu, document.body) : null}

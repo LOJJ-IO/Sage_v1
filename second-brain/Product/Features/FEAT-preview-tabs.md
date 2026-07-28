@@ -11,7 +11,7 @@ related: ["[[FEAT-app-shell-layout]]", "[[Current-Context]]", "[[Lessons-Learned
 # FEAT: Middle-pane file preview tabs
 
 ## Status
-`in-progress` — **Phases 1–6 complete** (pure state + 65 tests + vitest). **Phase 7** (tab-strip UI) is next. Phases 8+ (file-tree wiring, removal sync, viewers, CI gate) not started.
+`in-progress` — **Phases 1–7 complete** (pure state + 65 tests + vitest, tab-strip UI wired into the app shell). Phases 8+ (removal-poll sync, real viewers, CI gate) not started.
 
 ## Phases (master roadmap)
 
@@ -23,7 +23,7 @@ related: ["[[FEAT-app-shell-layout]]", "[[Current-Context]]", "[[Lessons-Learned
 | **4** | **Persistence boundary** | ✅ Done | `storage.ts` — SSR-safe `loadOverflowMode` / `saveOverflowMode`; only overflow mode persists in MVP. |
 | **5** | **Store wrapper** | ✅ Done | `store.ts` — `usePreviewTabsStore` (first zustand in repo); reducer remains source of truth. |
 | **6** | **Test harness** | ✅ Done | vitest bootstrap + 65 tests (`reducer`, `selectors`, `storage`, `store`); `npm run test`. |
-| **7** | **Tab-strip UI + stage shell** | 🔲 Next | React components in `frontend/src/components/preview-tabs/`; wire center panel in `page.tsx`; file-tree click → `openTab`; **no real viewers**. |
+| **7** | **Tab-strip UI + stage shell** | ✅ Done | `frontend/src/components/preview-tabs/` (10 files: strip, lanes, tab, both kebab menus, compression hook, file-type icon, stage, center panel, barrel); wired into `page.tsx`'s center panel and `FileList` row click → `openTab`. No real viewers (by design — Phase 9). |
 
 ### Post–Phase 7 (not numbered in the 7-phase core plan)
 
@@ -58,12 +58,19 @@ Notable resolved judgment calls (not obvious from a first read of the rules):
 - `closeAllUnpinned` only reselects the active tab if it was itself unpinned (and thus just removed); an active *pinned* tab stays active even if its lifecycle is `removed`, since pinned tabs are never touched by this action.
 - If only a `removed` tab exists for a `resourceKey`, `OPEN_TAB` opens a fresh tab rather than reviving the stale one (treated as "the file came back").
 
-## Out of scope (Phase 1–6, done)
-- Tab-strip UI, kebab menus, tooltips — not built yet (Phase 7).
-- Actual file viewers (PDF/docx/image rendering) — don't exist in the repo at all yet; Phase 8+.
-- Wiring `markResourceRemoved` to the real removal signal. Decision made but not implemented: diff `frontend/src/hooks/use-file-library.ts`'s existing 2s poll against open tabs' `resourceKey`s.
-- Debounced `updateViewState` syncing from a real viewer (viewer responds immediately; store write is debounced) — needs a real viewer to attach to.
+## Out of scope (Phase 1–7, done)
+
+- Actual file viewers (PDF/docx/image rendering) — don't exist in the repo at all yet; Phase 9. Stage shows a placeholder/empty/removed state only.
+- Wiring `markResourceRemoved` to the real removal signal. Decision made but not implemented: diff `frontend/src/hooks/use-file-library.ts`'s existing 2s poll against open tabs' `resourceKey`s. Phase 8.
+- Debounced `updateViewState` syncing from a real viewer (viewer responds immediately; store write is debounced) — needs a real viewer to attach to. Phase 9.
 - Version-aware `resourceKey` — would need a backend version/etag field that doesn't exist today.
+- `closeAllUnpinned()` has no UI entry point yet (spec marks it optional for Phase 7); reducer/tests already cover it.
+- Drag-reorder tabs, session restore of open tabs — explicitly excluded by the Phase 7 brief.
+
+## Known caveats from Phase 7
+
+- **`overflowMode` SSR hydration:** `store.ts` calls `loadOverflowMode()` synchronously at module-eval time, which reads real `localStorage` client-side but the default (`"scroll"`) server-side. If a user persisted `"pagination"`, the first client render can mismatch the server-rendered HTML for one tick before React corrects it (a dev-mode hydration warning, not a functional bug — `toast-provider.tsx` sidesteps the same class of issue with a `mounted` guard, which this doesn't yet do). Worth a `mounted` guard if the warning proves noisy in practice.
+- **Repo-wide `npm run lint` is not clean**, independent of this work — `eslint-config-next` 16.2.9 bundles a stricter `eslint-plugin-react-hooks` that flags `react-hooks/set-state-in-effect` and `react-hooks/static-components` across several pre-existing files (`file-row-menu.tsx`, `file-type-icon.tsx`, `edit-file-tags-dialog.tsx`, `toast-provider.tsx`, `theme-provider.tsx`, `use-file-library.ts`, `use-dialog-draft.ts`, `account-row-menu.tsx`, `organization-view.tsx`, and `page.tsx`'s `getUserRole` effect). None of this was introduced by Phase 7 — all new `preview-tabs/` files are lint-clean — but a repo-wide sweep is needed before Phase 10's CI gate can require `eslint` to pass.
 
 ## UI/UX
 Visual reference: Chrome/Obsidian-style tab strip — active tab visually connected to preview stage; inactive tabs recede; crowded mode compresses gracefully. Full rules in [[UI-UX-Guidelines#Preview tab strip]] and [[Workspace-UI-Design-Decisions#2. Tab model (center panel / file previewer)]].
@@ -165,6 +172,8 @@ File-tree wiring can be stubbed in Phase 7 with a minimal "open first file" dev 
 ---
 
 ## Claude implementation plan — Phase 7 (detailed)
+
+**Status: implemented 2026-07-28.** Kept below as the historical brief/reference — don't re-derive these rules from scratch for Phase 8/9 follow-ups, extend this doc instead. See [[Current-Context]] for what shipped and the known caveats above.
 
 **Read this entire section before writing any UI code.** The state layer is done and tested — your job is presentation + wiring, not re-deriving tab rules.
 

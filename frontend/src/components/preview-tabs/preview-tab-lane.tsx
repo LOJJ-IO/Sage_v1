@@ -11,7 +11,7 @@ import type {
   TabId,
 } from "@/lib/preview-tabs/types";
 
-const ESTIMATED_TAB_WIDTH = 128;
+const ESTIMATED_TAB_WIDTH = 124;
 const DEFAULT_VISIBLE_COUNT = 3;
 
 type PreviewTabLaneProps = {
@@ -24,6 +24,8 @@ type PreviewTabLaneProps = {
   scrollFallback?: boolean;
   /** Unpinned lane only. */
   overflowMode?: OverflowMode;
+  /** Pinned lane only — unpinned tabs render after this lane. */
+  hasTrailingUnpinnedLane?: boolean;
   onSelect: (tabId: TabId) => void;
   onPin: (tabId: TabId) => void;
   onUnpin: (tabId: TabId) => void;
@@ -38,6 +40,7 @@ export function PreviewTabLane({
   compression = "normal",
   scrollFallback = false,
   overflowMode,
+  hasTrailingUnpinnedLane = false,
   onSelect,
   onPin,
   onUnpin,
@@ -127,11 +130,11 @@ export function PreviewTabLane({
   const canPageForward = usesPagination && pageStart + visibleCount < tabs.length;
 
   const laneClassName = isPinned
-    ? `flex items-end gap-0.5 ${scrollFallback ? "overflow-x-auto" : "shrink-0 overflow-hidden"}`
-    : `flex min-w-0 flex-1 items-end gap-0.5 ${usesScroll ? "overflow-x-auto" : "overflow-hidden"}`;
+    ? `flex h-full items-stretch ${scrollFallback ? "overflow-x-auto overflow-y-visible" : "shrink-0 overflow-y-visible"}`
+    : `flex h-full min-w-0 flex-1 items-stretch ${usesScroll ? "overflow-x-auto overflow-y-visible" : "overflow-y-visible"}`;
 
   return (
-    <div className="flex min-w-0 items-end gap-0.5">
+    <div className="flex h-full min-w-0 items-stretch">
       {canPageBack ? (
         <button
           aria-label="Show previous tabs"
@@ -146,15 +149,20 @@ export function PreviewTabLane({
       ) : null}
 
       <div className={laneClassName} ref={scrollRef}>
-        {visibleTabs.map((tab) => (
+        {visibleTabs.map((tab, index) => (
           <div
             key={tab.tabId}
-            className="min-w-0 shrink"
+            className="flex h-full shrink-0 items-stretch"
             ref={tab.tabId === activeTabId ? activeTabRef : undefined}
           >
             <PreviewTab
               compression={isPinned ? compression : "normal"}
               isActive={tab.tabId === activeTabId}
+              trailsViewport={
+                index === visibleTabs.length - 1 &&
+                !canPageForward &&
+                (isPinned ? !hasTrailingUnpinnedLane : true)
+              }
               onClose={() => onClose(tab.tabId)}
               onDuplicate={() => onDuplicate(tab.tabId)}
               onPin={() => onPin(tab.tabId)}

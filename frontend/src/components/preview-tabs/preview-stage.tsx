@@ -4,13 +4,16 @@ import { IconAlertTriangle, IconFile } from "@tabler/icons-react";
 
 import { PreviewFileTypeIcon } from "@/components/preview-tabs/preview-file-type-icon";
 import {
+  PREVIEW_FILENAME_STAGE_MAX_CLASS,
+  TruncatedFilename,
+} from "@/components/preview-tabs/truncated-filename";
+import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PreviewTab } from "@/lib/preview-tabs/types";
 
 const ICON_SIZE_EMPTY = 16;
@@ -20,21 +23,6 @@ type PreviewStageProps = {
   hasTabs: boolean;
   filesEmpty?: boolean;
 };
-
-function StageFileTitle({ title }: { title: string }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <EmptyTitle className="max-w-md truncate">{title}</EmptyTitle>
-        }
-      />
-      <TooltipContent side="bottom" sideOffset={6} variant="compact">
-        {title}
-      </TooltipContent>
-    </Tooltip>
-  );
-}
 
 export function PreviewStage({ activeTab, hasTabs, filesEmpty }: PreviewStageProps) {
   if (!hasTabs || !activeTab) {
@@ -90,7 +78,11 @@ export function PreviewStage({ activeTab, hasTabs, filesEmpty }: PreviewStagePro
             title={activeTab.title}
           />
         </EmptyMedia>
-        <StageFileTitle title={activeTab.title} />
+        <TruncatedFilename
+          className="font-heading text-sm font-medium tracking-tight"
+          maxWidthClass={PREVIEW_FILENAME_STAGE_MAX_CLASS}
+          title={activeTab.title}
+        />
         <EmptyDescription>Preview coming soon.</EmptyDescription>
       </EmptyHeader>
     </Empty>

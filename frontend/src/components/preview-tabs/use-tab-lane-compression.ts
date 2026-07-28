@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 
 export type TabCompression = "normal" | "compact" | "icon-only";
 
-const PINNED_TAB_NORMAL_MIN = 96; // px — icon + truncated label + kebab
-const PINNED_TAB_COMPACT_MIN = 64; // px — tighter truncation
-const PINNED_TAB_ICON_ONLY_MIN = 40; // px — icon + kebab only
+const PINNED_TAB_NORMAL_MIN = 124; // px — fixed tab width (7.75rem)
+const PINNED_TAB_COMPACT_MIN = 104; // px — compact tab width (6.5rem)
+const PINNED_TAB_ICON_ONLY_MIN = 56; // px — icon-only tab width (3.5rem)
 /** Pinned lane won't claim more than half the strip before the unpinned region gets room. */
 const PINNED_LANE_MAX_RATIO = 0.5;
 

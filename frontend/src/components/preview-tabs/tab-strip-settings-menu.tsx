@@ -1,6 +1,6 @@
 "use client";
 
-import { IconCheck, IconDotsVertical } from "@tabler/icons-react";
+import { IconCheck, IconDots } from "@tabler/icons-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -158,7 +158,7 @@ export function TabStripSettingsMenu({
     ) : null;
 
   return (
-    <div className="flex shrink-0 items-end pb-1" ref={triggerRef}>
+    <div className="flex shrink-0 items-center" ref={triggerRef}>
       <Button
         aria-expanded={open}
         aria-haspopup="menu"
@@ -168,7 +168,7 @@ export function TabStripSettingsMenu({
         type="button"
         variant="ghost"
       >
-        <IconDotsVertical aria-hidden className="size-3.5" stroke={2.2} />
+        <IconDots aria-hidden className="size-4" stroke={2.2} />
       </Button>
 
       {menu ? createPortal(menu, document.body) : null}
