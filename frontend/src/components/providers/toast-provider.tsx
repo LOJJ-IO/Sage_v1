@@ -20,7 +20,7 @@ const AUTO_DISMISS_MS = 4000;
 
 /** Above dialog backdrop/popup (`z-50`) so toasts stay visible after Save. */
 const TOAST_HOST_CLASS =
-  "pointer-events-none fixed top-14 right-2 z-[100] flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-2";
+  "pointer-events-none fixed top-14 right-2 z-[100] flex w-[min(17rem,calc(100vw-2rem))] flex-col gap-2";
 
 type ToastContextValue = {
   success: (input: ToastInput) => string;
