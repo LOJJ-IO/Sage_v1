@@ -3,8 +3,8 @@ type: lessons
 status: active
 tags: [area/frontend]
 created: 2026-07-01
-updated: 2026-07-20
-related: ["[[Engineering/Bugs]]", "[[Troubleshooting]]", "[[UI-UX-Guidelines]]", "[[Stacking-Contexts-and-Portals]]"]
+updated: 2026-07-27
+related: ["[[Engineering/Bugs]]", "[[Troubleshooting]]", "[[UI-UX-Guidelines]]", "[[Stacking-Contexts-and-Portals]]", "[[Current-Context]]"]
 ---
 
 # Lessons Learned
@@ -20,6 +20,16 @@ What to do differently.
 ```
 
 ## Entries
+
+### 2026-07-27 — Toast host's `right-4` didn't match the shell's `px-2` inset, so it never lined up with the header/content
+After the toast host was portaled to `document.body` (see the entry directly below), it kept `right-4` (1rem) as its right inset. The header icon row (`frontend/src/app/page.tsx`, top toolbar div) and the content grid beneath it both use `px-2` (0.5rem) as their shared right inset. A `fixed`-positioned element outside the normal layout tree doesn't inherit or get checked against a sibling's padding — nothing enforces that two independently-positioned elements agree on the same inset, so the toast's right edge sat 8px further left than the icon row and grid's right edge above/below it, which read as visibly "off" in a screenshot even though each element's own CSS was internally correct.
+**Fix:** changed `TOAST_HOST_CLASS` right inset from `right-4` to `right-2` in `frontend/src/components/providers/toast-provider.tsx` to match the shell's `px-2` rhythm.
+**Rule going forward:** when a component is intentionally taken out of the normal layout flow (portaled to `document.body`, `fixed`/`absolute` positioned), any spacing constants it uses (inset, width, gap) must be diffed against the layout it's meant to visually align with — grep the sibling containers' padding/margin values rather than picking a Tailwind spacing token that merely "looks about right."
+
+### 2026-07-27 — Toast `z-[60]` inside Ask column still loses to dialog `z-50` on `document.body`
+Toasts looked “broken” after Save (Settings / tags / delete): state updated, but nothing visible.
+**Why:** `ToastViewport` lived in the Ask panel grid cell (`absolute` + local `z-[60]`). Dialogs portal to `document.body` at `z-50`. Local z-index never competes across stacking roots — the backdrop covers the whole page tree. Collapsing the Ask column to `0px` also registered a viewport and hid the fallback host, clipping toasts entirely.
+**Fix:** portal a single fixed toast host to `document.body` at `z-[100]` from `ToastProvider`. Notifications and modals must share the same stacking root. See [[UI-UX-Guidelines#Toasts (application-owned)]], [[Stacking-Contexts-and-Portals]].
 
 ### 2026-07-20 — Multi-stage Docker builds silently drop baked artifacts written outside the COPY'd paths
 `backend/Dockerfile`'s bake step (`RUN python -c "from flashrank import Ranker; Ranker(model_name=...)"`) was meant to pre-download the reranker model at build time so no container ever hits the network on its first `/ask`. It kept "working" (no error) but production logs still showed `Downloading ms-marco-MiniLM-L-12-v2...` on every fresh deploy. Cause: `flashrank.Ranker`'s own default `cache_dir` is `/tmp`, and the runtime stage only does `COPY --from=builder /root/.cache /root/.cache` (plus site-packages/bin/app) — `/tmp` from the builder stage is simply never copied, so the baked model is discarded and re-fetched from the network on every cold start.

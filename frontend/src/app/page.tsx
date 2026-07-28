@@ -18,7 +18,6 @@ import { FileLibraryPanel } from "@/components/files/file-library-panel";
 import { ProfileMenu } from "@/components/auth/profile-menu";
 import { ConfigureChatDialog } from "@/components/settings/configure-chat-dialog";
 import { SettingsDialog } from "@/components/settings/settings-dialog";
-import { ToastViewport } from "@/components/providers/toast-provider";
 import { Button } from "@/components/ui/button";
 import { useFileLibrary } from "@/hooks/use-file-library";
 import { getUserRole } from "@/lib/auth/session";
@@ -578,7 +577,6 @@ export default function Home() {
           ) : null}
         </div>
         <div className="relative min-h-0 min-w-0">
-          <ToastViewport />
           <section className={PANEL_SURFACE}>
           <header className="flex min-w-0 h-14 w-full shrink-0 items-center gap-2 border-b border-border px-2">
             <input

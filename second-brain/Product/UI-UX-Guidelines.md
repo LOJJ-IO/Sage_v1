@@ -3,7 +3,7 @@ type: product
 status: active
 tags: [area/frontend, area/design]
 created: 2026-07-01
-updated: 2026-07-19
+updated: 2026-07-27
 related: ["[[Product-Vision]]", "[[FEAT-app-shell-layout]]", "[[Reusable-Patterns]]", "[[Workspace-UI-Design-Decisions]]"]
 ---
 
@@ -186,13 +186,14 @@ Collapse all:
 ## Toasts (application-owned)
 
 - **Provider:** `ToastProvider` in `layout.tsx` — global, not Ask-panel-owned
-- **Viewport:** `ToastViewport` in workspace right column (position ①); fallback `fixed top-14 right-4` on other routes
+- **Host:** portal to `document.body`, `fixed top-14 right-4`, **`z-[100]`** (above dialog `z-50`) — same stacking root as modals so Save feedback isn’t trapped under the backdrop or inside a collapsible panel
 - **Stack:** max 3; 4s auto-dismiss (hover pauses); **errors sticky**
 - **Layout:** compact iOS-style row — `[icon | title + description]`; `py-2`; icon↔text gap `2px`; no muted icon disc; `rounded-2xl`; fixed width, height grows with content; stack grows downward
 - **Dismiss:** hover-only `X` overlay, slightly overlapping top-left corner (`aria-label="Dismiss"`; visible on focus too)
 - **No toast action buttons** — keep CTAs in-page / dialogs
 - **Variants:** `success`, `error`, `info`, `progress` (+ `update` for progress)
 - **API:** `useToast()` → `.success()`, `.error()`, `.info()`, `.progress()`, `.dismiss()`
+- **Deprecated:** `ToastViewport` is a no-op — do not nest toast hosts in panel columns
 
 ## Skeletons
 

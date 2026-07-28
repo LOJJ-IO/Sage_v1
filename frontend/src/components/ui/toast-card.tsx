@@ -59,7 +59,7 @@ export function ToastCard({
         <IconX aria-hidden="true" stroke={2.2} />
       </Button>
 
-      <div className="flex items-start gap-0.5">
+      <div className="flex items-start gap-2">
         <Icon
           aria-hidden="true"
           className={cn("mt-0.5 size-5 shrink-0", VARIANT_ICON_CLASS[toast.variant])}

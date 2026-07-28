@@ -14,10 +14,13 @@ import { createPortal } from "react-dom";
 
 import { ToastCard } from "@/components/ui/toast-card";
 import type { ToastInput, ToastRecord } from "@/lib/toast/types";
-import { cn } from "@/lib/utils";
 
 const MAX_TOASTS = 3;
 const AUTO_DISMISS_MS = 4000;
+
+/** Above dialog backdrop/popup (`z-50`) so toasts stay visible after Save. */
+const TOAST_HOST_CLASS =
+  "pointer-events-none fixed top-14 right-2 z-[100] flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-2";
 
 type ToastContextValue = {
   success: (input: ToastInput) => string;
@@ -26,7 +29,6 @@ type ToastContextValue = {
   progress: (input: ToastInput & { progress?: number }) => string;
   update: (id: string, input: Partial<ToastInput & { progress?: number }>) => void;
   dismiss: (id: string) => void;
-  registerViewport: (node: HTMLElement | null) => void;
 };
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -37,12 +39,13 @@ function createToastId() {
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastRecord[]>([]);
-  const [viewport, setViewport] = useState<HTMLElement | null>(null);
-  const [fallbackViewport, setFallbackViewport] = useState<HTMLElement | null>(
-    null
-  );
+  const [mounted, setMounted] = useState(false);
   const timersRef = useRef<Map<string, number>>(new Map());
   const pausedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const clearTimer = useCallback((id: string) => {
     const timer = timersRef.current.get(id);
@@ -193,10 +196,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     [clearTimer, dismiss]
   );
 
-  const registerViewport = useCallback((node: HTMLElement | null) => {
-    setViewport(node);
-  }, []);
-
   useEffect(() => {
     return () => {
       for (const timer of timersRef.current.values()) {
@@ -214,26 +213,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       progress,
       update,
       dismiss,
-      registerViewport,
     }),
-    [dismiss, error, info, progress, registerViewport, success, update]
+    [dismiss, error, info, progress, success, update]
   );
-
-  const portalTarget = viewport ?? fallbackViewport;
 
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div
-        ref={setFallbackViewport}
-        className={cn(
-          "pointer-events-none fixed top-14 right-4 z-[60] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2",
-          viewport ? "hidden" : null
-        )}
-      />
-      {portalTarget
+      {mounted
         ? createPortal(
-            <div className="flex flex-col gap-2">
+            <div className={TOAST_HOST_CLASS} data-slot="toast-viewport">
               {toasts.map((toast) => (
                 <ToastCard
                   key={toast.id}
@@ -244,41 +233,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 />
               ))}
             </div>,
-            portalTarget
+            document.body
           )
         : null}
     </ToastContext.Provider>
   );
 }
 
-export function ToastViewport({ className }: { className?: string }) {
-  const context = useContext(ToastContext);
-  const ref = useCallback(
-    (node: HTMLDivElement | null) => {
-      context?.registerViewport(node);
-    },
-    [context]
-  );
-
-  useEffect(() => {
-    return () => {
-      context?.registerViewport(null);
-    };
-  }, [context]);
-
-  if (!context) {
-    return null;
-  }
-
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "pointer-events-none absolute top-2 left-2 z-[60] flex w-[min(24rem,100%)] flex-col gap-2",
-        className
-      )}
-    />
-  );
+/** @deprecated Host is now fixed on `document.body` via ToastProvider. Kept as a no-op for call sites. */
+export function ToastViewport(_props: { className?: string }) {
+  return null;
 }
 
 export function useToast() {

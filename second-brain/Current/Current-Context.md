@@ -22,6 +22,8 @@ False "not enough grounded information" refusals on production — usually spars
 - Frontend deployed as its own Railway service: `https://sage-frontend-production.up.railway.app` (manual `railway up`, not GitHub-auto-deployed — see next section).
 - Production `/ask` refusals (`85280a06…`): retrieve `hits=8`, trust `top_score` ≤ 0.31; correlated with scanned PDF extract (`chars/page=136`, `chunks=1`). Threshold 0.35 kept — MiniLM scores real matches ≫ 0.35.
 - Merged `origin/tolu-implementations` into `main` (2026-07-27): kept compact toasts + FormDialog settings shell; added ThemeProvider / Settings Theme tab.
+- Toasts now portal to `document.body` at `z-[100]` (were invisible under dialogs / clipped in Ask column). See [[UI-UX-Guidelines#Toasts (application-owned)]].
+- Toast host right inset fixed: `right-4` → `right-2` in `toast-provider.tsx`, to match the `px-2` inset shared by the header icon row and content grid — toast right edge was visibly misaligned with them. See [[Lessons-Learned]].
 
 ## Still open
 1. User: re-upload **text-based** policy docs (`.txt` / `.md` / text PDF / `.docx`) for any store still refusing; delete scanned "Ready" files that can't be answered.

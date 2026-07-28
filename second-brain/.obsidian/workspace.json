@@ -11,10 +11,14 @@
             "id": "b2649c847a6770ea",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Graph view"
+              "type": "markdown",
+              "state": {
+                "file": "Architecture/Tech-Stack.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Tech-Stack"
             }
           },
           {
@@ -177,13 +181,15 @@
   },
   "active": "b2649c847a6770ea",
   "lastOpenFiles": [
+    "00-Home.md",
+    "Engineering/Prompt-Library.md",
+    "Architecture/Database-Schema.md",
     "Product/Features/FEAT-file-upload.md",
     "Current/Current-Context.md",
     "Templates/Daily-Note.md",
     "Daily/2026-07-07.md",
     "Engineering/Stacking-Contexts-and-Portals.md",
     "Product/Features/FEAT-sage-mvp.md",
-    "00-Home.md",
     "Product/Sage-MVP-Functional-Spec.md",
     "Daily/2026-07-06.md",
     "Architecture/Decisions/0007-boutique-retail-mvp-beachhead.md",
@@ -201,8 +207,6 @@
     "Templates/ADR.md",
     "Product/UI-UX-Guidelines.md",
     "Daily/2026-07-03.md",
-    "Engineering/Intake-Process.md",
-    "Templates/Intake-Entry.md",
     "Inbox"
   ]
 }

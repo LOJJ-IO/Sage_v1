@@ -165,8 +165,9 @@ const { files, error, openFilePicker, inputRef, inputProps } = useFileLibrary();
 
 ### Toast notifications
 **Use when:** post-commit feedback (Save succeeded), background info, or sticky errors.
-**Example:** `ToastProvider` + `useToast()`; viewport in `page.tsx` right column.
+**Example:** `ToastProvider` portals a fixed host to `document.body` (`top-14 right-4`, `z-[100]` above dialog `z-50`); `useToast()` from any route.
 **Don't use when:** in-form validation — use inline errors; destructive confirms — use `ConfirmDialog`.
+**Don't nest toast hosts inside panel columns** — collapsible/`overflow-hidden` grids clip them, and local `z-index` loses to body-portaled dialogs.
 
 ### Skeleton pairs
 **Use when:** a data boundary has no initial data yet.
