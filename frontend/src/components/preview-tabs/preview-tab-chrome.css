@@ -1,8 +1,18 @@
-/* Browser-style tab chrome: rounded top + inverse bottom fillets. */
+/* Tab chrome: rounded top, flush bottom into the stage.
+ *
+ * Active and hovered-inactive tabs share --tab-chrome-bg so one background
+ * rule covers both. Dividers are siblings between lane items; hover hides
+ * the divider on each side of that tab (active does not).
+ */
 
 :root {
   --preview-tab-curve: 0.625rem;
   --preview-tab-strip: oklch(0.93 0 0);
+  --preview-tab-hover: color-mix(
+    in oklab,
+    var(--background) 45%,
+    var(--preview-tab-strip)
+  );
 }
 
 :root.dark {
@@ -14,48 +24,55 @@
 }
 
 .preview-tab-shaped {
+  --tab-chrome-bg: var(--background);
   position: relative;
   z-index: 10;
-  height: 100%;
-  align-self: stretch;
+  height: 2.25rem;
+  align-self: flex-end;
+  /* Cover the strip's border-b so the active tab still bridges into the stage. */
   margin-bottom: -1px;
-  margin-inline: 0.25rem;
-  border-radius: var(--preview-tab-curve) var(--preview-tab-curve) 0 0;
-  background-color: var(--background);
+  padding-bottom: 1px;
   color: var(--foreground);
-}
-
-.preview-tab-shaped::before,
-.preview-tab-shaped::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  width: var(--preview-tab-curve);
-  height: var(--preview-tab-curve);
-  pointer-events: none;
-}
-
-.preview-tab-shaped::before {
-  left: calc(-1 * var(--preview-tab-curve));
-  border-bottom-right-radius: var(--preview-tab-curve);
-  box-shadow: 4px 4px 0 0 var(--background);
-}
-
-.preview-tab-shaped::after {
-  right: calc(-1 * var(--preview-tab-curve));
-  border-bottom-left-radius: var(--preview-tab-curve);
-  box-shadow: -4px 4px 0 0 var(--background);
-}
-
-.preview-tab--no-right-fillet.preview-tab-shaped::after {
-  content: none;
-}
-
-.preview-tab-settings {
-  margin-right: 0;
 }
 
 .preview-tab-inactive {
   position: relative;
-  margin-inline: 0.125rem;
+  align-self: flex-end;
+}
+
+.preview-tab-inactive:hover,
+.preview-tab-inactive:focus-within {
+  --tab-chrome-bg: var(--preview-tab-hover);
+  z-index: 5;
+  color: var(--foreground);
+}
+
+.preview-tab-shaped,
+.preview-tab-inactive:hover,
+.preview-tab-inactive:focus-within {
+  border-radius: var(--preview-tab-curve) var(--preview-tab-curve) 0 0;
+  background-color: var(--tab-chrome-bg);
+}
+
+/* Between-tab dividers — sit in the tab band (h-9 at strip bottom). */
+.preview-tab-divider {
+  align-self: flex-end;
+  width: 1px;
+  height: 1rem;
+  margin-bottom: 0.625rem; /* centers the 16px rule in the 36px tab band */
+  background-color: color-mix(in oklab, var(--foreground) 22%, transparent);
+}
+
+.preview-tab-settings {
+  margin-inline: 0.25rem 0;
+}
+
+/* Hide divider after the hovered tab. */
+.preview-tab-lane-item:has(.preview-tab-chrome:hover) + .preview-tab-divider {
+  background-color: transparent;
+}
+
+/* Hide divider before the hovered tab. */
+.preview-tab-divider:has(+ .preview-tab-lane-item:has(.preview-tab-chrome:hover)) {
+  background-color: transparent;
 }

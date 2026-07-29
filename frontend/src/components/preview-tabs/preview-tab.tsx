@@ -1,12 +1,21 @@
 "use client";
 
-import { IconPin } from "@tabler/icons-react";
+import { IconPin, IconX } from "@tabler/icons-react";
+import { useState } from "react";
 
 import { PreviewFileTypeIcon } from "@/components/preview-tabs/preview-file-type-icon";
 import "./preview-tab-chrome.css";
-import { PreviewTabMenu } from "@/components/preview-tabs/preview-tab-menu";
+import {
+  PreviewTabContextMenu,
+  type ContextMenuAnchor,
+} from "@/components/preview-tabs/preview-tab-menu";
 import { TruncatedFilenameText } from "@/components/preview-tabs/truncated-filename";
-import type { TabCompression } from "@/components/preview-tabs/use-tab-lane-compression";
+import {
+  isIconOnlyWidth,
+  TAB_MAX_WIDTH_PX,
+  useElementWidth,
+} from "@/components/preview-tabs/use-tab-lane-compression";
+import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   canCloseTab,
@@ -16,19 +25,9 @@ import {
 import type { PreviewTab as PreviewTabType } from "@/lib/preview-tabs/types";
 import { cn } from "@/lib/utils";
 
-/** Uniform tab chrome width — active and inactive share the same footprint. */
-const TAB_WIDTH_CLASS: Record<TabCompression, string> = {
-  normal: "w-[7.75rem] max-w-[7.75rem]",
-  compact: "w-[6.5rem] max-w-[6.5rem]",
-  "icon-only": "w-14 max-w-14",
-};
-
 type PreviewTabProps = {
   tab: PreviewTabType;
   isActive: boolean;
-  /** Rightmost visible tab before settings — omit bottom-right fillet. */
-  trailsViewport?: boolean;
-  compression: TabCompression;
   onSelect: () => void;
   onPin: () => void;
   onUnpin: () => void;
@@ -39,35 +38,36 @@ type PreviewTabProps = {
 export function PreviewTab({
   tab,
   isActive,
-  trailsViewport = false,
-  compression,
   onSelect,
   onPin,
   onUnpin,
   onDuplicate,
   onClose,
 }: PreviewTabProps) {
+  const [menuAnchor, setMenuAnchor] = useState<ContextMenuAnchor | null>(null);
+  const { ref: tabRef, width: tabWidth } = useElementWidth<HTMLDivElement>();
   const isRemoved = tab.lifecycle === "removed";
-  const isIconOnly = compression === "icon-only";
+  const isIconOnly = isIconOnlyWidth(tabWidth);
   const showTitle = !isIconOnly;
+  const closable = canCloseTab(tab);
+  const showTrailingAction = closable || tab.pinned;
   const tooltipLabel = isRemoved ? `${tab.title} (removed)` : tab.title;
 
   return (
     <div
+      ref={tabRef}
       className={cn(
-        "group relative shrink-0",
-        TAB_WIDTH_CLASS[compression],
+        "preview-tab-chrome group relative w-full min-w-8 text-sm",
         isActive
           ? "preview-tab-shaped"
-          : "preview-tab-inactive h-9 self-end border-r border-border bg-transparent text-muted-foreground last:border-r-0",
-        trailsViewport && isActive && "preview-tab--no-right-fillet",
+          : "preview-tab-inactive h-9 bg-transparent text-muted-foreground",
         isRemoved && "opacity-70",
-        isIconOnly
-          ? "text-sm"
-          : compression === "compact"
-            ? "text-xs"
-            : "text-sm",
       )}
+      style={{ maxWidth: TAB_MAX_WIDTH_PX }}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        setMenuAnchor({ x: event.clientX, y: event.clientY });
+      }}
     >
       <Tooltip>
         <TooltipTrigger
@@ -75,8 +75,9 @@ export function PreviewTab({
             <button
               aria-selected={isActive}
               className={cn(
-                "absolute inset-y-0 left-0 right-7 z-0 flex min-w-0 cursor-pointer items-center gap-1 overflow-hidden text-left",
-                isIconOnly ? "px-1" : compression === "compact" ? "px-1.5" : "px-2",
+                "absolute inset-y-0 left-0 z-0 flex min-w-0 cursor-pointer items-center gap-1 overflow-hidden px-2 text-left",
+                showTrailingAction ? "right-7" : "right-2",
+                isIconOnly && "px-1",
               )}
               onClick={onSelect}
               role="tab"
@@ -84,32 +85,17 @@ export function PreviewTab({
             />
           }
         >
-          {isIconOnly && tab.pinned ? (
-            <IconPin
-              aria-hidden
-              className="size-3.5 shrink-0 text-muted-foreground"
-              stroke={2.2}
-            />
-          ) : (
-            <PreviewFileTypeIcon
-              className={
-                isRemoved
-                  ? "shrink-0 text-destructive"
-                  : isActive
-                    ? "shrink-0 text-foreground"
-                    : "shrink-0 text-muted-foreground"
-              }
-              fileType={tab.fileType}
-              title={tab.title}
-            />
-          )}
-          {tab.pinned && showTitle ? (
-            <IconPin
-              aria-hidden
-              className="size-3 shrink-0 text-muted-foreground"
-              stroke={2.2}
-            />
-          ) : null}
+          <PreviewFileTypeIcon
+            className={
+              isRemoved
+                ? "shrink-0 text-destructive"
+                : isActive
+                  ? "shrink-0 text-foreground"
+                  : "shrink-0 text-muted-foreground"
+            }
+            fileType={tab.fileType}
+            title={tab.title}
+          />
           {showTitle ? (
             <TruncatedFilenameText
               className="min-w-0 flex-1"
@@ -122,19 +108,47 @@ export function PreviewTab({
         </TooltipContent>
       </Tooltip>
 
-      <div className="absolute inset-y-0 right-0 z-10 flex w-7 items-center justify-center">
-        <PreviewTabMenu
-          canClose={canCloseTab(tab)}
-          canDuplicate={canDuplicateTab(tab)}
-          canUnpin={canUnpinTab(tab)}
-          onClose={onClose}
-          onDuplicate={onDuplicate}
-          onPin={onPin}
-          onUnpin={onUnpin}
-          pinned={tab.pinned}
-          title={tab.title}
-        />
-      </div>
+      {showTrailingAction ? (
+        <div
+          className={cn(
+            "absolute inset-y-0 right-0 z-10 flex w-7 items-center justify-center",
+            // Close: hover-reveal on inactive. Pin stays visible (status).
+            !isActive &&
+              closable &&
+              "opacity-0 focus-within:opacity-100 group-hover:opacity-100",
+          )}
+        >
+          <Button
+            aria-label={
+              tab.pinned ? `Unpin ${tab.title}` : `Close ${tab.title}`
+            }
+            onClick={tab.pinned ? onUnpin : onClose}
+            size="icon-xs"
+            type="button"
+            variant="ghost"
+          >
+            {tab.pinned ? (
+              <IconPin aria-hidden className="size-3.5" stroke={2.2} />
+            ) : (
+              <IconX aria-hidden className="size-3.5" stroke={2.2} />
+            )}
+          </Button>
+        </div>
+      ) : null}
+
+      <PreviewTabContextMenu
+        anchor={menuAnchor}
+        canClose={closable}
+        canDuplicate={canDuplicateTab(tab)}
+        canUnpin={canUnpinTab(tab)}
+        onClose={onClose}
+        onDismiss={() => setMenuAnchor(null)}
+        onDuplicate={onDuplicate}
+        onPin={onPin}
+        onUnpin={onUnpin}
+        open={menuAnchor !== null}
+        pinned={tab.pinned}
+      />
     </div>
   );
 }

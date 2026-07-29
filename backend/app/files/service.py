@@ -17,7 +17,7 @@ from app.db import get_session
 from app.files.storage import get_storage
 from app.ingestion import delete_file as ingestion_delete_file
 from app.ingestion.extract import extract_text
-from app.models import File
+from app.models import Chunk, File
 
 ALLOWED_MIME_TYPES = {
     "application/pdf",
@@ -73,6 +73,21 @@ async def get_file(*, business_id: uuid.UUID, file_id: str) -> File | None:
             select(File).where(File.business_id == business_id, File.file_id == file_id)
         )
         return result.scalar_one_or_none()
+
+
+async def get_extracted_text(*, business_id: uuid.UUID, file_id: str) -> str:
+    """Reassemble a file's Docling-extracted text from its stored chunks, in order.
+
+    Used for preview of formats with no in-browser renderer (e.g. docx) —
+    reuses text already produced by ingestion rather than re-extracting.
+    """
+    async with get_session() as session:
+        result = await session.execute(
+            select(Chunk)
+            .where(Chunk.business_id == business_id, Chunk.file_id == file_id)
+            .order_by(Chunk.chunk_index)
+        )
+        return "".join(chunk.content for chunk in result.scalars())
 
 
 async def delete_file_and_storage(*, business_id: uuid.UUID, file_id: str) -> None:

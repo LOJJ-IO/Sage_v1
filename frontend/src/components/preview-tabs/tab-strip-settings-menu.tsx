@@ -1,11 +1,10 @@
 "use client";
 
-import { IconCheck, IconDots } from "@tabler/icons-react";
+import { IconDots } from "@tabler/icons-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { Button } from "@/components/ui/button";
-import type { OverflowMode } from "@/lib/preview-tabs/types";
 
 type MenuPosition = {
   top: number;
@@ -39,16 +38,16 @@ function getMenuPosition(
 }
 
 type TabStripSettingsMenuProps = {
-  overflowMode: OverflowMode;
-  onSetOverflowMode: (mode: OverflowMode) => void;
+  onCloseAllUnpinned: () => void;
+  hasUnpinnedTabs: boolean;
 };
 
 const ITEM_CLASS =
-  "flex w-full items-center justify-between gap-4 rounded-md px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted";
+  "flex w-full items-center justify-between gap-4 rounded-md px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40";
 
 export function TabStripSettingsMenu({
-  overflowMode,
-  onSetOverflowMode,
+  onCloseAllUnpinned,
+  hasUnpinnedTabs,
 }: TabStripSettingsMenuProps) {
   const [open, setOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null);
@@ -116,7 +115,7 @@ export function TabStripSettingsMenu({
     open && typeof document !== "undefined" ? (
       <div
         ref={menuRef}
-        className="fixed z-50 min-w-40 rounded-lg border border-border bg-popover p-1 shadow-md"
+        className="fixed z-50 min-w-44 rounded-lg border border-border bg-popover p-1 shadow-md"
         role="menu"
         style={
           menuPosition
@@ -125,34 +124,16 @@ export function TabStripSettingsMenu({
         }
       >
         <button
-          aria-checked={overflowMode === "scroll"}
           className={ITEM_CLASS}
+          disabled={!hasUnpinnedTabs}
           onClick={() => {
             setOpen(false);
-            onSetOverflowMode("scroll");
+            onCloseAllUnpinned();
           }}
-          role="menuitemradio"
+          role="menuitem"
           type="button"
         >
-          Scroll
-          {overflowMode === "scroll" ? (
-            <IconCheck aria-hidden className="size-4" stroke={2.2} />
-          ) : null}
-        </button>
-        <button
-          aria-checked={overflowMode === "pagination"}
-          className={ITEM_CLASS}
-          onClick={() => {
-            setOpen(false);
-            onSetOverflowMode("pagination");
-          }}
-          role="menuitemradio"
-          type="button"
-        >
-          Pagination
-          {overflowMode === "pagination" ? (
-            <IconCheck aria-hidden className="size-4" stroke={2.2} />
-          ) : null}
+          Close all unpinned
         </button>
       </div>
     ) : null;

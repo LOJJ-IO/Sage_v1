@@ -68,25 +68,25 @@ The app is a **workspace shell**, not a document viewer. Three panels (file tree
   - If an open file is deleted/replaced out from under the tab, the tab becomes a removed/error state instead of auto-closing.
   - Removed tabs cannot be duplicated.
 - **Overflow behavior**
-  - Active tab must always be brought into view.
-  - Overflow mode is a **tab-strip/workspace preference**, not a per-tab setting.
-  - MVP supports two overflow modes: `pagination` and `free horizontal scroll`.
-  - Overflow preference should survive refresh via browser storage; open tabs themselves do **not** need refresh persistence in MVP.
+  - Tabs **flex-shrink continuously** up to a max width; the filename truncates along the way.
+  - **Icon-only** (hide label) only when measured tab width falls below the icon+action floor (~72px) — last resort, not a staged jump.
+  - Dividers only between tabs (pinned sort first via `getOrderedTabs`, no special region divider). Hover or active hides the divider on both sides of that tab.
+  - No horizontal scrollbar.
+  - Open tabs themselves do **not** need refresh persistence in MVP.
 - **Minimum usable pinned-tab render contract**
   - file-type icon
   - truncated filename
-  - pin/unpin affordance
-  - kebab menu
+  - trailing pin in the close slot (click to unpin; close still requires unpin first via context menu)
   - full filename available via tooltip
   - Pinned tabs may shrink only down to the minimum width that still fits the elements above.
 - **Visual / crowded layout (2026-07-28, Chrome/Obsidian inspo)**
   - Active tab: visually connected to preview stage below; higher contrast; **wider than inactive neighbors** even when strip is crowded.
   - Inactive tabs: flatter, lower contrast; compress more aggressively than active.
-  - Pinned cluster: fixed left, non-scrollable by default; **compresses before** unpinned region loses readability; may degrade to icon-only (tooltip for full name; kebab always available).
-  - Divider between pinned and unpinned regions **only when** at least one pinned tab exists — no divider or reserved gap when zero pins.
-  - **Fallback only:** if pinned cluster still overflows after compression, pinned region becomes independently horizontally scrollable; active pinned tab auto-reveals inside that region.
-  - Unpinned region: normal overflow (`pagination` or free scroll); active tab always brought into view.
-  - Principle: **state truth and visual truth stay synchronized under compression** — don't show structural chrome (divider, scroll regions) without underlying state.
+  - Pinned tabs sort first in one strip row (no separate region divider).
+  - Dividers between tabs only; hover/active hide left+right dividers for that tab.
+  - Continuous flex-shrink under pressure; icon-only is last resort when the label no longer fits.
+  - Trailing action is one ghost button: ✕ when unpinned, pin when pinned (same hover treatment).
+  - Principle: **state truth and visual truth stay synchronized under compression**.
 
 ### 3. Apps in the workspace — tabs vs. replace
 - **Original plan:** dragging an app into the middle removes the file previewer.
