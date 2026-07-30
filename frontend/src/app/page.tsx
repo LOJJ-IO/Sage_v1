@@ -24,6 +24,7 @@ import { PreviewCenterPanel } from "@/components/preview-tabs";
 import { ConfigureChatDialog } from "@/components/settings/configure-chat-dialog";
 import { SettingsDialog } from "@/components/settings/settings-dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useFileLibrary } from "@/hooks/use-file-library";
 import { useSyncRemovedPreviewTabs } from "@/hooks/use-sync-removed-preview-tabs";
 import { getUserRole } from "@/lib/auth/session";
@@ -33,19 +34,12 @@ import type { LibraryFile } from "@/lib/file-upload";
 import { fileTypeFromFilename } from "@/lib/file-upload";
 import { usePreviewTabsStore } from "@/lib/preview-tabs/store";
 import { ApiError } from "@/lib/api/client";
+import { EmptyState } from "@/components/ui/empty";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 
 const MIN_SIDE_WIDTH = 16;
 const MIN_MIDDLE_WIDTH = 16;
@@ -94,24 +88,18 @@ function TablerIcon({
 
 function FilesEmptyState({ onUpload }: { onUpload: () => void }) {
   return (
-    <Empty className="h-full border-none px-4">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <Codicon iconClass="codicon-folder-library" size={ICON_SIZE_EMPTY} />
-        </EmptyMedia>
-        <EmptyTitle>No files yet</EmptyTitle>
-        <EmptyDescription>
-          Upload documents to populate your file tree and keep everything in one
-          place.
-        </EmptyDescription>
-      </EmptyHeader>
-      <EmptyContent>
+    <EmptyState
+      action={
         <Button onClick={onUpload} size="sm" type="button">
           <TablerIcon icon={IconUpload} size={ICON_SIZE_SM} />
           Upload files
         </Button>
-      </EmptyContent>
-    </Empty>
+      }
+      className="h-full px-4"
+      description="Upload documents to populate your file tree and keep everything in one place."
+      icon={<Codicon iconClass="codicon-folder-library" size={ICON_SIZE_EMPTY} />}
+      title="No files yet"
+    />
   );
 }
 
@@ -124,39 +112,30 @@ function AskAiEmptyState({
 }) {
   if (!hasFiles) {
     return (
-      <Empty className="h-full border-none px-4">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <TablerIcon icon={IconMessageCircle} size={ICON_SIZE_EMPTY} />
-          </EmptyMedia>
-          <EmptyTitle>No documents yet</EmptyTitle>
-          <EmptyDescription>
-            Upload documents first so I can answer questions about them.
-          </EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent>
+      <EmptyState
+        action={
           <Button onClick={onUpload} size="sm" type="button">
             <TablerIcon icon={IconUpload} size={ICON_SIZE_SM} />
             Upload files
           </Button>
-        </EmptyContent>
-      </Empty>
+        }
+        className="h-full px-4"
+        description="Upload documents first so I can answer questions about them."
+        icon={
+          <TablerIcon icon={IconMessageCircle} size={ICON_SIZE_EMPTY} />
+        }
+        title="No documents yet"
+      />
     );
   }
 
   return (
-    <Empty className="h-full border-none px-4">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <TablerIcon icon={IconMessageCircle} size={ICON_SIZE_EMPTY} />
-        </EmptyMedia>
-        <EmptyTitle>Ask AI</EmptyTitle>
-        <EmptyDescription>
-          Ask about SOPs, pricing, returns, and more. I&apos;ll look across your
-          uploaded docs.
-        </EmptyDescription>
-      </EmptyHeader>
-    </Empty>
+    <EmptyState
+      className="h-full px-4"
+      description="Ask about SOPs, pricing, returns, and more. I'll look across your uploaded docs."
+      icon={<TablerIcon icon={IconMessageCircle} size={ICON_SIZE_EMPTY} />}
+      title="Ask AI"
+    />
   );
 }
 
@@ -231,47 +210,48 @@ function AskAiChatInput({
 
   return (
     <div className="min-w-0 shrink-0 p-3">
-      <div className="flex min-w-0 items-center gap-0.5 rounded-full border border-border bg-background py-1 pl-4 pr-0.5 shadow-sm focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/50">
-        <input
-          className="min-w-0 flex-1 truncate bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={!hasFiles}
-          onChange={(event) => setMessage(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault();
-              send();
-            }
-          }}
-          placeholder={
-            hasFiles
-              ? "Ask about return policy, pricing, or store procedures..."
-              : "Upload documents to start asking..."
+      <Input
+        disabled={!hasFiles}
+        onChange={(event) => setMessage(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            send();
           }
-          type="text"
-          value={message}
-        />
-        <button
-          aria-label="Voice input"
-          className="flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
-          disabled={!hasFiles}
-          type="button"
-        >
-          <TablerIcon icon={IconMicrophone} />
-        </button>
-        <button
-          aria-label="Send message"
-          className={
-            canSend
-              ? "flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-secondary/80"
-              : "flex size-8 shrink-0 cursor-not-allowed items-center justify-center rounded-full text-muted-foreground"
-          }
-          disabled={!canSend}
-          onClick={send}
-          type="button"
-        >
-          <TablerIcon icon={IconArrowUp} />
-        </button>
-      </div>
+        }}
+        placeholder={
+          hasFiles
+            ? "Ask about return policy, pricing, or store procedures..."
+            : "Upload documents to start asking..."
+        }
+        trailing={
+          <>
+            <button
+              aria-label="Voice input"
+              className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+              disabled={!hasFiles}
+              type="button"
+            >
+              <TablerIcon icon={IconMicrophone} />
+            </button>
+            <button
+              aria-label="Send message"
+              className={
+                canSend
+                  ? "flex size-8 shrink-0 items-center justify-center rounded-md bg-secondary text-secondary-foreground transition-colors hover:bg-secondary/80"
+                  : "flex size-8 shrink-0 cursor-not-allowed items-center justify-center rounded-md text-muted-foreground"
+              }
+              disabled={!canSend}
+              onClick={send}
+              type="button"
+            >
+              <TablerIcon icon={IconArrowUp} />
+            </button>
+          </>
+        }
+        type="text"
+        value={message}
+      />
     </div>
   );
 }
@@ -618,7 +598,7 @@ export default function Home() {
             />
           ) : null}
         </div>
-        <PreviewCenterPanel filesEmpty={files.length === 0} />
+        <PreviewCenterPanel files={files} filesEmpty={files.length === 0} />
         <div className="relative h-full">
           {isRightVisible ? (
             <button

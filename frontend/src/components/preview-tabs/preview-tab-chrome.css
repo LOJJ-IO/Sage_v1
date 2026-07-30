@@ -1,8 +1,8 @@
 /* Tab chrome: rounded top, flush bottom into the stage.
  *
  * Active and hovered-inactive tabs share --tab-chrome-bg so one background
- * rule covers both. Dividers are siblings between lane items; hover hides
- * the divider on each side of that tab (active does not).
+ * rule covers both. Dividers are siblings between lane items; any divider
+ * that touches an active or hovered tab is hidden.
  */
 
 :root {
@@ -65,6 +65,16 @@
 
 .preview-tab-settings {
   margin-inline: 0.25rem 0;
+}
+
+/* Hide divider after the active tab. */
+.preview-tab-lane-item[data-active] + .preview-tab-divider {
+  background-color: transparent;
+}
+
+/* Hide divider before the active tab. */
+.preview-tab-divider:has(+ .preview-tab-lane-item[data-active]) {
+  background-color: transparent;
 }
 
 /* Hide divider after the hovered tab. */
