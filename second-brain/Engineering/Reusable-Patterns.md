@@ -3,7 +3,7 @@ type: pattern
 status: active
 tags: [area/frontend]
 created: 2026-07-01
-updated: 2026-07-27
+updated: 2026-07-30
 related: ["[[Coding-Standards]]", "[[UI-UX-Guidelines]]", "[[FEAT-app-shell-layout]]", "[[Lessons-Learned]]", "[[Stacking-Contexts-and-Portals]]"]
 ---
 
@@ -131,7 +131,28 @@ const { files, error, openFilePicker, inputRef, inputProps } = useFileLibrary();
 **Note:** `File` objects in React state only — lost on refresh. No API/disk until FastAPI.
 **Don't use when:** persistence, extraction, or admin gating is required — need backend.
 
-### Form dialog shell (`kind="form"`)
+### Empty state (`EmptyState`)
+**Use when:** any zero-content panel, dialog field, or list.
+**Example:** `EmptyState` in `frontend/src/components/ui/empty.tsx` — owns icon disc + title + description + optional CTA. Call sites pass props only; do not compose `EmptyHeader` / `EmptyMedia` yourself.
+**Panel fill:** `className="h-full px-4"`. Compact (e.g. TagInput): `className="px-3 py-5"`.
+**Don't use when:** loading skeletons — those stay separate.
+
+### Tag input (`TagInput`)
+**Use when:** editing a list of keywords as chips inside one focusable field (Edit tags).
+**Example:** `frontend/src/components/ui/tag-input.tsx` — chip row (wraps, no scrollbar) + draft caret in one flex flow (`min-w-[3ch] basis-[3ch] flex-1` so leftover row space is filled before wrap); library suggestions via a **portaled** list (`createPortal` → `document.body`, `z-100`, anchored under the **draft caret**, `min-w-[8.415rem]` / `max-w-xs`). Open on focus when unused library tags exist; filter/rank as you type (prefix then substring). Empty field shows placeholder “Add a tag”; Save disabled when 0 tags. Commit on **Enter**; draft is not a chip until committed. Click chip label to rename; × removes.
+**Don't use when:** freeform comma string is enough — rare. Prefer portal over Base UI `Popover` here — trigger/focus fight + dialog stacking made anchored popovers flaky.
+
+### Dialog shell (`ShellDialog` + `--dialog-shell-*` tokens)
+**Use when:** any modal that should match Settings chrome — bordered header, scroll body, bordered footer.
+**Tokens** (`globals.css` `:root`): `--dialog-shell-px`, `--dialog-shell-header-py`, `--dialog-shell-footer-py`, `--dialog-shell-body-py`, `--dialog-shell-max-h`, `--dialog-shell-min-h`. Exposed to Tailwind as `px-dialog-shell-x`, `py-dialog-shell-header-y`, etc.
+**Primitive:** `ShellDialog` in `frontend/src/components/ui/shell-dialog.tsx` — custom `footer` slot; optional `onSubmit` wraps in `<form>`; optional `headerExtra` (e.g. wizard progress).
+**Recipes on top:**
+- `FormDialog` — Discard + Save (`ConfigureChatDialog`, `SettingsDialog`)
+- `ConfirmDialog` — Cancel + confirm (`DeleteFileDialog`)
+- Wizards — custom Back/Next footer (`AddAccountDialog`)
+**Don't use when:** one-off legacy padded popup — rare; prefer shell for new work.
+
+### Form dialog shell (`FormDialog`)
 **Use when:** any editable modal with Discard + Save.
 **Example:** `FormDialog` in `frontend/src/components/ui/form-dialog.tsx`; `ConfigureChatDialog`, `SettingsDialog`.
 **Shape:**
@@ -150,7 +171,7 @@ const { files, error, openFilePicker, inputRef, inputProps } = useFileLibrary();
 </FormDialog>
 ```
 **Draft:** `useDialogDraft` + `useDialogOpenSync` — snapshot on open, Discard/X reverts, Save commits.
-**Don't use when:** destructive confirm only — use `ConfirmDialog`.
+**Don't use when:** destructive confirm only — use `ConfirmDialog`; multi-step with custom footer — use `ShellDialog` directly.
 
 ### Confirm dialog shell (`kind="confirm"`)
 **Use when:** irreversible or high-stakes action with no user draft.

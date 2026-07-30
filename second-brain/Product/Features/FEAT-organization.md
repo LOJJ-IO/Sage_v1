@@ -3,7 +3,7 @@ type: feature
 status: in-progress
 tags: [area/frontend, area/product, priority/high]
 created: 2026-07-08
-updated: 2026-07-28
+updated: 2026-07-30
 related: ["[[Sage-MVP-Functional-Spec#3.4.3 Admins creating additional accounts]]", "[[Sage-MVP-Functional-Spec#3.4.7 UI shape, concretely]]", "[[0004-username-pin-modular-auth]]", "[[API-Documentation#Accounts (Admin)]]", "[[FEAT-sage-mvp]]", "[[FEAT-sign-in]]", "[[UI-UX-Guidelines]]"]
 ---
 
@@ -30,11 +30,13 @@ Admin-only **Organization** dialog from the workspace header (spec historically 
 - Reactivate — shown for inactive accounts
 - Grant / revoke admin privileges — confirmation dialogs
 
-**+ Add account** (top-right):
-- Name + username
-- Temporary PIN (4 digits)
-- Grant admin privileges toggle (off by default)
-- Confirm your PIN — only when admin toggle is on ([[Sage-MVP-Functional-Spec#3.4.4]])
+**+ Add account** (top-right) — 4-step wizard:
+1. Name
+2. Username
+3. Temporary PIN (4 digits)
+4. Role — grant admin toggle (off by default); confirm your PIN only when admin is on ([[Sage-MVP-Functional-Spec#3.4.4]])
+
+Footer: Cancel (step 1) / Back (later) + Next / Create account. Uses `ShellDialog` (same header/footer chrome as Settings). Discrete progress segments with snappy `scale-x` fill (`duration-150`).
 
 Spec authority: [[Sage-MVP-Functional-Spec#3.4.3]]–[[Sage-MVP-Functional-Spec#3.4.7]].
 

@@ -3,7 +3,7 @@ type: product
 status: active
 tags: [area/frontend, area/design]
 created: 2026-07-01
-updated: 2026-07-28
+updated: 2026-07-30
 related: ["[[Product-Vision]]", "[[FEAT-app-shell-layout]]", "[[Reusable-Patterns]]", "[[Workspace-UI-Design-Decisions]]"]
 ---
 
@@ -193,20 +193,20 @@ Visual reference: Chrome/Obsidian — active tab attached to content surface; cr
 - Full filename on truncated tabs. Touch: long-press or focus equivalent — don't rely on hover-only.
 
 ### Empty states (all panels / standalone views)
-Use the shared `Empty` primitives from `@/components/ui/empty` — same structure everywhere:
+Use **`EmptyState`** from `@/components/ui/empty` — it owns the layout. Do not hand-assemble `Empty` / `EmptyHeader` / `EmptyMedia` at call sites.
 
 ```tsx
-<Empty className="h-full border-none px-4">  // h-full when filling a panel body
-  <EmptyHeader>
-    <EmptyMedia variant="icon">{icon}</EmptyMedia>
-    <EmptyTitle>…</EmptyTitle>
-    <EmptyDescription>…</EmptyDescription>
-  </EmptyHeader>
-  <EmptyContent>{optional CTA Button}</EmptyContent>
-</Empty>
+<EmptyState
+  className="h-full px-4" // h-full when filling a panel body
+  icon={icon}
+  title="…"
+  description="…"
+  action={optionalButton} // omit when no CTA
+  mediaClassName="…" // optional, e.g. destructive tint
+/>
 ```
 
-Canonical examples: `FilesEmptyState` / `AskAiEmptyState` in `page.tsx`; `AccountsEmptyState` in `accounts-table.tsx`. Do **not** hand-roll dashed boxes with custom heading sizes — icon disc, title weight, and description color come from the shared component.
+Canonical examples: `FilesEmptyState` / `AskAiEmptyState` in `page.tsx`; `AccountsEmptyState` in `accounts-table.tsx`; `TagInput`; preview stage / fetch errors. Primitives (`Empty`, `EmptyHeader`, …) remain for `EmptyState` internals only.
 
 **Organization accounts — three mutually exclusive states** (see `organization-view.tsx`):
 

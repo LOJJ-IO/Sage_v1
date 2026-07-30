@@ -3,7 +3,7 @@ type: feature
 status: in-progress
 tags: [area/frontend, area/design]
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-07-30
 related: ["[[FEAT-app-shell-layout]]", "[[Current-Context]]", "[[Lessons-Learned]]", "[[UI-UX-Guidelines]]", "[[Workspace-UI-Design-Decisions]]"]
 ---
 <!-- Filename convention: Product/Features/FEAT-short-title.md -->
@@ -11,7 +11,7 @@ related: ["[[FEAT-app-shell-layout]]", "[[Current-Context]]", "[[Lessons-Learned
 # FEAT: Middle-pane file preview tabs
 
 ## Status
-`in-progress` — **Phases 1–8 complete** (pure state + tab-strip UI + removal-poll sync, 69 tests + vitest). Phase 9 (real viewers) and Phase 10 (CI gate) not started.
+`in-progress` — **Phases 1–9 complete** (pure state + tab-strip UI + removal-poll sync + file viewers, 73 tests + vitest). Phase 10 (CI gate) not started.
 
 ## Phases (master roadmap)
 
@@ -30,8 +30,8 @@ related: ["[[FEAT-app-shell-layout]]", "[[Current-Context]]", "[[Lessons-Learned
 | Follow-up | Status | Scope |
 | --- | --- | --- |
 | **8 — Lifecycle sync** | ✅ Done | `markResourceRemoved` wired by diffing `useFileLibrary().files` against open tab `resourceKey`s; title/fileType refresh on poll when file still exists (already handled by `OPEN_TAB`). |
-| **9 — File viewers** | 🔲 Next | PDF / image / text-markdown / docx-text preview renderers; debounced `updateViewState`; download via `downloadBackendFile`; consume `viewState.highlight` from [[FEAT-citation-sources]] (scroll + highlight char range for text; PDF mapping later). |
-| **10 — CI gate** | 🔲 Blocked | GitHub Actions: `lint`, `test`, `tsc`, `build` on frontend PRs; required check before merge/deploy. Blocked on repo-wide `react-hooks` lint sweep. |
+| **9 — File viewers** | ✅ Done | PDF (`react-pdf` / pdf.js) + image + txt/md (blob) + docx (`GET /files/{id}/text`); `useDebouncedViewState` (~200ms) → `updateViewState`; content cache by `resourceKey`. Citation `viewState.highlight` consumption still follow-up. |
+| **10 — CI gate** | 🔲 Next | GitHub Actions: `lint`, `test`, `tsc`, `build` on frontend PRs; required check before merge/deploy. Blocked on repo-wide `react-hooks` lint sweep. |
 
 ## Problem
 The middle pane of the app shell ([frontend/src/app/page.tsx](frontend/src/app/page.tsx)) is an empty `<section>` — there's no way to preview an opened file. The subsystem needed to support this (tabs, pinning, duplication, removed-file handling, overflow) is meaningfully stateful and was scoped out as its own design pass rather than bolted onto UI code, to avoid re-deriving pinning/duplication/removal rules ad hoc mid-implementation.
@@ -68,11 +68,19 @@ Notable resolved judgment calls (not obvious from a first read of the rules):
 
 ## Out of scope (Phase 1–8, done)
 
-- Actual file viewers (PDF/docx/image rendering) — don't exist in the repo at all yet; Phase 9. Stage shows a placeholder/empty/removed state only.
-- Debounced `updateViewState` syncing from a real viewer (viewer responds immediately; store write is debounced) — needs a real viewer to attach to. Phase 9.
+- Actual file viewers (PDF/docx/image rendering) — **done in Phase 9** (see below).
+- Debounced `updateViewState` syncing from a real viewer — **done in Phase 9**.
 - Version-aware `resourceKey` — would need a backend version/etag field that doesn't exist today.
 - `closeAllUnpinned()` has no UI entry point yet (spec marks it optional for Phase 7); reducer/tests already cover it.
 - Drag-reorder tabs, session restore of open tabs — explicitly excluded by the Phase 7 brief.
+
+### Phase 9 — File viewers (implemented)
+
+- `fetchBackendFileText` in `frontend/src/lib/files/api.ts` → `GET /files/{id}/text`.
+- Viewers under `frontend/src/components/preview-tabs/viewers/`: router, PDF (`react-pdf`, `dynamic` + `ssr: false`), image, txt/md text, docx text; `usePreviewFileContent` (blob/text fetch + in-memory cache by `resourceKey`); `useDebouncedViewState` (200ms, flush on unmount) backed by `createDebouncedCallback` (+ unit tests).
+- `PreviewStage` ready branch renders `<FilePreviewRouter key={tabId} />` instead of “Preview coming soon.”
+- Loading/fetch errors are viewer-local — tab `lifecycle` stays `"ready"` (unchanged reducer).
+- Verified: `npm run test` (73/73), `tsc --noEmit`, eslint on new files, `npm run build`.
 
 ## Known caveats from Phase 7
 
