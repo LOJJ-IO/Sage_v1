@@ -64,5 +64,8 @@ The two other candidate directions from the original writeup (blending a keyword
 - `backend/evals/dataset.py`: added `STORE_PROFILE` seed doc (mirrors the shape that surfaced this — several short labeled sections) plus two new eval cases (`store-profile-who-founded`, `store-profile-mission`) asserting narrow single-fact questions against it don't get refused. Confirmed passing on the retrieval tier (`test_every_eval_case_reports_a_retrieval_verdict`) across two separate runs; the generation tier flaked once on wording (LLM wording variance choosing "beginner-friendly" over "first-time hikers" for the same correct, grounded answer) — unrelated to this fix, and passed cleanly on a second run.
 - Full existing suite (39 tests) re-run after the change: all passing, no regressions.
 
+## Follow-up: this was also the cause of an apparent "punctuation confuses the AI" symptom
+2026-07-30, same session: user reported "Who made TurnUp" (no "?") answered correctly while "Who made TurnUp?" (with "?") refused, in production. Reproduced locally with the pre-fix single-chunk behavior: scores for these narrow queries (0.23–0.34) sat right at the 0.35 threshold edge, where a trivial rewording — including something as small as trailing punctuation — was enough to tip a borderline case across the refuse/answer line. Not a distinct bug or a real "punctuation" sensitivity; same root cause as this one. Re-tested after the chunking fix: "Who made TurnUp", "Who made TurnUp?", "Who made TurnUp ?", and "Who made TurnUp!" all now score 0.74–0.86 — comfortable margin above threshold regardless of trailing punctuation. **This fix is not yet deployed to production as of 2026-07-30** — production will keep showing this symptom until it ships.
+
 ## Related
-[[Known-Issues]], [[Lessons-Learned]], [[FEAT-citation-sources]]
+[[Known-Issues]], [[Lessons-Learned]], [[FEAT-citation-sources]], [[BUG-0002-inline-citation-leak-in-answer-text]]
