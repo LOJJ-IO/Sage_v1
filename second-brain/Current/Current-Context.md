@@ -3,8 +3,8 @@ type: current-context
 status: active
 tags: [priority/high, area/infra, area/frontend]
 created: 2026-07-20
-updated: 2026-07-28
-related: ["[[Deployment-Notes]]", "[[Known-Issues]]", "[[Lessons-Learned]]", "[[UI-UX-Guidelines]]", "[[Workspace-UI-Design-Decisions]]", "[[FEAT-preview-tabs]]", "[[FEAT-citation-sources]]"]
+updated: 2026-07-30
+related: ["[[Deployment-Notes]]", "[[Known-Issues]]", "[[Lessons-Learned]]", "[[UI-UX-Guidelines]]", "[[Workspace-UI-Design-Decisions]]", "[[FEAT-preview-tabs]]", "[[FEAT-citation-sources]]", "[[BUG-0001-narrow-query-refusal-single-chunk]]"]
 ---
 
 # Current Context
@@ -31,7 +31,7 @@ False "not enough grounded information" refusals on production — usually spars
 - Preview-tabs **Phase 8 (lifecycle sync) shipped**: new pure selector `getResourceKeysToMarkRemoved(tabs, presentResourceKeys)` in `selectors.ts` (+4 tests, 69 total now) and a new hook `frontend/src/hooks/use-sync-removed-preview-tabs.ts` wired into `page.tsx` right after `useFileLibrary()`. Diffs `files` against open tabs on every `files`/`tabs` change and calls `markResourceRemoved` for anything missing — covers both explicit delete (synchronous) and the 2s poll (external disappearance). Title/fileType refresh on replace was already handled by `OPEN_TAB`, so nothing further was needed there. Verified: `tsc --noEmit`, `eslint` (new files clean; page.tsx's one pre-existing `getUserRole` lint error is unrelated, see caveats above), `npm run test` (69/69), `npm run build`. See [[FEAT-preview-tabs#Phase 8 — Lifecycle sync (implemented)]].
 - **Citation sources infra shipped** ([[FEAT-citation-sources]]): `/ask` returns structured citations with `filename` + char offsets; chat shows Gurubase-style Sources badges (file-type icon + filename); click opens/focuses the preview tab and seeds `viewState.highlight` for Phase 9 viewers. No real scroll/highlight yet (preview stage still placeholder).
 - Citation source badge (`frontend/src/components/ask/citation-sources.tsx`) was missing `cursor-pointer` — it's a `<button>`, and Tailwind v4's preflight resets `button { cursor: default }`, so it didn't look clickable despite `onClick` working. Fixed same file, uncommitted (working tree). See [[FEAT-citation-sources]].
-- Root-caused (not yet fixed) a second, numeric reproduction of the "narrow query refused, broad query answered" false-refusal pattern on a real user doc (LOJJ.io/TurnUp product brief, single 478-token chunk): rerank scores 0.34/0.14/0.23 for three answerable narrow questions (all refused) vs. 0.48 for a broad keyword-bearing question (answered). See [[BUG-0001-narrow-query-refusal-single-chunk]] and updated [[Known-Issues]] entry. Candidate fixes touch two locked invariants (chunk size, trust threshold) — needs a decision, not applied yet.
+- **Fixed** the "narrow query refused, broad query answered" false-refusal pattern (2026-07-30, [[BUG-0001-narrow-query-refusal-single-chunk]]): `chunk_text()` (`backend/app/ingestion/chunk.py`) now splits a document further along paragraph boundaries when its whole text already fits in a single 650-token window and has multiple paragraphs (`_split_short_document`/`_merge_small_sections`, small paragraphs like bare headings folded into a neighbor). Documents needing the sliding window are untouched. Re-verified against the exact LOJJ.io/TurnUp repro: rerank scores went from 0.34/0.14/0.23 (refused) to 0.99/0.57/0.83 (answered) for the three previously-refused questions. New `backend/tests/app/test_chunk.py` (5 tests, no DB needed) + two new eval cases in `backend/evals/dataset.py` (`store-profile-who-founded`, `store-profile-mission`) guard against regressing this. Full suite (39 tests) passing. Uncommitted (working tree).
 
 ## Still open
 1. User: re-upload **text-based** policy docs (`.txt` / `.md` / text PDF / `.docx`) for any store still refusing; delete scanned "Ready" files that can't be answered.
