@@ -35,6 +35,7 @@ const openInput = (overrides: Partial<OpenTabInput> = {}): OpenTabInput => ({
   resourceKey: overrides.resourceKey ?? "file-1",
   title: overrides.title ?? "File 1.pdf",
   fileType: overrides.fileType ?? "pdf",
+  viewState: overrides.viewState,
 });
 
 describe("OPEN_TAB", () => {
@@ -97,6 +98,44 @@ describe("OPEN_TAB", () => {
 
     expect(next.tabs[0].title).toBe("new-name.pdf");
     expect(next.tabs[0].fileType).toBe("docx");
+  });
+
+  it("merges citation highlight into viewState when focusing an existing tab", () => {
+    const tab = makeTab({
+      tabId: "tab-1",
+      resourceKey: "file-1",
+      viewState: { zoom: 1.2 },
+    });
+    const state = makeState({ tabs: [tab] });
+    const highlight = {
+      citationId: "file-1#abc123",
+      charStart: 40,
+      charEnd: 120,
+    };
+
+    const next = previewTabsReducer(state, {
+      type: "OPEN_TAB",
+      input: openInput({ viewState: { highlight } }),
+    });
+
+    expect(next.tabs[0].viewState).toEqual({ zoom: 1.2, highlight });
+  });
+
+  it("seeds viewState.highlight when opening a new tab from a citation", () => {
+    const state = makeState();
+    const highlight = {
+      citationId: "file-1#abc123",
+      charStart: 0,
+      charEnd: 50,
+    };
+
+    const next = previewTabsReducer(
+      state,
+      { type: "OPEN_TAB", input: openInput({ viewState: { highlight } }) },
+      { makeTabId: makeCounterId("new") },
+    );
+
+    expect(next.tabs[0].viewState.highlight).toEqual(highlight);
   });
 
   it("opens a fresh tab when only a removed tab exists for that resource, rather than reviving it", () => {

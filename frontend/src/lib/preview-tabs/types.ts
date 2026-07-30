@@ -10,10 +10,19 @@ export type OverflowMode = "pagination" | "scroll";
 
 export type TabLifecycle = "loading" | "ready" | "error" | "removed";
 
+/** Citation jump target for Phase 9 viewers (text scroll/highlight; PDF later). */
+export type CitationHighlight = {
+  citationId: string;
+  charStart: number;
+  charEnd: number;
+};
+
 export type ViewState = {
   zoom?: number;
   page?: number;
   scrollTop?: number;
+  /** Set when opening from a Sources badge; viewers consume and may clear. */
+  highlight?: CitationHighlight | null;
 };
 
 export type PreviewTab = {
@@ -40,4 +49,6 @@ export type OpenTabInput = {
   resourceKey: ResourceKey;
   title: string;
   fileType: SageFileType;
+  /** Merged into the focused/new tab's viewState (e.g. citation highlight). */
+  viewState?: Partial<ViewState>;
 };

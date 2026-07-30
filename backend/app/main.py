@@ -65,9 +65,18 @@ class AskRequest(BaseModel):
     question: str
 
 
+class CitationResponse(BaseModel):
+    id: str
+    file_id: str
+    filename: str
+    chunk_index: int
+    char_start: int
+    char_end: int
+
+
 class AskResponse(BaseModel):
     answer: str
-    citations: list[str]
+    citations: list[CitationResponse]
     refused: bool
     reason: str | None
     limited: bool
@@ -78,7 +87,17 @@ async def ask(user: CurrentUser, payload: AskRequest) -> AskResponse:
     result = await answer_question(business_id=user.business_id, user_id=user.user_id, question=payload.question)
     return AskResponse(
         answer=result.answer,
-        citations=result.citations,
+        citations=[
+            CitationResponse(
+                id=c.id,
+                file_id=c.file_id,
+                filename=c.filename,
+                chunk_index=c.chunk_index,
+                char_start=c.char_start,
+                char_end=c.char_end,
+            )
+            for c in result.citations
+        ],
         refused=result.refused,
         reason=result.reason,
         limited=result.limited,

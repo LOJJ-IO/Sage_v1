@@ -61,7 +61,8 @@ async def run_case(case: EvalCase) -> CaseResult:
                 answer_lower = result.answer.lower()
                 keywords_ok = all(kw.lower() in answer_lower for kw in case.expect_keywords)
                 citation_ok = case.expect_citation_file is None or any(
-                    case.expect_citation_file in c for c in result.citations
+                    case.expect_citation_file in c.filename or case.expect_citation_file in c.file_id
+                    for c in result.citations
                 )
                 generation_pass = keywords_ok and citation_ok
                 generation_status = "ran"

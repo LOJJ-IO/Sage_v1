@@ -56,7 +56,14 @@ export function previewTabsReducer(
           ...state,
           tabs: state.tabs.map((tab) =>
             tab.tabId === mruMatchId
-              ? { ...tab, title: input.title, fileType: input.fileType }
+              ? {
+                  ...tab,
+                  title: input.title,
+                  fileType: input.fileType,
+                  viewState: input.viewState
+                    ? { ...tab.viewState, ...input.viewState }
+                    : tab.viewState,
+                }
               : tab,
           ),
           activeTabId: mruMatchId,
@@ -71,7 +78,7 @@ export function previewTabsReducer(
         fileType: input.fileType,
         pinned: false,
         lifecycle: "ready",
-        viewState: {},
+        viewState: { ...(input.viewState ?? {}) },
       };
 
       return {

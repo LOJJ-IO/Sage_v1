@@ -13,10 +13,12 @@ from dataclasses import dataclass
 
 from pydantic_ai.exceptions import ModelHTTPError, UnexpectedModelBehavior
 
+from sqlalchemy import select
+
 from app.agent.sage_agent import AgentDeps, get_agent
 from app.db import get_session
 from app.limits import DailyCapExceeded, check_and_increment, validate_question
-from app.models import ChatHistory
+from app.models import ChatHistory, File
 from app.retrieval import retrieve
 from app.retrieval.assemble import AssembledContext, assemble_context
 from app.retrieval.trust import evaluate_trust
@@ -36,12 +38,37 @@ MODEL_UNAVAILABLE_MESSAGE = "Sage is temporarily unable to answer — the model 
 
 
 @dataclass(frozen=True)
+class Citation:
+    """One grounded source the UI can show and (later) jump-to in preview."""
+
+    id: str
+    file_id: str
+    filename: str
+    chunk_index: int
+    char_start: int
+    char_end: int
+
+
+@dataclass(frozen=True)
 class AnswerResult:
     answer: str
-    citations: list[str]
+    citations: list[Citation]
     refused: bool
     reason: str | None
     limited: bool = False
+
+
+async def _filenames_for(*, business_id: uuid.UUID, file_ids: set[str]) -> dict[str, str]:
+    if not file_ids:
+        return {}
+    async with get_session() as session:
+        result = await session.execute(
+            select(File.file_id, File.filename).where(
+                File.business_id == business_id,
+                File.file_id.in_(file_ids),
+            )
+        )
+        return {row.file_id: row.filename for row in result.all()}
 
 
 async def _persist(
@@ -95,16 +122,36 @@ async def answer_question(
     logger.info("model call succeeded model=%s business_id=%s", agent.model.model_name, business_id)
     output = result.output
 
-    citation_records = [
-        {
-            "id": cid,
-            "file_id": assembled.citation_lookup[cid].file_id,
-            "chunk_index": assembled.citation_lookup[cid].chunk_index,
-            "char_start": assembled.citation_lookup[cid].char_start,
-            "char_end": assembled.citation_lookup[cid].char_end,
-        }
+    cited_hits = [
+        (cid, assembled.citation_lookup[cid])
         for cid in output.citations
         if cid in assembled.citation_lookup
+    ]
+    filenames = await _filenames_for(
+        business_id=business_id,
+        file_ids={hit.file_id for _, hit in cited_hits},
+    )
+    citations = [
+        Citation(
+            id=cid,
+            file_id=hit.file_id,
+            filename=filenames.get(hit.file_id) or hit.file_id,
+            chunk_index=hit.chunk_index,
+            char_start=hit.char_start,
+            char_end=hit.char_end,
+        )
+        for cid, hit in cited_hits
+    ]
+    citation_records = [
+        {
+            "id": c.id,
+            "file_id": c.file_id,
+            "filename": c.filename,
+            "chunk_index": c.chunk_index,
+            "char_start": c.char_start,
+            "char_end": c.char_end,
+        }
+        for c in citations
     ]
 
     await _persist(
@@ -114,7 +161,7 @@ async def answer_question(
         "answered business_id=%s hits=%d citations=%d refused=%s",
         business_id,
         len(hits),
-        len(citation_records),
+        len(citations),
         decision.refused,
     )
-    return AnswerResult(answer=output.answer, citations=output.citations, refused=decision.refused, reason=decision.reason)
+    return AnswerResult(answer=output.answer, citations=citations, refused=decision.refused, reason=decision.reason)
