@@ -150,14 +150,14 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
       <div className="flex min-h-0 flex-1 gap-2">
         <nav
           aria-label="Settings sections"
-          className="flex w-40 shrink-0 flex-col gap-0.5 rounded-2xl border border-border bg-background p-2 shadow-sm"
+          className="flex w-30 shrink-0 flex-col gap-0.5 rounded-2xl border border-border bg-background p-2 shadow-sm"
         >
           {NAV_ITEMS.map((item) => (
             <button
               key={item.id}
               aria-current={section === item.id ? "page" : undefined}
               className={cn(
-                "flex items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors",
+                "flex items-center justify-center rounded-md px-2 py-2 text-sm transition-colors",
                 section === item.id
                   ? "bg-muted font-medium text-foreground"
                   : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
@@ -165,12 +165,14 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               onClick={() => setSection(item.id)}
               type="button"
             >
-              <span
-                aria-hidden="true"
-                className={`codicon ${item.iconClass} [-webkit-text-stroke:0.35px_currentColor]`}
-                style={{ fontSize: 16 }}
-              />
-              {item.label}
+              <span className="grid w-24 grid-cols-[1rem_1fr] items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className={`codicon ${item.iconClass} justify-self-center [-webkit-text-stroke:0.35px_currentColor]`}
+                  style={{ fontSize: 16 }}
+                />
+                <span className="text-left">{item.label}</span>
+              </span>
             </button>
           ))}
         </nav>
