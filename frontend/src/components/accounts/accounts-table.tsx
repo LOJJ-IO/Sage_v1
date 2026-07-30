@@ -11,14 +11,7 @@ import {
 } from "@/components/accounts/account-role-badge";
 import { AccountRowMenu } from "@/components/accounts/account-row-menu";
 import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
+import { EmptyState } from "@/components/ui/empty";
 import type { Account } from "@/lib/accounts/types";
 import { cn } from "@/lib/utils";
 
@@ -37,23 +30,9 @@ const EMPTY_ICON_STROKE = 2.2;
 
 function AccountsEmptyState({ onAddAccount }: { onAddAccount?: () => void }) {
   return (
-    <Empty className="border-none px-4 py-10">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <IconUsers
-            aria-hidden="true"
-            size={EMPTY_ICON_SIZE}
-            stroke={EMPTY_ICON_STROKE}
-          />
-        </EmptyMedia>
-        <EmptyTitle>No accounts yet</EmptyTitle>
-        <EmptyDescription>
-          Add your first team member to give them access to Sage on the store
-          floor.
-        </EmptyDescription>
-      </EmptyHeader>
-      {onAddAccount ? (
-        <EmptyContent>
+    <EmptyState
+      action={
+        onAddAccount ? (
           <Button onClick={onAddAccount} size="sm" type="button">
             <IconPlus
               aria-hidden="true"
@@ -62,9 +41,19 @@ function AccountsEmptyState({ onAddAccount }: { onAddAccount?: () => void }) {
             />
             Add account
           </Button>
-        </EmptyContent>
-      ) : null}
-    </Empty>
+        ) : undefined
+      }
+      className="px-4 py-10"
+      description="Add your first team member to give them access to Sage on the store floor."
+      icon={
+        <IconUsers
+          aria-hidden="true"
+          size={EMPTY_ICON_SIZE}
+          stroke={EMPTY_ICON_STROKE}
+        />
+      }
+      title="No accounts yet"
+    />
   );
 }
 
