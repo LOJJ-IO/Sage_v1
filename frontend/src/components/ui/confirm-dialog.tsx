@@ -4,15 +4,8 @@ import type { ReactNode } from "react";
 import { useCallback } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  type DialogSize,
-} from "@/components/ui/dialog";
+import { ShellDialog } from "@/components/ui/shell-dialog";
+import type { DialogSize } from "@/components/ui/dialog";
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -49,16 +42,10 @@ export function ConfirmDialog({
   }, [onConfirm, onOpenChange]);
 
   return (
-    <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent kind="confirm" onSafeExit={handleSafeExit} size={size} variant="shell">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          {description ? (
-            <DialogDescription>{description}</DialogDescription>
-          ) : null}
-        </DialogHeader>
-
-        <DialogFooter>
+    <ShellDialog
+      description={description}
+      footer={
+        <>
           <Button
             autoFocus={open}
             disabled={isConfirming}
@@ -76,8 +63,14 @@ export function ConfirmDialog({
           >
             {isConfirming ? `${confirmLabel}…` : confirmLabel}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </>
+      }
+      kind="confirm"
+      onOpenChange={onOpenChange}
+      onSafeExit={handleSafeExit}
+      open={open}
+      size={size}
+      title={title}
+    />
   );
 }
