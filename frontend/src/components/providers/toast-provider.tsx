@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
@@ -39,13 +40,13 @@ function createToastId() {
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastRecord[]>([]);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const timersRef = useRef<Map<string, number>>(new Map());
   const pausedRef = useRef<Set<string>>(new Set());
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const clearTimer = useCallback((id: string) => {
     const timer = timersRef.current.get(id);
