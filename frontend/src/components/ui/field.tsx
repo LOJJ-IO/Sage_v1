@@ -1,10 +1,11 @@
 import { cn } from "@/lib/utils";
+import { INPUT_CONTROL, INPUT_SHELL } from "@/components/ui/input";
 
-export const FIELD_SHELL =
-  "border border-border bg-background shadow-sm focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/50";
+/** @deprecated Prefer `INPUT_SHELL` from `@/components/ui/input`. */
+export const FIELD_SHELL = INPUT_SHELL;
 
-export const FIELD_INPUT =
-  "min-w-0 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground";
+/** @deprecated Prefer `INPUT_CONTROL` from `@/components/ui/input`. */
+export const FIELD_INPUT = INPUT_CONTROL;
 
 type FieldInputProps = {
   value: string;
@@ -26,12 +27,12 @@ export function FieldInput({
   return (
     <div
       className={cn(
-        "flex min-w-0 items-center rounded-full py-1 pl-4 pr-4",
-        FIELD_SHELL
+        "flex h-10 min-w-0 items-center px-3.5",
+        INPUT_SHELL
       )}
     >
       <input
-        className={cn(FIELD_INPUT, "flex-1 truncate")}
+        className={cn(INPUT_CONTROL, "w-full flex-1 truncate")}
         disabled={disabled}
         id={id}
         onChange={(event) => onChange(event.target.value)}
@@ -59,9 +60,9 @@ export function FieldTextArea({
   disabled,
 }: FieldTextAreaProps) {
   return (
-    <div className={cn("min-w-0 rounded-full px-4 py-2", FIELD_SHELL)}>
+    <div className={cn("min-w-0 px-3.5 py-2.5", INPUT_SHELL)}>
       <textarea
-        className={cn(FIELD_INPUT, "min-h-24 resize-y")}
+        className={cn(INPUT_CONTROL, "min-h-24 w-full resize-y")}
         disabled={disabled}
         id={id}
         onChange={(event) => onChange(event.target.value)}

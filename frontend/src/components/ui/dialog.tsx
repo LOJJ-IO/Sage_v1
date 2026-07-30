@@ -36,8 +36,18 @@ const DIALOG_SIZE_CLASS: Record<DialogSize, string> = {
   xl: "max-w-5xl",
 };
 
+/** Shell frame — uses `--dialog-shell-*` tokens from globals.css */
 const DIALOG_SHELL_CLASS =
-  "flex max-h-[min(80vh,32rem)] min-h-[20rem] flex-col gap-0 overflow-hidden p-0";
+  "flex max-h-[var(--dialog-shell-max-h)] min-h-[var(--dialog-shell-min-h)] flex-col gap-0 overflow-hidden p-0";
+
+const DIALOG_SHELL_HEADER_CLASS =
+  "min-w-0 shrink-0 space-y-1 overflow-hidden border-b border-border px-dialog-shell-x py-dialog-shell-header-y pr-14";
+
+const DIALOG_SHELL_BODY_CLASS =
+  "min-h-0 flex-1 overflow-y-auto px-dialog-shell-x py-dialog-shell-body-y";
+
+const DIALOG_SHELL_FOOTER_CLASS =
+  "flex shrink-0 justify-end gap-2 border-t border-border px-dialog-shell-x py-dialog-shell-footer-y";
 
 function Dialog({
   open,
@@ -131,7 +141,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       className={cn(
         variant === "shell"
-          ? "shrink-0 space-y-1.5 border-b border-border px-6 py-5 pr-14"
+          ? DIALOG_SHELL_HEADER_CLASS
           : "mb-4 space-y-1.5 pr-8",
         className
       )}
@@ -143,7 +153,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
 function DialogBody({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
-      className={cn("min-h-0 flex-1 overflow-y-auto px-6 py-5", className)}
+      className={cn(DIALOG_SHELL_BODY_CLASS, className)}
       {...props}
     />
   );
@@ -153,7 +163,7 @@ function DialogTitle({ className, ...props }: React.ComponentProps<"h2">) {
   return (
     <DialogPrimitive.Title
       className={cn(
-        "font-heading text-lg font-semibold tracking-tight text-foreground",
+        "min-w-0 truncate font-heading text-lg font-semibold tracking-tight text-foreground",
         className
       )}
       {...props}
@@ -167,7 +177,7 @@ function DialogDescription({
 }: React.ComponentProps<"p">) {
   return (
     <DialogPrimitive.Description
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn("min-w-0 text-sm text-muted-foreground", className)}
       {...props}
     />
   );
@@ -180,7 +190,7 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       className={cn(
         variant === "shell"
-          ? "flex shrink-0 justify-end gap-2 border-t border-border px-6 py-4"
+          ? DIALOG_SHELL_FOOTER_CLASS
           : "mt-6 flex justify-end gap-2",
         className
       )}
