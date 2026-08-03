@@ -47,6 +47,10 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --spacing-dialog-shell-x: var(--dialog-shell-px);
+  --spacing-dialog-shell-header-y: var(--dialog-shell-header-py);
+  --spacing-dialog-shell-footer-y: var(--dialog-shell-footer-py);
+  --spacing-dialog-shell-body-y: var(--dialog-shell-body-py);
 }
 
 body {
@@ -85,6 +89,13 @@ html {
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
+  /* Dialog shell chrome — Settings / FormDialog / wizards share these */
+  --dialog-shell-px: 1.5rem;
+  --dialog-shell-header-py: 0.875rem;
+  --dialog-shell-footer-py: 0.75rem;
+  --dialog-shell-body-py: 1.25rem;
+  --dialog-shell-max-h: min(80vh, 32rem);
+  --dialog-shell-min-h: 20rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);

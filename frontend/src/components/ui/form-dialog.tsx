@@ -4,16 +4,8 @@ import type { FormEvent, ReactNode } from "react";
 import { useCallback } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  type DialogSize,
-} from "@/components/ui/dialog";
+import { ShellDialog } from "@/components/ui/shell-dialog";
+import type { DialogSize } from "@/components/ui/dialog";
 
 type FormDialogProps = {
   open: boolean;
@@ -25,7 +17,10 @@ type FormDialogProps = {
   onSave: () => void | Promise<void>;
   isSaving?: boolean;
   children: ReactNode;
+  className?: string;
   bodyClassName?: string;
+  headerClassName?: string;
+  footerClassName?: string;
 };
 
 export function FormDialog({
@@ -38,7 +33,10 @@ export function FormDialog({
   onSave,
   isSaving = false,
   children,
+  className,
   bodyClassName,
+  headerClassName,
+  footerClassName,
 }: FormDialogProps) {
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
@@ -65,33 +63,36 @@ export function FormDialog({
   );
 
   return (
-    <Dialog onOpenChange={handleOpenChange} open={open}>
-      <DialogContent kind="form" onSafeExit={handleDiscard} size={size} variant="shell">
-        <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
-            {description ? (
-              <DialogDescription>{description}</DialogDescription>
-            ) : null}
-          </DialogHeader>
-
-          <DialogBody className={bodyClassName}>{children}</DialogBody>
-
-          <DialogFooter>
-            <Button
-              disabled={isSaving}
-              onClick={handleDiscard}
-              type="button"
-              variant="outline"
-            >
-              Discard
-            </Button>
-            <Button disabled={isSaving} type="submit">
-              {isSaving ? "Saving…" : "Save"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <ShellDialog
+      bodyClassName={bodyClassName}
+      className={className}
+      description={description}
+      footer={
+        <>
+          <Button
+            disabled={isSaving}
+            onClick={handleDiscard}
+            type="button"
+            variant="outline"
+          >
+            Discard
+          </Button>
+          <Button disabled={isSaving} type="submit">
+            {isSaving ? "Saving…" : "Save"}
+          </Button>
+        </>
+      }
+      footerClassName={footerClassName}
+      headerClassName={headerClassName}
+      kind="form"
+      onOpenChange={handleOpenChange}
+      onSafeExit={handleDiscard}
+      onSubmit={handleSubmit}
+      open={open}
+      size={size}
+      title={title}
+    >
+      {children}
+    </ShellDialog>
   );
 }

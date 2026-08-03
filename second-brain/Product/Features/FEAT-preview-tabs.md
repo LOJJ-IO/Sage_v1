@@ -3,7 +3,7 @@ type: feature
 status: in-progress
 tags: [area/frontend, area/design]
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-07-30
 related: ["[[FEAT-app-shell-layout]]", "[[Current-Context]]", "[[Lessons-Learned]]", "[[UI-UX-Guidelines]]", "[[Workspace-UI-Design-Decisions]]"]
 ---
 <!-- Filename convention: Product/Features/FEAT-short-title.md -->
@@ -11,7 +11,7 @@ related: ["[[FEAT-app-shell-layout]]", "[[Current-Context]]", "[[Lessons-Learned
 # FEAT: Middle-pane file preview tabs
 
 ## Status
-`in-progress` — **Phases 1–8 complete** (pure state + tab-strip UI + removal-poll sync, 69 tests + vitest). Phase 9 (real viewers) and Phase 10 (CI gate) not started.
+`in-progress` — **Phases 1–9 complete** (pure state + tab-strip UI + removal-poll sync + file viewers, 73 tests + vitest). Phase 10 (CI gate) not started.
 
 ## Phases (master roadmap)
 
@@ -30,8 +30,8 @@ related: ["[[FEAT-app-shell-layout]]", "[[Current-Context]]", "[[Lessons-Learned
 | Follow-up | Status | Scope |
 | --- | --- | --- |
 | **8 — Lifecycle sync** | ✅ Done | `markResourceRemoved` wired by diffing `useFileLibrary().files` against open tab `resourceKey`s; title/fileType refresh on poll when file still exists (already handled by `OPEN_TAB`). |
-| **9 — File viewers** | 🔲 Next | PDF / image / text-markdown / docx-text preview renderers; debounced `updateViewState`; download via `downloadBackendFile`; consume `viewState.highlight` from [[FEAT-citation-sources]] (scroll + highlight char range for text; PDF mapping later). |
-| **10 — CI gate** | 🔲 Blocked | GitHub Actions: `lint`, `test`, `tsc`, `build` on frontend PRs; required check before merge/deploy. Blocked on repo-wide `react-hooks` lint sweep. |
+| **9 — File viewers** | ✅ Done | PDF (`react-pdf` / pdf.js) + image + txt/md (blob) + docx (`GET /files/{id}/text`); `useDebouncedViewState` (~200ms) → `updateViewState`; content cache by `resourceKey`. Citation `viewState.highlight` consumption still follow-up. |
+| **10 — CI gate** | 🔲 Next | GitHub Actions: `lint`, `test`, `tsc`, `build` on frontend PRs; required check before merge/deploy. Blocked on repo-wide `react-hooks` lint sweep. |
 
 ## Problem
 The middle pane of the app shell ([frontend/src/app/page.tsx](frontend/src/app/page.tsx)) is an empty `<section>` — there's no way to preview an opened file. The subsystem needed to support this (tabs, pinning, duplication, removed-file handling, overflow) is meaningfully stateful and was scoped out as its own design pass rather than bolted onto UI code, to avoid re-deriving pinning/duplication/removal rules ad hoc mid-implementation.
@@ -68,26 +68,38 @@ Notable resolved judgment calls (not obvious from a first read of the rules):
 
 ## Out of scope (Phase 1–8, done)
 
-- Actual file viewers (PDF/docx/image rendering) — don't exist in the repo at all yet; Phase 9. Stage shows a placeholder/empty/removed state only.
-- Debounced `updateViewState` syncing from a real viewer (viewer responds immediately; store write is debounced) — needs a real viewer to attach to. Phase 9.
+- Actual file viewers (PDF/docx/image rendering) — **done in Phase 9** (see below).
+- Debounced `updateViewState` syncing from a real viewer — **done in Phase 9**.
 - Version-aware `resourceKey` — would need a backend version/etag field that doesn't exist today.
 - `closeAllUnpinned()` has no UI entry point yet (spec marks it optional for Phase 7); reducer/tests already cover it.
 - Drag-reorder tabs, session restore of open tabs — explicitly excluded by the Phase 7 brief.
+
+### Phase 9 — File viewers (implemented)
+
+- `fetchBackendFileText` in `frontend/src/lib/files/api.ts` → `GET /files/{id}/text`.
+- Viewers under `frontend/src/components/preview-tabs/viewers/`: router, PDF (`react-pdf`, `dynamic` + `ssr: false`), image, txt/md text, docx text; `usePreviewFileContent` (blob/text fetch + in-memory cache by `resourceKey`); `useDebouncedViewState` (200ms, flush on unmount) backed by `createDebouncedCallback` (+ unit tests).
+- `PreviewStage` ready branch renders `<FilePreviewRouter key={tabId} />` instead of “Preview coming soon.”
+- Loading/fetch errors are viewer-local — tab `lifecycle` stays `"ready"` (unchanged reducer).
+- Verified: `npm run test` (73/73), `tsc --noEmit`, eslint on new files, `npm run build`.
 
 ## Known caveats from Phase 7
 
 - **`overflowMode` SSR hydration:** `store.ts` calls `loadOverflowMode()` synchronously at module-eval time, which reads real `localStorage` client-side but the default (`"scroll"`) server-side. If a user persisted `"pagination"`, the first client render can mismatch the server-rendered HTML for one tick before React corrects it (a dev-mode hydration warning, not a functional bug — `toast-provider.tsx` sidesteps the same class of issue with a `mounted` guard, which this doesn't yet do). Worth a `mounted` guard if the warning proves noisy in practice.
 - **Repo-wide `npm run lint` is not clean**, independent of this work — `eslint-config-next` 16.2.9 bundles a stricter `eslint-plugin-react-hooks` that flags `react-hooks/set-state-in-effect` and `react-hooks/static-components` across several pre-existing files (`file-row-menu.tsx`, `file-type-icon.tsx`, `edit-file-tags-dialog.tsx`, `toast-provider.tsx`, `theme-provider.tsx`, `use-file-library.ts`, `use-dialog-draft.ts`, `account-row-menu.tsx`, `organization-view.tsx`, and `page.tsx`'s `getUserRole` effect). None of this was introduced by Phase 7 — all new `preview-tabs/` files are lint-clean — but a repo-wide sweep is needed before Phase 10's CI gate can require `eslint` to pass.
+- **Inverse tab fillets + overflow:** Chrome-style scoops (`preview-tab-chrome.css`) paint outside the tab box. Keep `margin-inline ≥ --preview-tab-curve`, strip/tablist `overflow-visible`, and do not wrap shaped tabs in `overflow-hidden`. See [[Lessons-Learned#2026-07-28 — Chrome-style inverse tab fillets get clipped when margin < curve or an ancestor uses overflow:hidden]].
 
 ## UI/UX
 Visual reference: Chrome/Obsidian-style tab strip — active tab visually connected to preview stage; inactive tabs recede; crowded mode compresses gracefully. Full rules in [[UI-UX-Guidelines#Preview tab strip]] and [[Workspace-UI-Design-Decisions#2. Tab model (center panel / file previewer)]].
 
+**Design change (2026-07-28, post-Phase 8):** tab chrome now matches Chrome structurally — no per-tab kebab button. The right slot is a close ✕ when unpinned (always visible on the active tab, hover/focus-reveal on inactive). When pinned, that same slot swaps to a pin icon (always visible — status + unpin click). Pin/duplicate/close also live on a **right-click context menu** (`PreviewTabContextMenu` in `preview-tab-menu.tsx`, anchored at the pointer). Inactive tabs lost their full-height `border-r`; adjacent tabs are separated by short centered dividers (`h-4`, bottom-aligned) rendered by the lane and hidden on either side of the active tab. The pinned/unpinned region divider uses the same short form. Supersedes the "kebab always reachable" rule below — the context menu is the always-reachable action surface now, including for icon-only pinned tabs. Hovered inactive tabs take the same rounded-top chrome at their own `h-9` height in a `--preview-tab-hover` tone. The file explorer's `FileRowMenu` kebab was likewise replaced by `FileRowContextMenu` (right-click on the row, one instance owned by `FileList`).
+
 Key visual laws:
 - **Active vs inactive:** active tab has higher contrast and feels attached to the preview surface; inactive tabs are flatter/quieter. Active ≠ focus ring — active is persistent selection; focus is transient keyboard state.
 - **Width under pressure:** active tab stays wider than neighbors; inactive tabs compress more aggressively. Pinned cluster compresses *before* unpinned region loses readability.
-- **Pinned cluster:** fixed left group, non-scrollable by default; divider after last pinned tab when `pinnedCount > 0` (no divider, no reserved gap when zero pinned). Kebab remains on pinned tabs (unpin, duplicate; close disabled while pinned). Unpin promotes MRU (already in reducer).
-- **Progressive compression (pinned):** (0) icon + truncated label → (1) stronger truncation → (2) icon-only + tooltip for full filename + kebab → (3) fallback only: pinned region becomes independently horizontally scrollable; active pinned tab auto-reveals inside that region.
-- **Unpinned region:** owns normal overflow (`pagination` | `scroll` from store); active tab always brought into view.
+- **Pinned cluster:** pinned tabs sort first in one row (no special region divider).
+- **Progressive compression:** continuous flex-shrink with truncating filename; **icon-only only** when measured width can’t fit the label. No horizontal scrollbar.
+- **Dividers:** between tabs only; hover or active hides that tab’s left and right dividers.
+- **Trailing action:** one ghost button — ✕ unpinned / pin pinned (identical hover bg).
 
 ## Phase 7 — Tab-strip UI implementation brief (no viewers)
 **Goal:** Render and interact with `usePreviewTabsStore` in the empty center `<section>` at `frontend/src/app/page.tsx` (~line 565). No PDF/docx/image viewers yet — preview **stage** is a placeholder empty/error/removed state only.

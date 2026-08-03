@@ -23,6 +23,8 @@ export type ViewState = {
   scrollTop?: number;
   /** Set when opening from a Sources badge; viewers consume and may clear. */
   highlight?: CitationHighlight | null;
+  /** PDF only: one page at a time vs all pages stacked. */
+  scrollMode?: "single" | "continuous";
 };
 
 export type PreviewTab = {

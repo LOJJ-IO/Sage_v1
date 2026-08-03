@@ -8,6 +8,7 @@ chunks itself — everything tenant-scoped goes through `app.retrieval.retrieve`
 from __future__ import annotations
 
 import logging
+import re
 import uuid
 from dataclasses import dataclass
 
@@ -35,6 +36,24 @@ REFUSAL_MESSAGE = (
 LIMIT_MESSAGE = "This store has reached its daily question limit. Please try again tomorrow."
 
 MODEL_UNAVAILABLE_MESSAGE = "Sage is temporarily unable to answer — the model is unavailable right now. Please try again in a moment."
+
+
+def _strip_inline_citations(answer: str, citation_ids: frozenset[str]) -> str:
+    """Remove any `[citation_id]` the model wrote inline in the prose despite the system prompt.
+
+    Citations belong only in SageAnswer.citations, surfaced to the UI as
+    separate Sources badges — never as raw ids in the text a staff member
+    reads. The system prompt says so, but LLM instruction-following isn't a
+    correctness guarantee (same reasoning as citation-id validation above),
+    so this is a plain string operation, not something we hope the model
+    gets right. Only strips ids that are actually valid for this context,
+    so it can't accidentally eat unrelated bracketed text.
+    """
+    for cid in citation_ids:
+        answer = answer.replace(f"[{cid}]", "")
+    answer = re.sub(r" {2,}", " ", answer)
+    answer = re.sub(r" +([.,;:!?])", r"\1", answer)
+    return answer.strip()
 
 
 @dataclass(frozen=True)
@@ -121,6 +140,7 @@ async def answer_question(
         return AnswerResult(answer=MODEL_UNAVAILABLE_MESSAGE, citations=[], refused=False, reason="MODEL_UNAVAILABLE")
     logger.info("model call succeeded model=%s business_id=%s", agent.model.model_name, business_id)
     output = result.output
+    answer_text = _strip_inline_citations(output.answer, assembled.citation_ids)
 
     cited_hits = [
         (cid, assembled.citation_lookup[cid])
@@ -155,7 +175,7 @@ async def answer_question(
     ]
 
     await _persist(
-        business_id=business_id, user_id=user_id, question=question, answer=output.answer, citations=citation_records
+        business_id=business_id, user_id=user_id, question=question, answer=answer_text, citations=citation_records
     )
     logger.info(
         "answered business_id=%s hits=%d citations=%d refused=%s",
@@ -164,4 +184,4 @@ async def answer_question(
         len(citations),
         decision.refused,
     )
-    return AnswerResult(answer=output.answer, citations=citations, refused=decision.refused, reason=decision.reason)
+    return AnswerResult(answer=answer_text, citations=citations, refused=decision.refused, reason=decision.reason)

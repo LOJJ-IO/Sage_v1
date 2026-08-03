@@ -1,63 +1,59 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useToast } from "@/components/providers/toast-provider";
-
+import { TruncatedFilename } from "@/components/preview-tabs/truncated-filename";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ShellDialog } from "@/components/ui/shell-dialog";
+import { TagInput } from "@/components/ui/tag-input";
 import type { LibraryFile } from "@/lib/file-upload";
+import { TRUNCATE_PROSE_CLASS } from "@/lib/ui/truncate";
 
 type EditFileTagsDialogProps = {
   file: LibraryFile | null;
+  files: LibraryFile[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (fileId: string, tags: string[]) => void;
 };
 
-function parseTagsInput(value: string): string[] {
-  return [
-    ...new Set(
-      value
-        .split(",")
-        .map((tag) => tag.trim().toLowerCase())
-        .filter((tag) => tag.length > 0),
-    ),
-  ];
-}
-
-function formatTagsInput(tags: string[]): string {
-  return tags.join(", ");
+function collectLibraryTags(files: LibraryFile[]): string[] {
+  const tags = new Set<string>();
+  for (const entry of files) {
+    for (const tag of entry.tags) {
+      const normalized = tag.trim().toLowerCase();
+      if (normalized) {
+        tags.add(normalized);
+      }
+    }
+  }
+  return [...tags].sort((a, b) => a.localeCompare(b));
 }
 
 export function EditFileTagsDialog({
   file,
+  files,
   open,
   onOpenChange,
   onSubmit,
 }: EditFileTagsDialogProps) {
   const toast = useToast();
-  const [tagsInput, setTagsInput] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+
+  const suggestions = useMemo(() => collectLibraryTags(files), [files]);
+  const canSave = file != null && tags.length > 0;
 
   useEffect(() => {
     if (open && file) {
-      setTagsInput(formatTagsInput(file.tags));
+      setTags([...file.tags]);
     }
   }, [file, open]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
-      setTagsInput("");
+      setTags([]);
     }
 
     onOpenChange(nextOpen);
@@ -66,55 +62,61 @@ export function EditFileTagsDialog({
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!file) {
+    if (!file || tags.length === 0) {
       return;
     }
 
-    onSubmit(file.id, parseTagsInput(tagsInput));
+    onSubmit(file.id, tags);
     toast.success({ title: "Tags saved" });
     handleOpenChange(false);
   };
 
   return (
-    <Dialog onOpenChange={handleOpenChange} open={open}>
-      {open && file ? (
-        <DialogContent>
-          <form onSubmit={handleSubmit}>
-            <DialogHeader>
-              <DialogTitle>Edit tags</DialogTitle>
-              <DialogDescription>
-                Keywords help Sage find{" "}
-                <span className="font-medium text-foreground">
-                  {file.file.name}
-                </span>{" "}
-                when staff ask questions. Separate tags with commas.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-2">
-              <Label htmlFor="file-tags-input">Tags / keywords</Label>
-              <Input
-                autoComplete="off"
-                id="file-tags-input"
-                onChange={(event) => setTagsInput(event.target.value)}
-                placeholder="training, policy, returns"
-                value={tagsInput}
-              />
-            </div>
-
-            <DialogFooter>
-              <Button
-                onClick={() => handleOpenChange(false)}
-                type="button"
-                variant="outline"
-              >
-                Cancel
-              </Button>
-              <Button type="submit">Save tags</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      ) : null}
-    </Dialog>
+    <ShellDialog
+      bodyClassName="py-3"
+      className="min-h-0"
+      description={
+        file ? (
+          <span className="flex min-w-0 items-center gap-1">
+            <span className="shrink-0">Keywords help Sage find</span>
+            <TruncatedFilename
+              className="font-medium text-foreground"
+              maxWidthClass={TRUNCATE_PROSE_CLASS}
+              title={file.file.name}
+            />
+          </span>
+        ) : (
+          "Keywords help Sage find this file."
+        )
+      }
+      footer={
+        <>
+          <Button
+            onClick={() => handleOpenChange(false)}
+            type="button"
+            variant="outline"
+          >
+            Cancel
+          </Button>
+          <Button disabled={!canSave} type="submit">
+            Save tags
+          </Button>
+        </>
+      }
+      kind="form"
+      onOpenChange={handleOpenChange}
+      onSafeExit={() => handleOpenChange(false)}
+      onSubmit={handleSubmit}
+      open={open && file != null}
+      size="sm"
+      title="Edit tags"
+    >
+      <TagInput
+        id="file-tags-input"
+        onChange={setTags}
+        suggestions={suggestions}
+        value={tags}
+      />
+    </ShellDialog>
   );
 }

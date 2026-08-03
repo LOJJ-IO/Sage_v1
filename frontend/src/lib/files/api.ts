@@ -39,6 +39,11 @@ export async function deleteBackendFile(fileId: string): Promise<void> {
 /** Direct fetch (not apiFetch) because the response is a blob, not JSON. */
 export async function downloadBackendFile(fileId: string): Promise<Blob> {
   const baseUrl = getApiBaseUrl();
+  if (!baseUrl) {
+    throw new Error(
+      "API is not configured. Set NEXT_PUBLIC_API_URL to connect to the backend.",
+    );
+  }
   const token = getAuthToken();
   const response = await fetch(`${baseUrl}/files/${fileId}/content`, {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -49,4 +54,10 @@ export async function downloadBackendFile(fileId: string): Promise<Blob> {
   }
 
   return response.blob();
+}
+
+/** Extracted text from ingestion chunks — used for docx preview (no in-browser renderer). */
+export async function fetchBackendFileText(fileId: string): Promise<string> {
+  const body = await apiFetch<{ text: string }>(`/files/${fileId}/text`);
+  return body.text;
 }

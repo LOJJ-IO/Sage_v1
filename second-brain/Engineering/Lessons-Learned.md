@@ -3,8 +3,8 @@ type: lessons
 status: active
 tags: [area/frontend]
 created: 2026-07-01
-updated: 2026-08-02
-related: ["[[Engineering/Bugs]]", "[[Troubleshooting]]", "[[UI-UX-Guidelines]]", "[[Stacking-Contexts-and-Portals]]", "[[Current-Context]]", "[[FEAT-sign-in]]"]
+updated: 2026-08-03
+related: ["[[Engineering/Bugs]]", "[[Troubleshooting]]", "[[UI-UX-Guidelines]]", "[[Stacking-Contexts-and-Portals]]", "[[Current-Context]]", "[[FEAT-sign-in]]", "[[FEAT-preview-tabs]]"]
 ---
 
 # Lessons Learned
@@ -25,6 +25,50 @@ What to do differently.
 Local sign-in looked broken ("Unable to sign in" / network error). Backend logs showed `OPTIONS /auth/login` → 500 with `AttributeError: '_IncludedRouter' object has no attribute 'path'` inside `opentelemetry.instrumentation.fastapi`. FastAPI ≥0.137 stores `include_router()` children as `_IncludedRouter` nodes; OTel's route walker reads `.path` on CORS preflight partial matches and crashes before `CORSMiddleware` can answer. Browser never sends `POST /auth/login`.
 **Fix (interim):** skip `logfire.instrument_fastapi(app)` in `app/main.py` until `opentelemetry-instrumentation-fastapi` includes the 0.137 fix (PR #4700). Keep `configure` + `instrument_pydantic_ai`. Hard-restart uvicorn if `--reload` hangs after the edit.
 **Rule:** a failing OPTIONS preflight presents as "frontend auth broken"; always curl OPTIONS with `Origin` before debugging credentials.
+
+### 2026-07-30 — Tag suggestion menu should track the caret, not the field shell
+**Symptom:** Autocomplete always opened at the left edge of the tag box, far from where you were typing once chips filled the row.
+**Cause:** Position used `shellRef.getBoundingClientRect()` — fixed to the control, not the draft caret.
+**Fix:** Measure text before `selectionStart` (canvas `measureText` + input padding/scroll) and place the portal under that viewport point; re-run on draft/selection/scroll/resize.
+**Rule:** Combobox menus belong at the insertion point; field-shell anchoring only works when the input never moves inside the shell.
+
+### 2026-07-30 — Tag draft input `min-w-32` / `basis-32` leaves dead space before wrap
+**Symptom:** Chips filled only part of a row; “Add a tag” jumped to the next line while the first row still had empty room.
+**Cause:** Flex wrap only puts the next item on the current line if it fits its **minimum** size. An 8rem (`min-w-32` + `basis-32`) draft input refused leftover scraps of the row and wrapped early.
+**Fix:** `min-w-[3ch] basis-[3ch] flex-1` so the caret fills remaining space; hide placeholder once chips exist (long placeholder shouldn’t force layout).
+**Rule:** In chip+input fields, the draft control’s min/basis must be caret-sized, not “comfortable empty-field” sized — comfort comes from `flex-1` when the row is empty.
+
+### 2026-07-30 — Chip labels: `flex-1` + truncate adds empty space on short tags
+**Symptom:** Short Edit-tags chips (e.g. “yes”) showed a dead gap after the ×; longer chips looked fine.
+**Cause:** Label used `flex-1` so it would shrink/ellipsis inside `max-w-[min(70%,24ch)]`. Grow also absorbs leftover width when the pill’s used size isn’t pure content-fit — short labels stretch and leave padding after the remove control.
+**Fix:** Chip `w-fit`; label `min-w-0 truncate` only (no `flex-1`). Max-width still caps long tags; truncate still works because `min-w-0` lets the label shrink.
+
+### 2026-07-30 — Tag autocomplete inside a dialog needs a body portal, not Base UI Popover
+**Symptom:** Edit tags focused “Add a tag” with library tags available, but no suggestion menu appeared.
+**Cause:** Anchored `Popover` without a trigger fought input focus; same `z-50` as the dialog left the menu invisible/under. Filtering only unused library tags is correct — if every library tag is already on the file, the list stays empty.
+**Fix:** Portaled `fixed` list at `z-100` under the field (`getBoundingClientRect`); open on focus when suggestions remain; rank prefix then `includes` while typing.
+**Rule:** Combobox-in-dialog → portal above dialog z; don’t reuse focus-stealing PopoverTrigger for an always-focused input.
+
+### 2026-07-30 — Truncate with `ch` + container %, not fixed px
+**Symptom:** Long filenames wrapped the Edit tags description; long tags blew out the chip field.
+**Principle:** Ellipsis relative to type (`ch`) and parent (`min(70%, 24ch)` for chips, `min(100%, 28ch)` for prose). Full string via tooltip. See `lib/ui/truncate.ts`.
+**Don't:** hardcode `max-w-48` / rem caps that ignore font size and field width.
+
+### 2026-07-30 — Stadium (`rounded-full`) inputs look “gummy” on wide fields
+**Symptom:** Full-width text fields read as stretched pills — soft double edge, weak border, label collapsed into the control.
+**Cause:** `rounded-full` + `shadow-sm` + light `border-border` on a tall input; placeholder used full muted weight next to the label.
+**Fix:** `Input` / `Field*` use `rounded-lg` (~10px), no shadow, `border-foreground/20`, `h-10`, lighter placeholder (`/65`). Keep `rounded-full` for true pills (buttons, tags, search bars).
+
+### 2026-07-30 — Preview download with empty `NEXT_PUBLIC_API_URL` 404s on Next.js, not the API
+Phase 9 called `downloadBackendFile` which did `fetch(\`${baseUrl}/files/.../content\`)`. When `baseUrl` is `""`, that becomes a **relative** URL, so the browser hits the Next.dev server (`GET /files/.../content` → 404). Standalone mode already keeps the real `File` in `useFileLibrary` (`crypto.randomUUID()` ids) — dashed UUIDs in the 404 path were the giveaway vs backend `uuid4().hex` ids.
+**Fix:** prefer `LibraryFile.file` when `size > 0` for blob previews; guard `downloadBackendFile` so a missing API URL throws instead of relative-fetching.
+**Rule:** any `fetch(baseUrl + path)` helper must refuse an empty base URL the same way `apiFetch` does; dual-mode UIs must use local bytes when the backend isn't the source of truth.
+
+### 2026-07-30 — `data-active` on the lane item does nothing until CSS selects it
+Preview-tab design says hover *or* active hides the dividers that touch that tab. The lane already set `data-active=""` on the active lane item, but `preview-tab-chrome.css` only had hover `:has(.preview-tab-chrome:hover)` rules — so active tabs still showed bordering dividers.
+**Why:** markup readiness ≠ behavior. The attribute is a hook; two sibling selectors (`[data-active] + .preview-tab-divider` and `.preview-tab-divider:has(+ …[data-active])`) are what actually hide the left and right dividers.
+**Rule:** when the invariant is “any divider touching X,” verify both the DOM flag *and* the CSS that targets that flag — don’t stop at one.
+
 ### 2026-07-27 — Toast host's `right-4` didn't match the shell's `px-2` inset, so it never lined up with the header/content
 After the toast host was portaled to `document.body` (see the entry directly below), it kept `right-4` (1rem) as its right inset. The header icon row (`frontend/src/app/page.tsx`, top toolbar div) and the content grid beneath it both use `px-2` (0.5rem) as their shared right inset. A `fixed`-positioned element outside the normal layout tree doesn't inherit or get checked against a sibling's padding — nothing enforces that two independently-positioned elements agree on the same inset, so the toast's right edge sat 8px further left than the icon row and grid's right edge above/below it, which read as visibly "off" in a screenshot even though each element's own CSS was internally correct.
 **Fix:** changed `TOAST_HOST_CLASS` right inset from `right-4` to `right-2` in `frontend/src/components/providers/toast-provider.tsx` to match the shell's `px-2` rhythm.
@@ -188,3 +232,24 @@ Citation ids were `f"{file_id}#{chunk_index}"` — e.g. `28867fcd076e454f99b200a
 **Why this hid so well:** it's invisible with a single-document business (the common case in early manual testing) and only appears once retrieval has more candidates to pad with — exactly the shape a real pilot store's file library would have.
 **Fix:** `score_hits()` now takes `max(scores)` instead of the mean — "is there at least one trustworthy passage," not "was everything retrieved relevant on average." The agent's own citation validation already ensures irrelevant padding chunks never get cited even when they're in context, so gating on the top score doesn't risk ungrounded answers. Matches what the `FallbackEvent.top_score` column name always implied the intended metric was.
 **Lesson:** a trust/quality gate tested only against the smallest possible input (one file, one relevant chunk) can hide a scoring-methodology bug that only appears at slightly more realistic scale. Test refusal/trust logic with at least two documents — one relevant, one not — not just one.
+
+### 2026-07-28 — Inverse tab fillets (“curl backs”) were a Chrome illusion, then removed by design
+Preview-tab chrome briefly used `::before`/`::after` + `box-shadow` scoops at the bottom corners so the active tab looked cut into the strip the way Chrome does. The effect is easy to misread as a bug (“why does it curl back?”) and cost a lot of layout constraints (`margin-inline ≥ curve`, no ancestor `overflow-hidden`, reserved bottom band so scoops don’t paint onto the stage). After shortening tabs to `h-9`, the product call was to drop the scoops entirely: sides meet the strip line square; only the top `border-radius` remains.
+**Related:** [[FEAT-preview-tabs]]
+
+### 2026-07-28 — Chrome-style inverse tab fillets get clipped when margin < curve or an ancestor uses overflow:hidden
+Preview-tab active chrome uses `::before`/`::after` + `box-shadow` to fake concave bottom corners (see `frontend/src/components/preview-tabs/preview-tab-chrome.css`). The scoops sit *outside* the tab border box at `±--preview-tab-curve`. Two easy ways to erase them: (1) `margin-inline` smaller than the curve — fillets spill into neighbors/clippers; (2) a parent `overflow-hidden` (common flex `min-w-0` companion) — clips anything painted outside the padding edge.
+**Fix:** set `margin-inline: var(--preview-tab-curve)`, size the shadow offset with the same token, keep the strip/tablist `overflow-visible`, and avoid `overflow-hidden` on ancestors of shaped tabs (lanes may still `overflow-x-auto` for scroll — accept edge clipping there or pad the scrollport).
+**Related:** [[FEAT-preview-tabs]], panel tooltip overflow clipping lesson above.
+
+### 2026-07-28 — Same inverse tab fillets: correct math, still invisible, because the tab was flush with the strip's own bottom edge
+Even with margins and overflow fixed (entry above), the active tab's bottom corners still showed no scoop. Isolated the CSS in a standalone HTML file with high-contrast colors (`chromium`/Playwright, since no project run-skill existed — see [[Reusable-Patterns]] for the driver pattern) and confirmed the `::before`/`::after` + `box-shadow` math paints a geometrically correct concave notch — but it lands **below** the tab's own border box (`bottom:0` + `box-shadow` offset `(curve, curve)` shifts the shadow's Y range to `[tabBottom, tabBottom+curve]`, not `[tabBottom-curve, tabBottom]`). Because `.preview-tab-shaped` was `height:100%` (flush with the strip header's own bottom edge, by design, so the active tab visually bridges into the stage with no gap), that "below the tab" region *is* the stage, not the strip — and the stage shares the exact same `--background` token as the active tab. The notch was painting perfectly, just onto a surface the same color as the thing it was supposed to look like it was cut out of, so it was optically invisible while still being present in computed styles.
+**Why prompting/margin fixes alone couldn't catch this:** `getComputedStyle` on the pseudo-element showed a real, non-`none` `box-shadow` with the right color and offset the whole time — nothing was "wrong" in isolation, so a DOM/CSS inspection without an actual rendered screenshot comparison would say everything checks out. Only a visual diff (isolated repro with two contrasting colors above/below the strip line) revealed the notch was landing on the wrong side of the boundary.
+**Fix:** leave a real `curve`-tall band of strip background under the tab (what the fillet bleeds into) and bridge it with `box-shadow: 0 var(--preview-tab-curve) 0 0 var(--tab-chrome-bg)` so the tab still reads flush with the stage except in the side gutters. First pass used `height: calc(100% - curve)` (near-full header). That made the label float high in an oversized chrome; later pass uses fixed `height: 2.25rem` (`h-9`, same as inactive) + `align-self: flex-end` + `margin-bottom: var(--preview-tab-curve)` so active/inactive/settings share one baseline and the top radius sits in the strip well instead of dominating the header. Inactive tabs use the same `self-end` + bottom margin (not bare `self-end`, which would flush to the strip edge and reintroduce this bug).
+**General rule: a CSS effect that paints "just past" an element's box only reads correctly if what's on the other side of that boundary is the color the effect assumes it is.** Verify with an actual rendered screenshot at high contrast, not just `getComputedStyle` — the styles can be 100% correct and the effect can still be invisible because of what's painted underneath.
+**Tooling note:** this environment had no project skill for running the frontend visually and no `chromium-cli`; `npm install --no-save playwright-core && npx playwright install chromium` worked (network was available despite an initial `npx` prompt failure) and is the fallback path per the `run` skill's `examples/playwright.md`. A temp diagnostic Next.js route must **not** be prefixed with `_` (App Router treats `_`-prefixed folders as private and 404s them).
+
+### 2026-07-29 — React 19: `useEffect(() => setMounted(true))` for portals is flagged
+The classic "mount portal only on client" pattern (`useState(false)` + `useEffect` → `setMounted(true)`) now trips `react-hooks/set-state-in-effect` in React 19 / eslint-config-next: synchronous setState in an effect causes an extra render cascade.
+**Fix:** `useSyncExternalStore(() => () => {}, () => true, () => false)` — server snapshot `false`, client snapshot `true`, no effect, no setState. Applied in `toast-provider.tsx`.
+**Related:** [[UI-UX-Guidelines#Toasts (application-owned)]]

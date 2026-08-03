@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
@@ -94,6 +95,45 @@ function EmptyContent({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+type EmptyStateProps = {
+  icon: ReactNode
+  title: string
+  description?: ReactNode
+  /** Optional CTA (usually a `Button`). */
+  action?: ReactNode
+  className?: string
+  /** Extra classes on the icon disc (e.g. destructive tint). */
+  mediaClassName?: string
+}
+
+/**
+ * Canonical empty state — own this instead of composing Empty* primitives.
+ * Panel fills: pass `className="h-full border-none px-4"`.
+ */
+function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+  className,
+  mediaClassName,
+}: EmptyStateProps) {
+  return (
+    <Empty className={cn("border-none", className)}>
+      <EmptyHeader>
+        <EmptyMedia className={mediaClassName} variant="icon">
+          {icon}
+        </EmptyMedia>
+        <EmptyTitle>{title}</EmptyTitle>
+        {description ? (
+          <EmptyDescription>{description}</EmptyDescription>
+        ) : null}
+      </EmptyHeader>
+      {action ? <EmptyContent>{action}</EmptyContent> : null}
+    </Empty>
+  )
+}
+
 export {
   Empty,
   EmptyHeader,
@@ -101,4 +141,5 @@ export {
   EmptyDescription,
   EmptyContent,
   EmptyMedia,
+  EmptyState,
 }

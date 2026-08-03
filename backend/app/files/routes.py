@@ -69,6 +69,16 @@ async def download_file(user: AdminUser, file_id: str) -> Response:
     return Response(content=content, media_type="application/octet-stream")
 
 
+@router.get("/{file_id}/text")
+async def get_file_text(user: AdminUser, file_id: str) -> dict[str, str]:
+    """Extracted text (from ingestion chunks), for previewing formats with no in-browser renderer."""
+    file_row = await service.get_file(business_id=user.business_id, file_id=file_id)
+    if file_row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="file not found")
+    text = await service.get_extracted_text(business_id=user.business_id, file_id=file_id)
+    return {"text": text}
+
+
 @router.delete("/{file_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_file(user: AdminUser, file_id: str) -> None:
     file_row = await service.get_file(business_id=user.business_id, file_id=file_id)

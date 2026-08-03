@@ -59,6 +59,26 @@ SHIPPING_POLICY = SeedDoc(
     ),
 )
 
+# Regression coverage for BUG-0001 (see second-brain/Engineering/Bugs/): a
+# short, multi-section document ingested as a single chunk used to make
+# narrow single-fact questions score below trust.py's threshold, while a
+# broad keyword-bearing question scored fine — same document, only the
+# question's phrasing differed. Mirrors the shape of the doc that surfaced
+# it (several distinct labeled sections, each a fact a real user would ask
+# about in isolation).
+STORE_PROFILE = SeedDoc(
+    file_id="store-profile.pdf",
+    text=(
+        "Store Name: Riverside Outfitters\n"
+        "Owners: Dana Kessler, Marcus Lin\n"
+        "Founded: Riverside Outfitters opened in 2014 as a single storefront specializing in "
+        "outdoor apparel for the local hiking community.\n"
+        "Mission: We exist to make quality outdoor gear accessible to first-time hikers, not "
+        "just experienced ones, through in-store fitting sessions and beginner-friendly staff "
+        "guidance.\n"
+    ),
+)
+
 EVAL_CASES: list[EvalCase] = [
     EvalCase(
         id="return-window",
@@ -99,6 +119,22 @@ EVAL_CASES: list[EvalCase] = [
         expect_refusal=False,
         expect_keywords=["$50"],
         expect_citation_file="shipping-policy.pdf",
+    ),
+    EvalCase(
+        id="store-profile-who-founded",
+        question="Who owns Riverside Outfitters?",
+        seed_docs=[STORE_PROFILE],
+        expect_refusal=False,
+        expect_keywords=["Dana Kessler"],
+        expect_citation_file="store-profile.pdf",
+    ),
+    EvalCase(
+        id="store-profile-mission",
+        question="What is the store's mission?",
+        seed_docs=[STORE_PROFILE],
+        expect_refusal=False,
+        expect_keywords=["first-time hikers"],
+        expect_citation_file="store-profile.pdf",
     ),
     EvalCase(
         id="out-of-scope-refusal",

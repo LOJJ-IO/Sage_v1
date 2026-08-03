@@ -1,9 +1,14 @@
 "use client";
 
+import { useState } from "react";
+
 import type { FileIngestStatus, LibraryFile } from "@/lib/file-upload";
 
 import { FileBookmarkButton } from "@/components/files/file-bookmark-button";
-import { FileRowMenu } from "@/components/files/file-row-menu";
+import {
+  FileRowContextMenu,
+  type FileRowMenuAnchor,
+} from "@/components/files/file-row-menu";
 import { FileTypeIcon } from "@/components/files/file-type-icon";
 
 type FileListProps = {
@@ -13,6 +18,11 @@ type FileListProps = {
   onOpenFile: (file: LibraryFile) => void;
   onReplace: (file: LibraryFile) => void;
   onToggleBookmark: (fileId: string) => void;
+};
+
+type RowContextMenuState = {
+  file: LibraryFile;
+  anchor: FileRowMenuAnchor;
 };
 
 function statusLabel(status: FileIngestStatus): string {
@@ -42,6 +52,10 @@ export function FileList({
   onReplace,
   onToggleBookmark,
 }: FileListProps) {
+  const [contextMenu, setContextMenu] = useState<RowContextMenuState | null>(
+    null,
+  );
+
   if (files.length === 0) return null;
 
   return (
@@ -52,6 +66,13 @@ export function FileList({
           <li
             key={entry.id}
             className="rounded-md px-1 py-0.5 hover:bg-muted"
+            onContextMenu={(event) => {
+              event.preventDefault();
+              setContextMenu({
+                file: entry,
+                anchor: { x: event.clientX, y: event.clientY },
+              });
+            }}
           >
             <div className="flex min-w-0 items-center gap-1">
               <button
@@ -82,12 +103,6 @@ export function FileList({
                   filename={entry.file.name}
                   onToggle={() => onToggleBookmark(entry.id)}
                 />
-                <FileRowMenu
-                  file={entry}
-                  onDelete={onDelete}
-                  onEditTags={onEditTags}
-                  onReplace={onReplace}
-                />
               </div>
             </div>
             {hint ? (
@@ -98,6 +113,17 @@ export function FileList({
           </li>
         );
       })}
+
+      {contextMenu ? (
+        <FileRowContextMenu
+          anchor={contextMenu.anchor}
+          file={contextMenu.file}
+          onDelete={onDelete}
+          onDismiss={() => setContextMenu(null)}
+          onEditTags={onEditTags}
+          onReplace={onReplace}
+        />
+      ) : null}
     </ul>
   );
 }

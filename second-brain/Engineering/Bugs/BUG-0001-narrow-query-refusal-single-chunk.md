@@ -1,16 +1,16 @@
 ---
 type: bug
-status: investigating
+status: resolved
 tags: [area/retrieval, area/frontend]
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-07-30
 related: ["[[Known-Issues]]", "[[Lessons-Learned]]", "[[FEAT-citation-sources]]", "[[0008-fastapi-owned-pgvector-rag-backend]]"]
 ---
 
 # BUG-0001: Narrow questions refused as "not enough grounded information" against a document that clearly contains the answer
 
 ## Status
-`investigating` — root-caused and reproduced locally; no fix applied yet (touches locked invariants, needs a decision — see below).
+`resolved` — section-aware sub-chunking for short documents shipped 2026-07-30 (user chose candidate direction 1 from the three below). See Fix.
 
 ## Symptom
 User uploaded "New Product Brief.pdf" (LOJJ.io / TurnUp, one page). In the same chat:
@@ -42,17 +42,30 @@ The cross-encoder scores a query against the *whole* chunk as one unit. This chu
 This is the same failure mode already logged in [[Known-Issues]] under `backend/retrieval` ("Trust threshold can refuse genuinely-answerable questions when a document packs multiple topics into one chunk") — that entry was speculative ("Not investigated further"). This bug is the first concrete, numeric reproduction of it, on a second, unrelated document, confirming it's a real recurring pattern and not a one-off.
 
 ## Fix
-Not applied. This sits on top of two locked invariants (CLAUDE.md "Sage backend — architecture invariants"):
-- Chunking is fixed at 650 tokens / 15% overlap ("Locked by the build plan §3").
-- `trust_score_threshold = 0.35` was deliberately tuned against MiniLM's score scale and is covered by the eval suite ([[Known-Issues]] TinyBERT incident) — lowering it isn't obviously safe without re-running evals, and doesn't address the underlying issue (a 0.20 threshold would just admit more false positives elsewhere).
+Shipped `_split_short_document()` in `backend/app/ingestion/chunk.py` (2026-07-30). Only the single-window case changes — documents long enough to need the existing sliding window are untouched, so the 650-token/15%-overlap invariant for those is not violated; this only stops forcing a document that already fits under 650 tokens into exactly one chunk when it has multiple paragraphs to isolate.
 
-Candidate directions, none applied yet — needs a product/eng call, not a unilateral change:
-1. **Section-aware sub-chunking for short documents**: when a document is small enough to fit in one 650-token window but has clear structural breaks (headings, labeled fields like "Problem:", "Team Name:"), split on those breaks instead of always taking the single full-window chunk. Keeps the 650-token *ceiling* (still "locked"), just stops forcing small multi-section docs into exactly one chunk.
-2. **Blend rerank score with a keyword/vector signal in `evaluate_trust`** rather than relying solely on the cross-encoder's single-chunk score, so a literal term match (e.g. "TurnUp", "LOJJ") can't be outweighed by topic dilution.
-3. **Do nothing / accept as a known limitation** of small, information-dense documents until it's shown to matter enough to justify touching two locked invariants at once.
+How it works: when `chunk_text()`'s whole-document token count is `<= token_size`, it now first tries splitting the text into paragraphs (non-blank lines) via `_paragraph_spans()`. Paragraphs under `_MIN_SECTION_TOKENS` (20 tokens — e.g. a bare heading line like "Team Name: LOJJ.io") are folded into a neighboring paragraph via `_merge_small_sections()` so no chunk is a degenerate one-line fragment. If this collapses down to a single section (e.g. a genuinely single-topic short doc with no paragraph breaks), it returns `None` and the original single-chunk behavior is unchanged — this path is additive, not a behavior change for documents that don't have the multi-section shape.
+
+Verified against the exact BUG-0001 repro (real doc text + real `ms-marco-MiniLM-L-12-v2` rerank scores, not a mock):
+
+| query | rerank score before | rerank score after |
+|---|---|---|
+| "How do I use TurnUp?" | 0.34 (refused) | 0.99 (answered) |
+| "Describe the TurnUp user flow" | 0.14 (refused) | 0.57 (answered) |
+| "Who made TurnUp?" | 0.23 (refused) | 0.83 (answered) |
+| "Tell me about lojj" | 0.48 (answered) | 0.49 (answered, unchanged) |
+
+The doc now produces 13 chunks instead of 1 (one per merged paragraph/section). Char offsets were asserted exact (`text[char_start:char_end] == content` for every chunk) — needed since citations depend on them ([[FEAT-citation-sources]]).
+
+The two other candidate directions from the original writeup (blending a keyword/vector signal into `evaluate_trust`; doing nothing) were not pursued — user chose section-aware sub-chunking specifically because it doesn't touch the trust gate itself, the riskier of the two locked invariants to modify.
 
 ## Prevention
-If a fix direction is chosen, it needs eval-suite coverage before shipping (per the TinyBERT lesson) — specifically a case with a short, multi-section document and multiple narrow single-fact queries against it, asserting all of them clear the trust threshold. That case doesn't exist in the current eval suite (which is why this reproduced in prod but not in CI).
+- `backend/tests/app/test_chunk.py` (new): pure unit tests for `chunk_text()` — single-paragraph short doc stays one chunk (regression guard), multi-section short doc splits by paragraph, a bare heading line merges into its neighbor instead of becoming a degenerate chunk, a long document still uses the sliding window untouched, exact char-offset round-trip. No DB needed.
+- `backend/evals/dataset.py`: added `STORE_PROFILE` seed doc (mirrors the shape that surfaced this — several short labeled sections) plus two new eval cases (`store-profile-who-founded`, `store-profile-mission`) asserting narrow single-fact questions against it don't get refused. Confirmed passing on the retrieval tier (`test_every_eval_case_reports_a_retrieval_verdict`) across two separate runs; the generation tier flaked once on wording (LLM wording variance choosing "beginner-friendly" over "first-time hikers" for the same correct, grounded answer) — unrelated to this fix, and passed cleanly on a second run.
+- Full existing suite (39 tests) re-run after the change: all passing, no regressions.
+
+## Follow-up: this was also the cause of an apparent "punctuation confuses the AI" symptom
+2026-07-30, same session: user reported "Who made TurnUp" (no "?") answered correctly while "Who made TurnUp?" (with "?") refused, in production. Reproduced locally with the pre-fix single-chunk behavior: scores for these narrow queries (0.23–0.34) sat right at the 0.35 threshold edge, where a trivial rewording — including something as small as trailing punctuation — was enough to tip a borderline case across the refuse/answer line. Not a distinct bug or a real "punctuation" sensitivity; same root cause as this one. Re-tested after the chunking fix: "Who made TurnUp", "Who made TurnUp?", "Who made TurnUp ?", and "Who made TurnUp!" all now score 0.74–0.86 — comfortable margin above threshold regardless of trailing punctuation. **This fix is not yet deployed to production as of 2026-07-30** — production will keep showing this symptom until it ships.
 
 ## Related
-[[Known-Issues]], [[Lessons-Learned]], [[FEAT-citation-sources]]
+[[Known-Issues]], [[Lessons-Learned]], [[FEAT-citation-sources]], [[BUG-0002-inline-citation-leak-in-answer-text]]

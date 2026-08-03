@@ -53,6 +53,7 @@ export function FileLibraryPanel({
 
       <EditFileTagsDialog
         file={editTagsTarget}
+        files={files}
         onOpenChange={(open) => {
           if (!open) {
             setEditTagsTarget(null);
