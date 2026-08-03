@@ -40,10 +40,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-if settings.logfire_token:
-    import logfire
-
-    logfire.instrument_fastapi(app)
+# Skip logfire.instrument_fastapi for now: with FastAPI >=0.137, OTel's
+# route walker crashes on _IncludedRouter during CORS OPTIONS preflights
+# (AttributeError: no attribute 'path') → browser never reaches POST /auth/login.
+# logfire.configure + instrument_pydantic_ai above still run. Re-enable once
+# opentelemetry-instrumentation-fastapi includes the 0.137 fix (PR #4700).
 
 app.include_router(auth_router)
 app.include_router(files_router)

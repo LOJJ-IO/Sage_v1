@@ -4,6 +4,7 @@ import { IconX } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import {
   useCallback,
+  useEffect,
   useRef,
   useState,
   type FormEvent,
@@ -13,7 +14,7 @@ import { PinKeypad } from "@/components/auth/pin-keypad";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoginError, PIN_LENGTH } from "@/lib/auth/types";
-import { login, storeAuthToken } from "@/lib/auth/login";
+import { getAuthToken, login, storeAuthToken } from "@/lib/auth/login";
 import {
   playLockFailClip,
   playLockSuccessClip,
@@ -29,6 +30,12 @@ export function SignInForm() {
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (getAuthToken()) {
+      router.replace("/");
+    }
+  }, [router]);
 
   const trimmedUsername = username.trim();
 

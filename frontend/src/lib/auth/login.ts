@@ -79,10 +79,19 @@ export async function login(request: LoginRequest): Promise<LoginResponse> {
   return response.json() as Promise<LoginResponse>;
 }
 
+const ACCESS_TOKEN_KEY = "sage_access_token";
+
+export function getAuthToken(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  return sessionStorage.getItem(ACCESS_TOKEN_KEY);
+}
+
 export function storeAuthToken(token: string) {
-  sessionStorage.setItem("sage_access_token", token);
+  sessionStorage.setItem(ACCESS_TOKEN_KEY, token);
 }
 
 export function clearAuthToken() {
-  sessionStorage.removeItem("sage_access_token");
+  sessionStorage.removeItem(ACCESS_TOKEN_KEY);
 }

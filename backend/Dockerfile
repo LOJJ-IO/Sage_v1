@@ -28,10 +28,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 COPY pyproject.toml ./
-COPY app ./app
-COPY alembic ./alembic
-COPY alembic.ini ./
-COPY evals ./evals
+
+# Stub package dirs so `pip install .` can resolve project metadata (setuptools
+# needs `app`/`evals` to exist per [tool.setuptools.packages.find]) without the
+# real source present. This keeps the expensive layers below cached across
+# app-code-only changes — real source lands via COPY further down, after which
+# a cheap --no-deps reinstall relinks it. Without this split, `COPY app ./app`
+# sat *before* these RUN steps and busted their cache on every single deploy,
+# forcing a full network reinstall of torch/docling/flashrank + model
+# re-downloads regardless of what actually changed.
+RUN mkdir -p app evals && touch app/__init__.py evals/__init__.py
 
 # Install torch+torchvision from the CPU index *before* the rest of the
 # package so docling cannot resolve the default (CUDA) PyPI wheels — that
@@ -54,6 +60,17 @@ RUN pip install --upgrade pip \
 # re-downloaded over the network on every cold container start.
 RUN python -c "from flashrank import Ranker; Ranker(model_name='ms-marco-MiniLM-L-12-v2', cache_dir='/root/.cache/flashrank')" \
     && docling-tools models download layout tableformer
+
+# Now bring in the real source and relink the package over the stub.
+# --no-deps: dependencies are already installed above, nothing to resolve.
+# --no-build-isolation: reuse the env's already-installed setuptools/wheel
+# instead of fetching a fresh isolated build env over the network.
+# This is the only layer that reruns on a normal code-only deploy.
+COPY app ./app
+COPY alembic ./alembic
+COPY alembic.ini ./
+COPY evals ./evals
+RUN pip install --no-deps --no-build-isolation .
 
 # ── runtime ──────────────────────────────────────────────────────────────
 FROM python:3.12-slim-bookworm

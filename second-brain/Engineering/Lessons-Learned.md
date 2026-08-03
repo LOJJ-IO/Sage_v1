@@ -3,8 +3,8 @@ type: lessons
 status: active
 tags: [area/frontend]
 created: 2026-07-01
-updated: 2026-07-27
-related: ["[[Engineering/Bugs]]", "[[Troubleshooting]]", "[[UI-UX-Guidelines]]", "[[Stacking-Contexts-and-Portals]]", "[[Current-Context]]"]
+updated: 2026-08-02
+related: ["[[Engineering/Bugs]]", "[[Troubleshooting]]", "[[UI-UX-Guidelines]]", "[[Stacking-Contexts-and-Portals]]", "[[Current-Context]]", "[[FEAT-sign-in]]"]
 ---
 
 # Lessons Learned
@@ -21,6 +21,10 @@ What to do differently.
 
 ## Entries
 
+### 2026-08-02 — Logfire FastAPI instrumentation 500s every browser CORS OPTIONS (sign-in "doesn't work")
+Local sign-in looked broken ("Unable to sign in" / network error). Backend logs showed `OPTIONS /auth/login` → 500 with `AttributeError: '_IncludedRouter' object has no attribute 'path'` inside `opentelemetry.instrumentation.fastapi`. FastAPI ≥0.137 stores `include_router()` children as `_IncludedRouter` nodes; OTel's route walker reads `.path` on CORS preflight partial matches and crashes before `CORSMiddleware` can answer. Browser never sends `POST /auth/login`.
+**Fix (interim):** skip `logfire.instrument_fastapi(app)` in `app/main.py` until `opentelemetry-instrumentation-fastapi` includes the 0.137 fix (PR #4700). Keep `configure` + `instrument_pydantic_ai`. Hard-restart uvicorn if `--reload` hangs after the edit.
+**Rule:** a failing OPTIONS preflight presents as "frontend auth broken"; always curl OPTIONS with `Origin` before debugging credentials.
 ### 2026-07-27 — Toast host's `right-4` didn't match the shell's `px-2` inset, so it never lined up with the header/content
 After the toast host was portaled to `document.body` (see the entry directly below), it kept `right-4` (1rem) as its right inset. The header icon row (`frontend/src/app/page.tsx`, top toolbar div) and the content grid beneath it both use `px-2` (0.5rem) as their shared right inset. A `fixed`-positioned element outside the normal layout tree doesn't inherit or get checked against a sibling's padding — nothing enforces that two independently-positioned elements agree on the same inset, so the toast's right edge sat 8px further left than the icon row and grid's right edge above/below it, which read as visibly "off" in a screenshot even though each element's own CSS was internally correct.
 **Fix:** changed `TOAST_HOST_CLASS` right inset from `right-4` to `right-2` in `frontend/src/components/providers/toast-provider.tsx` to match the shell's `px-2` rhythm.

@@ -3,14 +3,14 @@ type: feature
 status: in-progress
 tags: [area/frontend, area/product, priority/high]
 created: 2026-07-07
-updated: 2026-07-10
+updated: 2026-08-02
 related: ["[[Sage-MVP-Functional-Spec#3.4.1 Regular sign-in]]", "[[0004-username-pin-modular-auth]]", "[[UI-UX-Guidelines]]", "[[FEAT-sage-mvp]]", "[[API-Documentation#Auth]]"]
 ---
 
 # FEAT: Sign-in page
 
 ## Status
-`in-progress` — UI at `/sign-in` implemented; backend wiring pending (local demo stub active)
+`in-progress` — UI at `/sign-in` implemented; client route gate on `/` redirects unsigned users to `/sign-in`; backend wiring may still use demo stub when `NEXT_PUBLIC_API_URL` is unset
 
 ## Problem
 Retail staff and managers share store tablets and need a fast, touch-friendly way to authenticate with username + PIN — no email, no separate admin login, no public sign-up.
@@ -36,10 +36,16 @@ When `NEXT_PUBLIC_API_URL` is unset, `login()` accepts:
 - Passcode: `1234`
 → admin session, redirect to `/` after full lock video.
 
+## Auth gate (shipped 2026-08-02)
+- `RequireAuth` wraps the workspace at `/` (`frontend/src/components/auth/require-auth.tsx`)
+- Checks `getAuthToken()` from `sessionStorage`; missing token → `router.replace("/sign-in")`; children mount only after check (avoids shell flash + premature API calls)
+- Signed-in users hitting `/sign-in` are sent to `/`
+- Why client-only: JWT is in `sessionStorage`, so Next `middleware.ts` cannot read it. Cookie-backed sessions would unlock edge middleware later
+
 ## Out of scope (this feature)
 - Change-PIN flow (`/change-pin`) — separate feature; sign-in redirects there when API returns `must_change_pin`
 - Organization UI
-- Route guards / middleware protecting `/`
+- Server/middleware route protection (needs cookie session redesign)
 - Session inactivity timeout (30 min) — session layer, not sign-in page
 
 ## UI/UX

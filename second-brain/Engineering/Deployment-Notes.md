@@ -3,7 +3,7 @@ type: deployment
 status: active
 tags: [area/infra]
 created: 2026-07-01
-updated: 2026-07-20
+updated: 2026-08-02 (added cost characterization)
 related: ["[[Architecture-Overview]]", "[[Tech-Stack]]", "[[0003-railway-hosting-all-services]]", "[[0008-fastapi-owned-pgvector-rag-backend]]"]
 ---
 
@@ -12,8 +12,8 @@ related: ["[[Architecture-Overview]]", "[[Tech-Stack]]", "[[0003-railway-hosting
 ## Environments
 | Env | URL | Purpose | Deploy trigger |
 |---|---|---|---|
-| Railway `production` (`compassionate-serenity`) backend `Sage_v1` | https://sagev1-production.up.railway.app | Host FastAPI backend | Push to `tolu-implementations` (as of 2026-07-20) + manual redeploy |
-| Railway `production` frontend `sage-frontend` | https://sage-frontend-production.up.railway.app | Host Next.js UI | Must use Root Directory `frontend` + `NEXT_PUBLIC_API_URL` |
+| Railway `production` (`compassionate-serenity`) backend `Sage_v1` | https://sagev1-production.up.railway.app | Host FastAPI backend | Push to `tolu-implementations` (confirmed 2026-08-02 via `railway service source connect`; was actually still on `main` despite an earlier note claiming otherwise) + manual redeploy |
+| Railway `production` frontend `sage-frontend` | https://sage-frontend-production.up.railway.app | Host Next.js UI | Push to `tolu-implementations` (switched 2026-08-02, same as backend) + Root Directory `frontend` + `NEXT_PUBLIC_API_URL` |
 
 ## Railway project
 
@@ -31,9 +31,11 @@ CLI: from repo root, `railway link -p compassionate-serenity -e production -s Sa
 Note: ADR [[0003-railway-hosting-all-services]] still says 3 services including VoltAgent; superseded in practice by [[0008-fastapi-owned-pgvector-rag-backend]] — deploy **frontend + backend** only (2 services).
 
 ## How a release goes out
-1. Merge backend changes to the branch Railway watches (`main` currently).
-2. Railway auto-builds from `backend/` root, or run `railway redeploy --yes`.
+1. Push to the branch Railway watches (`tolu-implementations` as of 2026-08-02, both services).
+2. Railway auto-builds from `backend/` root (backend) or `frontend/` root (frontend), or run `railway redeploy --yes`.
 3. Confirm `/health` returns `{"status":"ok"}` on the public URL.
+
+Change the watched branch anytime with: `railway service source connect --repo LOJJ-IO/Sage_v1 --branch <branch> --service <Sage_v1|sage-frontend>` (triggers an immediate build).
 
 ## Rollback
 Railway dashboard → Deployments → Redeploy a previous successful deployment.
@@ -64,6 +66,16 @@ Set on the **Sage_v1** service (Variables tab). Names only here — never commit
 7. **PgBouncer + asyncpg:** `statement_cache_size=0` in `app/db.py` — shipped on SUCCESS deploy above.
 8. **`sage-frontend` mis-watch:** Root Directory unset + RAILPACK caused frontend service to attempt building backend commits from `tolu-implementations` and fail. Set Root Directory = `frontend` (user action).
 9. **ML memory on one worker:** Docling/torch + FlashRank MiniLM overlapping (upload BackgroundTask + `/ask`) can OOM the container. Mitigations in image/code (2026-07-20): plain-text extract bypasses Docling; shared converter; `heavy_ml` semaphore; FlashRank bake `ms-marco-TinyBERT-L-2-v2`; `CANDIDATE_POOL_SIZE=14`; runtime `OMP/OPENBLAS/MKL/ORT_NUM_THREADS=1` + `OMP_WAIT_POLICY=PASSIVE`. Locally, set the same thread env vars if OpenBLAS thrash appears. If still OOM after redeploy → raise Railway RAM / workers (ops).
+
+## Build time
+
+10. **Every deploy re-ran the full `pip install torch/docling` + model-bake steps, even for one-line code changes:** `backend/Dockerfile` had `COPY app ./app` *before* the `RUN pip install ...` and model-bake layers. Docker's layer cache is sequential — once `COPY app` changes (i.e. on every deploy), every layer after it is invalidated too, regardless of whether that layer's own command changed. Result: every deploy re-downloaded CPU torch wheels + re-installed docling/flashrank + re-downloaded the FlashRank/Docling models over the network, on top of the CUDA-bloat fix from gotcha #6. **Fix (2026-08-02):** install deps + bake models against a stub `app/__init__.py`/`evals/__init__.py` (satisfies `[tool.setuptools.packages.find]`) *before* copying real source; real source lands after, followed by a cheap network-free `pip install --no-deps --no-build-isolation .` to relink it. Only that last step should rerun on a normal code-only deploy now. Not yet build-tested locally (no Docker in this dev env) — verify via Railway build log showing `CACHED` on the deps/bake layers on the deploy *after* this one lands.
+
+## Cost characterization (2026-08-02, ~1 week of light manual testing)
+
+Railway project total ≈ **$3.71/wk** (`Sage_v1` $3.32 + `sage-frontend` $0.44). **Memory is ~99% of the backend bill** (Memory $3.6723 vs CPU $0.0340) — 15,864 GB-min ÷ 10,080 min/wk ≈ **1.57GB resident continuously**, not spiking with usage. This is the ONNX/torch steady-state floor from gotcha #9 below (FlashRank + Docling loaded once, never released), not per-document processing cost.
+
+**Implication:** this cost scales with uptime × replica count, not with document/tenant volume — ingesting 100 docs instead of 5 barely moves it, since the same models are already resident either way. The costs that *do* scale with usage (OpenAI embeddings, Gemini `/ask` calls) are billed separately and don't appear in Railway's dashboard at all — track those per `business_id` for real unit economics, not this number. See [[Lessons-Learned#2026-07-20 — A code-side memory fix can be real and still not enough if the container's hard limit is the actual bottleneck]].
 
 ## Monitoring
 - Railway service logs (`railway logs`)

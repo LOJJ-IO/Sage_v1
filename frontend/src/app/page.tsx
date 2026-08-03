@@ -16,6 +16,7 @@ import { useCallback, useEffect, useState } from "react";
 import { FileLibraryPanel } from "@/components/files/file-library-panel";
 import { OrganizationDialog } from "@/components/accounts/organization-dialog";
 import { ProfileMenu } from "@/components/auth/profile-menu";
+import { RequireAuth } from "@/components/auth/require-auth";
 import {
   CitationSources,
   type CitationSource,
@@ -325,6 +326,14 @@ function HeaderIconButton({
 }
 
 export default function Home() {
+  return (
+    <RequireAuth>
+      <HomeWorkspace />
+    </RequireAuth>
+  );
+}
+
+function HomeWorkspace() {
   const {
     files,
     error,

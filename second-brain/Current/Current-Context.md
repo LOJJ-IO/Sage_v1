@@ -3,16 +3,17 @@ type: current-context
 status: active
 tags: [priority/high, area/infra, area/frontend]
 created: 2026-07-20
-updated: 2026-07-28
-related: ["[[Deployment-Notes]]", "[[Known-Issues]]", "[[Lessons-Learned]]", "[[UI-UX-Guidelines]]", "[[Workspace-UI-Design-Decisions]]", "[[FEAT-preview-tabs]]", "[[FEAT-citation-sources]]"]
+updated: 2026-08-02
+related: ["[[Deployment-Notes]]", "[[Known-Issues]]", "[[Lessons-Learned]]", "[[UI-UX-Guidelines]]", "[[Workspace-UI-Design-Decisions]]", "[[FEAT-preview-tabs]]", "[[FEAT-citation-sources]]", "[[FEAT-sign-in]]"]
 ---
 
 # Current Context
 
 ## Active priority
-False "not enough grounded information" refusals on production — usually sparse/scanned extracts (OCR deferred), not a dead retriever. Files UI now shows status + scanned warning; near-empty scanned uploads fail ingest. User should re-upload text-native files for the store that was refusing.
+Auth UX: unsigned users must land on `/sign-in` (client `RequireAuth` gate shipped). Still open: false "not enough grounded information" refusals on production — usually sparse/scanned extracts (OCR deferred), not a dead retriever. Files UI now shows status + scanned warning; near-empty scanned uploads fail ingest. User should re-upload text-native files for the store that was refusing.
 
-## What's true right now (2026-07-28)
+## What's true right now (2026-08-02)
+- **Auth gate:** `/` wrapped in `RequireAuth` — no `sage_access_token` → `replace("/sign-in")`; children mount only after check. `/sign-in` sends already-signed-in users to `/`. Token still `sessionStorage` (no middleware). See [[FEAT-sign-in]].
 - Backend deploy live at commit `ca02e92` (memory mitigations + FlashRank cache_dir fix). Healthcheck passing; uvicorn on `:8080`.
 - Live CORS: OPTIONS from `https://sage-frontend-production.up.railway.app` → **200** + `access-control-allow-origin`.
 - PgBouncer `statement_cache_size=0` is on this image (ancestor commit `26a10a4`).

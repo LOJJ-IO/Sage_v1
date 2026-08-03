@@ -1,14 +1,10 @@
+import { getAuthToken } from "@/lib/auth/login";
+
 export function getApiBaseUrl() {
   return process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "";
 }
 
-export function getAuthToken() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  return sessionStorage.getItem("sage_access_token");
-}
+export { getAuthToken };
 
 type ApiFetchOptions = RequestInit & {
   auth?: boolean;
