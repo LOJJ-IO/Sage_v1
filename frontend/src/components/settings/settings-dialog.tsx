@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useCallback, useState } from "react";
 
@@ -14,6 +15,7 @@ import {
 } from "@/hooks/use-dialog-draft";
 import { useToast } from "@/components/providers/toast-provider";
 import { useTheme } from "@/hooks/use-theme";
+import { signOut } from "@/lib/auth/session";
 import type { ThemePreference } from "@/lib/theme";
 
 type SettingsSection = "general" | "theme" | "account";
@@ -111,6 +113,7 @@ function ThemePill({
 }
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
+  const router = useRouter();
   const [section, setSection] = useState<SettingsSection>("general");
   const toast = useToast();
   const { theme, setTheme } = useTheme();
@@ -120,6 +123,12 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   useDialogOpenSync(open, syncOnOpen);
 
   const selectedTheme = THEME_OPTIONS.find((option) => option.id === theme)!;
+
+  const handleSignOut = useCallback(() => {
+    signOut();
+    onOpenChange(false);
+    router.replace("/sign-in");
+  }, [onOpenChange, router]);
 
   const handleSave = useCallback(async () => {
     await save(async () => {
@@ -272,6 +281,15 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 >
                   Learn more about Sage
                 </a>
+              </SettingsRow>
+
+              <SettingsRow
+                description="End your session on this device."
+                label="Sign out"
+              >
+                <Button onClick={handleSignOut} size="sm" type="button" variant="outline">
+                  Sign out
+                </Button>
               </SettingsRow>
             </div>
           )}

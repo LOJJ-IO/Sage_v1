@@ -13,10 +13,12 @@ export function AccountRoleBadges({
   account,
   className,
   inactive = false,
+  isSelf = false,
 }: {
   account: Pick<Account, "role">;
   className?: string;
   inactive?: boolean;
+  isSelf?: boolean;
 }) {
   return (
     <div className={cn("flex flex-wrap items-center gap-1.5", className)}>
@@ -26,14 +28,20 @@ export function AccountRoleBadges({
       >
         {account.role === "admin" ? "Admin" : "Staff"}
       </Badge>
+      {isSelf ? <Badge variant="you">You</Badge> : null}
     </div>
   );
 }
 
 export function formatAccountDate(value: string) {
+  const date = new Date(value);
+  if (!value || Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
-  }).format(new Date(value));
+  }).format(date);
 }
 
 export function inactiveTableRowClass(isActive: boolean) {

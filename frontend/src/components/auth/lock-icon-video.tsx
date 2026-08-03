@@ -22,7 +22,7 @@ export const LockIconVideo = memo(
       <video
         ref={videoRef}
         aria-hidden="true"
-        className="mb-3 size-16 object-contain"
+        className="mb-3 size-16 object-contain dark:invert"
         loop={false}
         muted
         playsInline

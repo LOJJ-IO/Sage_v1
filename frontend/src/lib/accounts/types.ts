@@ -1,5 +1,8 @@
 import type { UserRole } from "@/lib/auth/types";
 
+/** Id used for the signed-in user's own row when the backend list doesn't include (or hasn't loaded) it yet. */
+export const SELF_ACCOUNT_ID = "self";
+
 export type Account = {
   id: string;
   name: string;

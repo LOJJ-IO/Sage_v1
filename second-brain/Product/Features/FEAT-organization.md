@@ -10,7 +10,7 @@ related: ["[[Sage-MVP-Functional-Spec#3.4.3 Admins creating additional accounts]
 # FEAT: Organization (accounts)
 
 ## Status
-`in-progress` — Organization dialog in workspace shell implemented; backend wiring pending
+`in-progress` — Organization dialog in workspace shell implemented; backend wiring pending. Frontend now degrades gracefully while it's pending (2026-08-02): `GET /accounts` 404s (no backend route exists yet), and `OrganizationView` treats a 404 specifically as "no data yet" rather than an error — no toast, no error banner. The signed-in user's own username/role (captured at login, `sage_username`/`sage_user_role` in `sessionStorage`) is always merged into the displayed list as a synthetic row (`id: "self"`) marked with a "You" badge, so the page is never literally empty even with zero real accounts. That synthetic row hides its row-menu (nothing real to act on yet).
 
 ## Problem
 Store admins need to create staff accounts, reset forgotten PINs, and deactivate/reactivate access without a separate admin login or public sign-up flow.
@@ -59,6 +59,7 @@ Spec authority: [[Sage-MVP-Functional-Spec#3.4.3]]–[[Sage-MVP-Functional-Spec#
 
 ## Open questions
 - Spec still says "Manage Accounts" in places — product label is now **Organization** (dialog from header)
+- `AddAccountButton` (`accounts-table.tsx`) existed but was never rendered outside the empty state — non-empty accounts list had no way to add a new account at all. Now rendered in a persistent header row above the table (2026-08-02). Worth double-checking once the real backend ships: `handleCreateAccount` → `POST /accounts` still doesn't exist server-side either, so "Add account" will itself 404 until that's built.
 
 ## Related
 - Primary admin protection: [[Sage-MVP-Functional-Spec#3.4.5]]

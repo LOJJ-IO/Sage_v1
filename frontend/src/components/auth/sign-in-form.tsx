@@ -20,7 +20,7 @@ import {
   playLockSuccessClip,
   resetLockVideo,
 } from "@/lib/auth/lock-video-playback";
-import { storeUserRole } from "@/lib/auth/session";
+import { storeUserRole, storeUsername } from "@/lib/auth/session";
 
 export function SignInForm() {
   const router = useRouter();
@@ -71,6 +71,7 @@ export function SignInForm() {
 
         storeAuthToken(response.access_token);
         storeUserRole(response.role);
+        storeUsername(trimmedUsername);
 
         if (video) {
           await playLockSuccessClip(video);

@@ -26,6 +26,7 @@ type ToastContextValue = {
   success: (input: ToastInput) => string;
   error: (input: ToastInput) => string;
   info: (input: ToastInput) => string;
+  warning: (input: ToastInput) => string;
   progress: (input: ToastInput & { progress?: number }) => string;
   update: (id: string, input: Partial<ToastInput & { progress?: number }>) => void;
   dismiss: (id: string) => void;
@@ -154,6 +155,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     [addToast]
   );
 
+  const warning = useCallback(
+    (input: ToastInput) =>
+      addToast({
+        variant: "warning",
+        sticky: false,
+        title: input.title,
+        description: input.description,
+      }),
+    [addToast]
+  );
+
   const progress = useCallback(
     (input: ToastInput & { progress?: number }) =>
       addToast({
@@ -210,11 +222,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       success,
       error,
       info,
+      warning,
       progress,
       update,
       dismiss,
     }),
-    [dismiss, error, info, progress, success, update]
+    [dismiss, error, info, warning, progress, success, update]
   );
 
   return (

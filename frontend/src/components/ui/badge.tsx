@@ -9,6 +9,7 @@ const badgeVariants = cva(
       variant: {
         admin: "border-primary/20 bg-primary/10 text-primary",
         staff: "border-border bg-muted text-muted-foreground",
+        you: "border-dashed border-border bg-transparent text-muted-foreground",
       },
     },
     defaultVariants: {

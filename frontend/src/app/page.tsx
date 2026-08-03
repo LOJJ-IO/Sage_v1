@@ -17,6 +17,7 @@ import { FileLibraryPanel } from "@/components/files/file-library-panel";
 import { OrganizationDialog } from "@/components/accounts/organization-dialog";
 import { ProfileMenu } from "@/components/auth/profile-menu";
 import { RequireAuth } from "@/components/auth/require-auth";
+import { ChatTabStrip } from "@/components/chat/chat-tab-strip";
 import {
   CitationSources,
   type CitationSource,
@@ -25,15 +26,14 @@ import { PreviewCenterPanel } from "@/components/preview-tabs";
 import { ConfigureChatDialog } from "@/components/settings/configure-chat-dialog";
 import { SettingsDialog } from "@/components/settings/settings-dialog";
 import { Button } from "@/components/ui/button";
+import { useChatSessions } from "@/hooks/use-chat-sessions";
 import { useFileLibrary } from "@/hooks/use-file-library";
 import { useSyncRemovedPreviewTabs } from "@/hooks/use-sync-removed-preview-tabs";
 import { getUserRole } from "@/lib/auth/session";
-import type { AskCitation } from "@/lib/ask/api";
-import { askSage, isBackendConfigured } from "@/lib/ask/api";
+import type { ChatMessage } from "@/lib/chat/types";
 import type { LibraryFile } from "@/lib/file-upload";
 import { fileTypeFromFilename } from "@/lib/file-upload";
 import { usePreviewTabsStore } from "@/lib/preview-tabs/store";
-import { ApiError } from "@/lib/api/client";
 import {
   Tooltip,
   TooltipContent,
@@ -158,26 +158,6 @@ function AskAiEmptyState({
         </EmptyDescription>
       </EmptyHeader>
     </Empty>
-  );
-}
-
-type ChatMessage = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  citations?: AskCitation[];
-};
-
-function createMessageId() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
-
-/** Local-only reply when NEXT_PUBLIC_API_URL isn't set (standalone UI demo). */
-function buildLocalAssistantReply(question: string): string {
-  const trimmed = question.trim();
-  return (
-    `I received your question (“${trimmed.length > 120 ? `${trimmed.slice(0, 117)}…` : trimmed}”), ` +
-    "but no backend is configured (NEXT_PUBLIC_API_URL is unset) — so I can’t look up your uploaded docs."
   );
 }
 
@@ -384,8 +364,15 @@ function HomeWorkspace() {
   const [rightWidth, setRightWidth] = useState(DEFAULT_SIDE_WIDTH);
   const [isLeftVisible, setIsLeftVisible] = useState(true);
   const [isRightVisible, setIsRightVisible] = useState(true);
-  const [chatTitle, setChatTitle] = useState("Title");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const {
+    sessions: chatSessions,
+    activeSession,
+    newChat,
+    closeChat,
+    switchChat,
+    renameChat,
+    sendMessage,
+  } = useChatSessions();
   const [isAdmin, setIsAdmin] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [organizationOpen, setOrganizationOpen] = useState(false);
@@ -401,55 +388,6 @@ function HomeWorkspace() {
 
   const openConfigureChat = useCallback(() => {
     setConfigureChatOpen(true);
-  }, []);
-
-  const handleSendMessage = useCallback((content: string) => {
-    const userMessage: ChatMessage = {
-      id: createMessageId(),
-      role: "user",
-      content,
-    };
-    setMessages((current) => [...current, userMessage]);
-
-    const backendOn = isBackendConfigured();
-
-    if (!backendOn) {
-      const assistantMessage: ChatMessage = {
-        id: createMessageId(),
-        role: "assistant",
-        content: buildLocalAssistantReply(content),
-      };
-      setMessages((current) => [...current, assistantMessage]);
-      return;
-    }
-
-    void askSage(content)
-      .then((result) => {
-        const assistantMessage: ChatMessage = {
-          id: createMessageId(),
-          role: "assistant",
-          content: result.answer,
-          citations: result.limited ? undefined : result.citations,
-        };
-        setMessages((current) => [...current, assistantMessage]);
-      })
-      .catch((err) => {
-        const message =
-          err instanceof ApiError
-            ? err.message
-            : "Something went wrong reaching Sage. Try again.";
-        const assistantMessage: ChatMessage = {
-          id: createMessageId(),
-          role: "assistant",
-          content: message,
-        };
-        setMessages((current) => [...current, assistantMessage]);
-      });
-  }, []);
-
-  const handleNewChat = useCallback(() => {
-    setMessages([]);
-    setChatTitle("Title");
   }, []);
 
   useEffect(() => {
@@ -643,19 +581,25 @@ function HomeWorkspace() {
         </div>
         <div className="relative min-h-0 min-w-0">
           <section className={PANEL_SURFACE}>
+          <ChatTabStrip
+            activeSessionId={activeSession.id}
+            onClose={closeChat}
+            onSelect={switchChat}
+            sessions={chatSessions}
+          />
           <header className="flex min-w-0 h-14 w-full shrink-0 items-center gap-2 border-b border-border px-2">
             <input
               aria-label="Chat title"
               className="h-8 w-64 min-w-0 max-w-[calc(100%-7.5rem)] shrink truncate rounded-md border border-border bg-transparent px-2 text-sm font-semibold text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
-              onChange={(event) => setChatTitle(event.target.value)}
-              value={chatTitle}
+              onChange={(event) => renameChat(activeSession.id, event.target.value)}
+              value={activeSession.title}
             />
             <div className="ml-auto shrink-0">
               <HeaderIconGroup>
                 <HeaderIconButton
                   iconClass="codicon-add"
                   label="New chat"
-                  onClick={handleNewChat}
+                  onClick={newChat}
                 />
                 <HeaderIconButton
                   iconClass="codicon-search"
@@ -674,9 +618,9 @@ function HomeWorkspace() {
             </div>
           </header>
           <div className="min-h-0 flex-1 overflow-auto p-2">
-            {messages.length > 0 ? (
+            {activeSession.messages.length > 0 ? (
               <AskAiMessageList
-                messages={messages}
+                messages={activeSession.messages}
                 onOpenSource={handleOpenCitationSource}
               />
             ) : (
@@ -688,7 +632,7 @@ function HomeWorkspace() {
           </div>
           <AskAiChatInput
             hasFiles={files.length > 0}
-            onSend={handleSendMessage}
+            onSend={sendMessage}
           />
         </section>
         </div>

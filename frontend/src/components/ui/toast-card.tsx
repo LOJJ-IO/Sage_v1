@@ -2,6 +2,7 @@
 
 import {
   IconAlertCircle,
+  IconAlertTriangle,
   IconCircleCheck,
   IconCloudUpload,
   IconInfoCircle,
@@ -16,6 +17,7 @@ const VARIANT_ICON = {
   success: IconCircleCheck,
   error: IconAlertCircle,
   info: IconInfoCircle,
+  warning: IconAlertTriangle,
   progress: IconCloudUpload,
 } as const;
 
@@ -23,6 +25,7 @@ const VARIANT_ICON_CLASS = {
   success: "text-emerald-600",
   error: "text-destructive",
   info: "text-foreground",
+  warning: "text-amber-600",
   progress: "text-foreground",
 } as const;
 

@@ -1,4 +1,4 @@
-export type ToastVariant = "success" | "error" | "info" | "progress";
+export type ToastVariant = "success" | "error" | "info" | "warning" | "progress";
 
 export type ToastRecord = {
   id: string;

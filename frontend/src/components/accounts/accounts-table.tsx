@@ -19,11 +19,12 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import type { Account } from "@/lib/accounts/types";
+import { SELF_ACCOUNT_ID, type Account } from "@/lib/accounts/types";
 import { cn } from "@/lib/utils";
 
 type AccountsTableProps = {
   accounts: Account[];
+  currentUsername?: string | null;
   onResetPin: (account: Account) => void;
   onGrantAdmin: (account: Account) => void;
   onRevokeAdmin: (account: Account) => void;
@@ -74,6 +75,7 @@ function rowCellClass(extra?: string) {
 
 export function AccountsTable({
   accounts,
+  currentUsername,
   onResetPin,
   onGrantAdmin,
   onRevokeAdmin,
@@ -90,7 +92,13 @@ export function AccountsTable({
   }
 
   return (
-    <>
+    <div className="space-y-3">
+      {onAddAccount ? (
+        <div className="flex justify-end">
+          <AddAccountButton onClick={onAddAccount} />
+        </div>
+      ) : null}
+
       <div className="hidden overflow-hidden rounded-2xl border border-border bg-card md:block">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-border bg-muted/40">
@@ -139,6 +147,7 @@ export function AccountsTable({
                   <AccountRoleBadges
                     account={account}
                     inactive={!account.is_active}
+                    isSelf={account.username === currentUsername}
                   />
                 </td>
                 <td
@@ -149,14 +158,16 @@ export function AccountsTable({
                   {formatAccountDate(account.created_at)}
                 </td>
                 <td className="w-0 whitespace-nowrap py-3 pl-2 pr-3 text-right">
-                  <AccountRowMenu
-                    account={account}
-                    onDeactivate={onDeactivate}
-                    onGrantAdmin={onGrantAdmin}
-                    onReactivate={onReactivate}
-                    onResetPin={onResetPin}
-                    onRevokeAdmin={onRevokeAdmin}
-                  />
+                  {account.id === SELF_ACCOUNT_ID ? null : (
+                    <AccountRowMenu
+                      account={account}
+                      onDeactivate={onDeactivate}
+                      onGrantAdmin={onGrantAdmin}
+                      onReactivate={onReactivate}
+                      onResetPin={onResetPin}
+                      onRevokeAdmin={onRevokeAdmin}
+                    />
+                  )}
                 </td>
               </tr>
             ))}
@@ -194,6 +205,7 @@ export function AccountsTable({
                 <AccountRoleBadges
                   account={account}
                   inactive={!account.is_active}
+                  isSelf={account.username === currentUsername}
                 />
                 <p
                   className={cn(
@@ -205,20 +217,22 @@ export function AccountsTable({
                 </p>
               </div>
               <div>
-                <AccountRowMenu
-                  account={account}
-                  onDeactivate={onDeactivate}
-                  onGrantAdmin={onGrantAdmin}
-                  onReactivate={onReactivate}
-                  onResetPin={onResetPin}
-                  onRevokeAdmin={onRevokeAdmin}
-                />
+                {account.id === SELF_ACCOUNT_ID ? null : (
+                  <AccountRowMenu
+                    account={account}
+                    onDeactivate={onDeactivate}
+                    onGrantAdmin={onGrantAdmin}
+                    onReactivate={onReactivate}
+                    onResetPin={onResetPin}
+                    onRevokeAdmin={onRevokeAdmin}
+                  />
+                )}
               </div>
             </div>
           </article>
         ))}
       </div>
-    </>
+    </div>
   );
 }
 

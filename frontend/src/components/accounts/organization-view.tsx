@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AddAccountDialog } from "@/components/accounts/add-account-dialog";
 import { AdminPrivilegesDialog } from "@/components/accounts/admin-privileges-dialog";
 import { AccountsTableSkeleton } from "@/components/accounts/accounts-table-skeleton";
@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  ApiError,
   createAccount,
   deactivateAccount,
   grantAdminPrivileges,
@@ -28,11 +29,13 @@ import {
   resetAccountPin,
   revokeAdminPrivileges,
 } from "@/lib/accounts/api";
-import type {
-  Account,
-  AdminPrivilegesMode,
-  CreateAccountRequest,
+import {
+  SELF_ACCOUNT_ID,
+  type Account,
+  type AdminPrivilegesMode,
+  type CreateAccountRequest,
 } from "@/lib/accounts/types";
+import { getCurrentUsername, getUserRole } from "@/lib/auth/session";
 
 type OrganizationViewProps = {
   /** When false, skip fetching (dialog closed). */
@@ -57,6 +60,35 @@ export function OrganizationView({ active = true }: OrganizationViewProps) {
   const [isDeactivating, setIsDeactivating] = useState(false);
   const hasAccountsRef = useRef(false);
 
+  const currentUsername = getCurrentUsername();
+
+  /** The signed-in user is always a member of this org, even before the
+   * accounts list has (or can) load — so the page is never truly empty. */
+  const displayAccounts = useMemo(() => {
+    const loaded = accounts ?? [];
+    if (!currentUsername) {
+      return loaded;
+    }
+
+    const hasSelf = loaded.some(
+      (account) => account.username === currentUsername
+    );
+    if (hasSelf) {
+      return loaded;
+    }
+
+    const selfAccount: Account = {
+      id: SELF_ACCOUNT_ID,
+      name: currentUsername,
+      username: currentUsername,
+      role: getUserRole() ?? "admin",
+      is_primary_admin: false,
+      is_active: true,
+      created_at: "",
+    };
+    return [selfAccount, ...loaded];
+  }, [accounts, currentUsername]);
+
   const refreshAccounts = useCallback(async () => {
     if (hasAccountsRef.current) {
       setIsRefreshing(true);
@@ -68,6 +100,16 @@ export function OrganizationView({ active = true }: OrganizationViewProps) {
       setAccounts(nextAccounts);
       hasAccountsRef.current = true;
     } catch (error) {
+      // 404 means the accounts endpoint has nothing for this business yet
+      // (or isn't wired up on the backend yet) — that's not an error worth
+      // surfacing, it just means "no team members besides you." Only real
+      // failures (auth expired, server error, network) get the error UI.
+      if (error instanceof ApiError && error.status === 404) {
+        setAccounts([]);
+        hasAccountsRef.current = true;
+        return;
+      }
+
       setLoadError(
         error instanceof Error ? error.message : "Unable to load accounts."
       );
@@ -206,7 +248,8 @@ export function OrganizationView({ active = true }: OrganizationViewProps) {
           </p>
         ) : null}
         <AccountsTable
-          accounts={accounts}
+          accounts={displayAccounts}
+          currentUsername={currentUsername}
           onAddAccount={() => setAddDialogOpen(true)}
           onDeactivate={setDeactivateAccountTarget}
           onGrantAdmin={(account) => openAdminPrivilegesDialog(account, "grant")}

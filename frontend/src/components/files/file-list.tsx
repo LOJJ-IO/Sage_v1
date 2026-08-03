@@ -31,9 +31,6 @@ function fileHint(entry: LibraryFile): string | null {
   if (entry.status === "failed") {
     return entry.error?.trim() || "Indexing failed — try replace or re-upload.";
   }
-  if (entry.looksScanned) {
-    return "Looks scanned — OCR is off, so Sage may refuse questions about this file. Prefer a text PDF, .docx, or .txt.";
-  }
   return null;
 }
 

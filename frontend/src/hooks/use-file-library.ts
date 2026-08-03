@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useToast } from "@/components/providers/toast-provider";
 import { ApiError } from "@/lib/api/client";
 import {
   deleteBackendFile,
@@ -51,22 +52,50 @@ function errorMessage(err: unknown, fallback: string): string {
 }
 
 export function useFileLibrary() {
+  const toast = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
   const replaceTargetIdRef = useRef<string | null>(null);
   const [files, setFiles] = useState<LibraryFile[]>([]);
   const [error, setError] = useState<string | null>(null);
   const backendConfigured = isBackendConfigured();
+  const filesRef = useRef<LibraryFile[]>([]);
+  const notifiedScannedIdsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    filesRef.current = files;
+  }, [files]);
+
+  const notifyScannedFiles = useCallback(
+    (entries: LibraryFile[]) => {
+      for (const entry of entries) {
+        if (
+          entry.looksScanned &&
+          entry.status === "indexed" &&
+          !notifiedScannedIdsRef.current.has(entry.id)
+        ) {
+          notifiedScannedIdsRef.current.add(entry.id);
+          toast.warning({
+            title: "OCR is off",
+            description: `"${entry.file.name}" looks scanned — images and handwritten text may be lost, so Sage might not be able to answer questions about it.`,
+          });
+        }
+      }
+    },
+    [toast]
+  );
 
   const refreshFromBackend = useCallback(async () => {
     if (!backendConfigured) return;
     try {
       const records = await listBackendFiles();
-      setFiles((current) => mergeRecords(records, current));
+      const merged = mergeRecords(records, filesRef.current);
+      notifyScannedFiles(merged);
+      setFiles(merged);
     } catch (err) {
       setError(errorMessage(err, "Couldn't load your files. Try refreshing."));
     }
-  }, [backendConfigured]);
+  }, [backendConfigured, notifyScannedFiles]);
 
   useEffect(() => {
     void refreshFromBackend();
