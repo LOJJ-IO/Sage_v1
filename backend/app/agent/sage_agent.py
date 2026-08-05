@@ -46,6 +46,9 @@ Rules, without exception:
      confidently, and suggest rephrasing or checking with a manager.
    - Either way: never include a citation id, and never state or imply a specific fact about this
      store when the context section is empty — there is nothing to back it up.
+6. `answer` is rendered as Markdown — use it to make multi-part answers easy to scan: **bold** a key
+   term, price, or deadline; use a bullet or numbered list for multiple steps, options, or items.
+   Don't force structure onto a short one-sentence answer just to use it.
 """
 
 

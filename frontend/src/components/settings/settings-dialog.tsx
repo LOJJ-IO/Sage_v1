@@ -16,6 +16,7 @@ import {
 import { useToast } from "@/components/providers/toast-provider";
 import { useTheme } from "@/hooks/use-theme";
 import { signOut } from "@/lib/auth/session";
+import { clearPersistedChatState } from "@/lib/chat/storage";
 import type { ThemePreference } from "@/lib/theme";
 
 type SettingsSection = "general" | "theme" | "account";
@@ -126,6 +127,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
   const handleSignOut = useCallback(() => {
     signOut();
+    clearPersistedChatState();
     onOpenChange(false);
     router.replace("/sign-in");
   }, [onOpenChange, router]);

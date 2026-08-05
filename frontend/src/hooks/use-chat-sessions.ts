@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ApiError } from "@/lib/api/client";
 import { askSage, isBackendConfigured } from "@/lib/ask/api";
+import { loadPersistedChatState, saveChatState } from "@/lib/chat/storage";
 import { deriveChatTitle } from "@/lib/chat/title";
 import type { ChatMessage, ChatSession } from "@/lib/chat/types";
 
@@ -28,10 +29,29 @@ function buildLocalAssistantReply(question: string): string {
   );
 }
 
+function initialChatState(): { sessions: ChatSession[]; activeSessionId: string } {
+  const persisted = loadPersistedChatState();
+  if (persisted && persisted.sessions.length > 0) {
+    const activeSessionId = persisted.sessions.some(
+      (session) => session.id === persisted.activeSessionId
+    )
+      ? persisted.activeSessionId
+      : persisted.sessions[0].id;
+    return { sessions: persisted.sessions, activeSessionId };
+  }
+
+  const session = createSession();
+  return { sessions: [session], activeSessionId: session.id };
+}
+
 export function useChatSessions() {
-  const [initialSession] = useState(() => createSession());
-  const [sessions, setSessions] = useState<ChatSession[]>([initialSession]);
-  const [activeSessionId, setActiveSessionId] = useState(initialSession.id);
+  const [initial] = useState(initialChatState);
+  const [sessions, setSessions] = useState<ChatSession[]>(initial.sessions);
+  const [activeSessionId, setActiveSessionId] = useState(initial.activeSessionId);
+
+  useEffect(() => {
+    saveChatState({ sessions, activeSessionId });
+  }, [sessions, activeSessionId]);
 
   const newChat = useCallback(() => {
     const session = createSession();

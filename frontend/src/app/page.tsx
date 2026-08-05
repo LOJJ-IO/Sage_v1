@@ -22,6 +22,7 @@ import {
   CitationSources,
   type CitationSource,
 } from "@/components/ask/citation-sources";
+import { MarkdownMessage } from "@/components/ask/markdown-message";
 import { PreviewCenterPanel } from "@/components/preview-tabs";
 import { ConfigureChatDialog } from "@/components/settings/configure-chat-dialog";
 import { SettingsDialog } from "@/components/settings/settings-dialog";
@@ -158,7 +159,11 @@ function AskAiMessageList({
           }
           key={message.id}
         >
-          <div className="whitespace-pre-wrap">{message.content}</div>
+          {message.role === "assistant" ? (
+            <MarkdownMessage content={message.content} />
+          ) : (
+            <div className="whitespace-pre-wrap">{message.content}</div>
+          )}
           {message.role === "assistant" && message.citations && message.citations.length > 0 ? (
             <CitationSources
               citations={message.citations}
