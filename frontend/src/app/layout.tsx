@@ -7,7 +7,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Sage",
-  description: "Operational knowledge for retail teams — ask Sage anything about your store's docs.",
+  description: "Operational knowledge for your team — ask Sage anything about your organization's docs.",
 };
 
 export default function RootLayout({

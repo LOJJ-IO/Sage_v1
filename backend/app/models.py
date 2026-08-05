@@ -78,6 +78,10 @@ class File(Base):
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     looks_scanned: Mapped[bool] = mapped_column(default=False)
     # OCR trigger only (build plan §11) — flags low chars/page for the admin UI; Tesseract itself is deferred.
+    preview_markdown: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Docling's own markdown export (real tables, headings) — human preview only, never chunked/embedded.
+    # Null for plain-text uploads (the raw text already *is* the preview) and for files ingested before
+    # this column existed, until they're replaced/re-uploaded.
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -137,6 +141,28 @@ class FallbackEvent(Base):
     reason: Mapped[str] = mapped_column(String(64), nullable=False)  # e.g. NOT_ENOUGH_CONTEXT
     top_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ChatSettings(Base):
+    """One row per user — each person's own chat persona/response-length preferences,
+    layered onto (never replacing) SYSTEM_PROMPT's grounding rules. `business_id` is
+    kept as a required, indexed column (not just derivable via the users FK) so every
+    query here still scopes by business_id directly, per CLAUDE.md §2.4."""
+
+    __tablename__ = "chat_settings"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    business_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    goal: Mapped[str] = mapped_column(String(16), nullable=False, default="default")  # default | learning | custom
+    response_length: Mapped[str] = mapped_column(String(16), nullable=False, default="default")  # default | shorter
+    custom_instructions: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
 
 class QueryCount(Base):

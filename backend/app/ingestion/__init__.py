@@ -61,6 +61,21 @@ async def _set_status(
         await session.commit()
 
 
+async def set_preview_markdown(business_id: uuid.UUID, file_id: str, preview_markdown: str | None) -> None:
+    """Store Docling's markdown export for human preview — orthogonal to chunking/embedding,
+    so it's written as soon as extraction succeeds rather than gated on embed success."""
+    async with get_session() as session:
+        result = await session.execute(
+            select(File).where(File.business_id == business_id, File.file_id == file_id)
+        )
+        file_row = result.scalar_one_or_none()
+        if file_row is None:
+            return
+        file_row.preview_markdown = preview_markdown
+        session.add(file_row)
+        await session.commit()
+
+
 async def _delete_chunks(business_id: uuid.UUID, file_id: str) -> None:
     async with get_session() as session:
         await session.execute(

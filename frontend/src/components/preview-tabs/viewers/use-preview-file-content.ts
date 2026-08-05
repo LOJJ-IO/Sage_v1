@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import {
   downloadBackendFile,
+  fetchBackendFilePreview,
   fetchBackendFileText,
   isBackendConfigured,
 } from "@/lib/files/api";
@@ -11,7 +12,8 @@ import type { SageFileType } from "@/lib/file-upload";
 
 type CachedBlob = { kind: "blob"; blob: Blob };
 type CachedText = { kind: "text"; text: string };
-type Cached = CachedBlob | CachedText;
+type CachedMarkdown = { kind: "markdown"; markdown: string };
+type Cached = CachedBlob | CachedText | CachedMarkdown;
 
 /** Survives remounts within the session so focusing the same file skips a re-download. */
 const contentCache = new Map<string, Cached>();
@@ -20,7 +22,8 @@ export type PreviewFileContent =
   | { status: "loading" }
   | { status: "error"; message: string }
   | { status: "ready"; kind: "blob"; blob: Blob; blobUrl: string }
-  | { status: "ready"; kind: "text"; text: string };
+  | { status: "ready"; kind: "text"; text: string }
+  | { status: "ready"; kind: "markdown"; markdown: string };
 
 function usesExtractedText(fileType: SageFileType): boolean {
   return fileType === "docx";
@@ -92,6 +95,10 @@ export function usePreviewFileContent(
           if (cancelled) {
             return;
           }
+          if (cached.kind === "markdown") {
+            setContent({ status: "ready", kind: "markdown", markdown: cached.markdown });
+            return;
+          }
           if (cached.kind === "text") {
             setContent({ status: "ready", kind: "text", text: cached.text });
             return;
@@ -107,6 +114,18 @@ export function usePreviewFileContent(
         }
 
         if (usesExtractedText(fileType)) {
+          // Prefer Docling's markdown export (real tables) when the file's been
+          // (re)ingested with it; older files fall back to the flat RAG text.
+          const markdown = await fetchBackendFilePreview(resourceKey);
+          if (cancelled) {
+            return;
+          }
+          if (markdown) {
+            contentCache.set(resourceKey, { kind: "markdown", markdown });
+            setContent({ status: "ready", kind: "markdown", markdown });
+            return;
+          }
+
           const text = await fetchBackendFileText(resourceKey);
           if (cancelled) {
             return;

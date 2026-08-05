@@ -13,7 +13,7 @@ import logging
 import uuid
 
 from app.files.storage import get_storage
-from app.ingestion import _set_status, ingest_text
+from app.ingestion import _set_status, ingest_text, set_preview_markdown
 from app.ingestion.extract import extract_text
 from app.ml_gate import heavy_ml
 
@@ -33,6 +33,11 @@ async def process_file(*, business_id: uuid.UUID, file_id: str, filename: str, s
         # FlashRank), not both stacks at once.
         async with heavy_ml:
             extraction = await asyncio.to_thread(extract_text, filename, content)
+
+        # Orthogonal to chunking/embedding below — written now so a preview is
+        # available even if the near-empty-scanned check or embedding later
+        # fails this file.
+        await set_preview_markdown(business_id, file_id, extraction.preview_markdown)
 
         # OCR is deferred (extract.py). A "scanned" file with almost no
         # extractable text would index as Ready and then every /ask about it

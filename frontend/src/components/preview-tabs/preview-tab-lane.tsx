@@ -33,14 +33,14 @@ export function PreviewTabLane({
   }
 
   return (
-    <div className="flex h-full min-w-0 flex-1 items-stretch overflow-x-hidden overflow-y-visible">
+    <div className="scrollbar-thin flex h-full min-w-0 flex-1 items-stretch overflow-x-auto overflow-y-hidden">
       {tabs.map((tab, index) => (
         <Fragment key={tab.tabId}>
           {index > 0 ? (
             <div aria-hidden className="preview-tab-divider shrink-0" />
           ) : null}
           <div
-            className="preview-tab-lane-item flex h-full min-w-0 shrink grow basis-0 items-stretch"
+            className="preview-tab-lane-item flex h-full shrink grow basis-0 items-stretch"
             data-active={tab.tabId === activeTabId ? "" : undefined}
             style={{ maxWidth: TAB_MAX_WIDTH_PX }}
           >

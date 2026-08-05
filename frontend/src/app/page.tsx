@@ -12,7 +12,8 @@ import {
   IconWand,
 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import { FileLibraryPanel } from "@/components/files/file-library-panel";
 import { OrganizationDialog } from "@/components/accounts/organization-dialog";
 import { ProfileMenu } from "@/components/auth/profile-menu";
@@ -23,19 +24,26 @@ import {
   type CitationSource,
 } from "@/components/ask/citation-sources";
 import { MarkdownMessage } from "@/components/ask/markdown-message";
+import { TypingIndicator } from "@/components/ask/typing-indicator";
 import { PreviewCenterPanel } from "@/components/preview-tabs";
 import { ConfigureChatDialog } from "@/components/settings/configure-chat-dialog";
 import { SettingsDialog } from "@/components/settings/settings-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/empty";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useChatSessions } from "@/hooks/use-chat-sessions";
 import { useFileLibrary } from "@/hooks/use-file-library";
 import { useSyncRemovedPreviewTabs } from "@/hooks/use-sync-removed-preview-tabs";
 import { getUserRole } from "@/lib/auth/session";
-import type { ChatMessage } from "@/lib/chat/types";
+import type { ChatMessage, ChatSession } from "@/lib/chat/types";
 import type { LibraryFile } from "@/lib/file-upload";
 import { fileTypeFromFilename } from "@/lib/file-upload";
+import { getActiveTab } from "@/lib/preview-tabs/selectors";
 import { usePreviewTabsStore } from "@/lib/preview-tabs/store";
 import {
   Tooltip,
@@ -134,7 +142,7 @@ function AskAiEmptyState({
   return (
     <EmptyState
       className="h-full px-4"
-      description="Ask about SOPs, pricing, returns, and more. I'll look across your uploaded docs."
+      description="Ask about policies, procedures, and more. I'll look across your uploaded docs."
       icon={<TablerIcon icon={IconMessageCircle} size={ICON_SIZE_EMPTY} />}
       title="Ask AI"
     />
@@ -143,9 +151,11 @@ function AskAiEmptyState({
 
 function AskAiMessageList({
   messages,
+  isSending,
   onOpenSource,
 }: {
   messages: ChatMessage[];
+  isSending: boolean;
   onOpenSource: (source: CitationSource) => void;
 }) {
   return (
@@ -172,6 +182,7 @@ function AskAiMessageList({
           ) : null}
         </div>
       ))}
+      <AnimatePresence>{isSending ? <TypingIndicator /> : null}</AnimatePresence>
     </div>
   );
 }
@@ -207,7 +218,7 @@ function AskAiChatInput({
         }}
         placeholder={
           hasFiles
-            ? "Ask about return policy, pricing, or store procedures..."
+            ? "Ask about policies, procedures, or documentation..."
             : "Upload documents to start asking..."
         }
         trailing={
@@ -242,6 +253,42 @@ function AskAiChatInput({
   );
 }
 
+function ChatHistoryMenu({
+  sessions,
+  activeSessionId,
+  onSelect,
+}: {
+  sessions: ChatSession[];
+  activeSessionId: string;
+  onSelect: (id: string) => void;
+}) {
+  if (sessions.length === 0) {
+    return (
+      <p className="px-2 py-1.5 text-sm text-muted-foreground">No chats yet.</p>
+    );
+  }
+
+  return (
+    <ul className="flex max-h-72 flex-col gap-0.5 overflow-y-auto">
+      {sessions.map((session) => (
+        <li key={session.id}>
+          <button
+            className={
+              session.id === activeSessionId
+                ? "w-full truncate rounded-md bg-muted px-2 py-1.5 text-left text-sm font-medium text-foreground"
+                : "w-full truncate rounded-md px-2 py-1.5 text-left text-sm text-foreground hover:bg-muted"
+            }
+            onClick={() => onSelect(session.id)}
+            type="button"
+          >
+            {session.title}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function HeaderIconGroup({ children }: { children: ReactNode }) {
   return (
     <div className="inline-flex w-fit items-center gap-0.5 rounded-full border border-border bg-background p-0.5 shadow-sm">
@@ -255,12 +302,14 @@ function HeaderIconButton({
   iconClass,
   icon,
   onClick,
+  active = false,
   tooltipPlacement = "bottom",
 }: {
   label: string;
   iconClass?: string;
   icon?: ReactNode;
   onClick?: () => void;
+  active?: boolean;
   tooltipPlacement?: "bottom" | "left" | "right";
 }) {
   const sideOffset = tooltipPlacement === "bottom" ? 6 : 8;
@@ -271,7 +320,12 @@ function HeaderIconButton({
         render={
           <button
             aria-label={label}
-            className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            aria-pressed={active}
+            className={
+              active
+                ? "flex size-8 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                : "flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            }
             onClick={onClick}
             type="button"
           />
@@ -301,7 +355,6 @@ export default function Home() {
 function HomeWorkspace() {
   const {
     files,
-    error,
     openFilePicker,
     removeFile,
     updateTags,
@@ -349,15 +402,49 @@ function HomeWorkspace() {
   const [rightWidth, setRightWidth] = useState(DEFAULT_SIDE_WIDTH);
   const [isLeftVisible, setIsLeftVisible] = useState(true);
   const [isRightVisible, setIsRightVisible] = useState(true);
+  const [sortOrder, setSortOrder] = useState<"name-asc" | "name-desc">("name-asc");
+  const [bookmarkedOnly, setBookmarkedOnly] = useState(false);
+  const [isFileSearchOpen, setIsFileSearchOpen] = useState(false);
+  const [fileSearchQuery, setFileSearchQuery] = useState("");
+  const [autoRevealEnabled, setAutoRevealEnabled] = useState(false);
+  const [isChatSearchOpen, setIsChatSearchOpen] = useState(false);
+  const [chatSearchQuery, setChatSearchQuery] = useState("");
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const activeResourceKey = usePreviewTabsStore(
+    (state) => getActiveTab(state)?.resourceKey ?? null,
+  );
+
+  const visibleFiles = useMemo(() => {
+    const query = fileSearchQuery.trim().toLowerCase();
+    const filtered = files.filter((entry) => {
+      if (bookmarkedOnly && !entry.isBookmarked) return false;
+      if (query && !entry.file.name.toLowerCase().includes(query)) return false;
+      return true;
+    });
+    const sorted = [...filtered].sort((a, b) =>
+      a.file.name.localeCompare(b.file.name),
+    );
+    return sortOrder === "name-desc" ? sorted.reverse() : sorted;
+  }, [files, bookmarkedOnly, fileSearchQuery, sortOrder]);
+
   const {
     sessions: chatSessions,
     activeSession,
+    isActiveSessionPending,
     newChat,
     closeChat,
     switchChat,
     renameChat,
     sendMessage,
   } = useChatSessions();
+  const visibleMessages = useMemo(() => {
+    const query = chatSearchQuery.trim().toLowerCase();
+    if (!query) return activeSession.messages;
+    return activeSession.messages.filter((message) =>
+      message.content.toLowerCase().includes(query),
+    );
+  }, [activeSession.messages, chatSearchQuery]);
+
   const [isAdmin, setIsAdmin] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [organizationOpen, setOrganizationOpen] = useState(false);
@@ -444,15 +531,28 @@ function HomeWorkspace() {
           </HeaderIconGroup>
           <HeaderIconGroup>
             <HeaderIconButton iconClass="codicon-folder-library" label="Files" />
-            <HeaderIconButton iconClass="codicon-search" label="Search" />
+            <HeaderIconButton
+              active={isFileSearchOpen}
+              iconClass="codicon-search"
+              label="Search"
+              onClick={() =>
+                setIsFileSearchOpen((open) => {
+                  const next = !open;
+                  if (!next) setFileSearchQuery("");
+                  return next;
+                })
+              }
+            />
             <HeaderIconButton
               icon={<TablerIcon icon={IconUpload} />}
               label="Upload"
               onClick={openFilePicker}
             />
             <HeaderIconButton
+              active={bookmarkedOnly}
               icon={<TablerIcon icon={IconBookmark} />}
               label="Bookmarks"
+              onClick={() => setBookmarkedOnly((value) => !value)}
             />
           </HeaderIconGroup>
         </div>
@@ -493,8 +593,18 @@ function HomeWorkspace() {
           <header className="flex h-14 w-full shrink-0 items-center justify-center border-b border-border">
             <HeaderIconGroup>
               <HeaderIconButton
+                active={sortOrder === "name-desc"}
                 icon={<TablerIcon icon={IconArrowsSort} />}
-                label="Sort"
+                label={
+                  sortOrder === "name-asc"
+                    ? "Sort: Name (A–Z)"
+                    : "Sort: Name (Z–A)"
+                }
+                onClick={() =>
+                  setSortOrder((order) =>
+                    order === "name-asc" ? "name-desc" : "name-asc",
+                  )
+                }
               />
               <HeaderIconButton
                 iconClass="codicon-new-folder"
@@ -505,8 +615,10 @@ function HomeWorkspace() {
                 label="Auto-Sort"
               />
               <HeaderIconButton
+                active={autoRevealEnabled}
                 icon={<TablerIcon icon={IconEyeQuestion} />}
                 label="Auto-reveal current file"
+                onClick={() => setAutoRevealEnabled((value) => !value)}
               />
               <HeaderIconButton
                 iconClass="codicon-collapse-all"
@@ -515,23 +627,34 @@ function HomeWorkspace() {
             </HeaderIconGroup>
           </header>
           <div className="min-h-0 flex-1 overflow-auto p-2">
-            {error ? (
-              <p
-                className="mb-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
-                role="alert"
-              >
-                {error}
-              </p>
+            {isFileSearchOpen ? (
+              <Input
+                aria-label="Search files"
+                autoFocus
+                className="mb-2"
+                onChange={(event) => setFileSearchQuery(event.target.value)}
+                placeholder="Search files by name…"
+                type="text"
+                value={fileSearchQuery}
+              />
             ) : null}
             {files.length > 0 ? (
-              <FileLibraryPanel
-                files={files}
-                onDeleteFile={removeFile}
-                onEditTags={updateTags}
-                onOpenFile={handleOpenFile}
-                onReplaceFile={openReplacePicker}
-                onToggleBookmark={toggleBookmark}
-              />
+              visibleFiles.length > 0 ? (
+                <FileLibraryPanel
+                  files={visibleFiles}
+                  onDeleteFile={removeFile}
+                  onEditTags={updateTags}
+                  onOpenFile={handleOpenFile}
+                  onReplaceFile={openReplacePicker}
+                  onToggleBookmark={toggleBookmark}
+                  revealFileId={autoRevealEnabled ? activeResourceKey : null}
+                />
+              ) : (
+                <p className="px-1 py-2 text-sm text-muted-foreground">
+                  No files match{bookmarkedOnly ? " your bookmarks filter" : ""}
+                  {fileSearchQuery ? ` "${fileSearchQuery}"` : ""}.
+                </p>
+              )
             ) : (
               <FilesEmptyState onUpload={openFilePicker} />
             )}
@@ -587,13 +710,40 @@ function HomeWorkspace() {
                   onClick={newChat}
                 />
                 <HeaderIconButton
+                  active={isChatSearchOpen}
                   iconClass="codicon-search"
                   label="Search chats"
+                  onClick={() =>
+                    setIsChatSearchOpen((open) => {
+                      const next = !open;
+                      if (!next) setChatSearchQuery("");
+                      return next;
+                    })
+                  }
                 />
-                <HeaderIconButton
-                  iconClass="codicon-history"
-                  label="History"
-                />
+                <Popover onOpenChange={setIsHistoryOpen} open={isHistoryOpen}>
+                  <PopoverTrigger
+                    aria-label="History"
+                    aria-pressed={isHistoryOpen}
+                    className={
+                      isHistoryOpen
+                        ? "flex size-8 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                        : "flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                    }
+                  >
+                    <Codicon iconClass="codicon-history" size={ICON_SIZE} />
+                  </PopoverTrigger>
+                  <PopoverContent align="end">
+                    <ChatHistoryMenu
+                      activeSessionId={activeSession.id}
+                      onSelect={(id: string) => {
+                        switchChat(id);
+                        setIsHistoryOpen(false);
+                      }}
+                      sessions={chatSessions}
+                    />
+                  </PopoverContent>
+                </Popover>
                 <HeaderIconButton
                   iconClass="codicon-settings"
                   label="Configure"
@@ -602,12 +752,31 @@ function HomeWorkspace() {
               </HeaderIconGroup>
             </div>
           </header>
+          {isChatSearchOpen ? (
+            <div className="shrink-0 border-b border-border p-2">
+              <Input
+                aria-label="Search chats"
+                autoFocus
+                onChange={(event) => setChatSearchQuery(event.target.value)}
+                placeholder="Search this chat…"
+                type="text"
+                value={chatSearchQuery}
+              />
+            </div>
+          ) : null}
           <div className="min-h-0 flex-1 overflow-auto p-2">
             {activeSession.messages.length > 0 ? (
-              <AskAiMessageList
-                messages={activeSession.messages}
-                onOpenSource={handleOpenCitationSource}
-              />
+              visibleMessages.length > 0 || isActiveSessionPending ? (
+                <AskAiMessageList
+                  isSending={isActiveSessionPending}
+                  messages={visibleMessages}
+                  onOpenSource={handleOpenCitationSource}
+                />
+              ) : (
+                <p className="px-1 py-2 text-sm text-muted-foreground">
+                  No messages match &ldquo;{chatSearchQuery}&rdquo;.
+                </p>
+              )
             ) : (
               <AskAiEmptyState
                 hasFiles={files.length > 0}

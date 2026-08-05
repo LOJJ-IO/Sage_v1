@@ -37,10 +37,28 @@ def sniff_content_type(content: bytes) -> str:
     return magic.from_buffer(content, mime=True)
 
 
+_PLAIN_TEXT_EXTENSIONS = {"txt", "md"}
+
+
+def _is_acceptable_plain_text_upload(mime: str, filename: str) -> bool:
+    """A `.txt`/`.md` upload whose *content* magic-sniffs as some other text
+    flavor (e.g. `text/html` because it holds HTML source, `text/css`, `text/xml`)
+    is still plain text, not a disguised binary — the extension-spoofing risk
+    `sniff_content_type` exists to catch (build plan Phase 3 acceptance) is a
+    binary payload wearing a safe-looking extension, not text-flavored text.
+    Narrow on purpose: every other extension still sniffs to its exact expected
+    MIME in `ALLOWED_MIME_TYPES`, no free pass for pdf/docx/xlsx/etc.
+    """
+    if not mime.startswith("text/"):
+        return False
+    extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    return extension in _PLAIN_TEXT_EXTENSIONS
+
+
 async def create_pending_file(*, business_id: uuid.UUID, filename: str, content: bytes) -> File:
     """Validate real content type, persist bytes to storage, create a `pending` files row."""
     mime = sniff_content_type(content)
-    if mime not in ALLOWED_MIME_TYPES:
+    if mime not in ALLOWED_MIME_TYPES and not _is_acceptable_plain_text_upload(mime, filename):
         raise UnsupportedFileType(f"unsupported content type: {mime}")
 
     file_id = uuid.uuid4().hex
@@ -105,7 +123,7 @@ async def replace_file_bytes(*, business_id: uuid.UUID, file_id: str, filename: 
     the background pipeline once this returns — see `app.files.routes`.
     """
     mime = sniff_content_type(content)
-    if mime not in ALLOWED_MIME_TYPES:
+    if mime not in ALLOWED_MIME_TYPES and not _is_acceptable_plain_text_upload(mime, filename):
         raise UnsupportedFileType(f"unsupported content type: {mime}")
 
     storage = get_storage()

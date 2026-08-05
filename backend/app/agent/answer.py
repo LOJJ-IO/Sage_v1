@@ -17,6 +17,7 @@ from pydantic_ai.exceptions import ModelHTTPError, UnexpectedModelBehavior
 from sqlalchemy import select
 
 from app.agent.sage_agent import AgentDeps, get_agent
+from app.chat_settings import build_style_instructions, get_chat_settings
 from app.db import get_session
 from app.limits import DailyCapExceeded, check_and_increment, validate_question
 from app.models import ChatHistory, File
@@ -29,11 +30,11 @@ NO_CONTEXT_PLACEHOLDER = "(no relevant passages found)"
 logger = logging.getLogger("app.agent.answer")
 
 REFUSAL_MESSAGE = (
-    "I don't have enough grounded information in this store's files to answer that confidently. "
-    "Try rephrasing, or check with a manager — I'd rather say I don't know than guess."
+    "I don't have enough grounded information in the uploaded files to answer that confidently. "
+    "Try rephrasing, or check with your manager — I'd rather say I don't know than guess."
 )
 
-LIMIT_MESSAGE = "This store has reached its daily question limit. Please try again tomorrow."
+LIMIT_MESSAGE = "This workspace has reached its daily question limit. Please try again tomorrow."
 
 MODEL_UNAVAILABLE_MESSAGE = "Sage is temporarily unable to answer — the model is unavailable right now. Please try again in a moment."
 
@@ -130,9 +131,16 @@ async def answer_question(
     agent = get_agent()
     context_section = assembled.context_text or NO_CONTEXT_PLACEHOLDER
     prompt = f"Context:\n{context_section}\n\nQuestion: {question}"
+    chat_settings = (
+        await get_chat_settings(business_id=business_id, user_id=user_id) if user_id is not None else None
+    )
+    style_instructions = build_style_instructions(chat_settings)
     logger.info("calling model=%s business_id=%s grounded=%s", agent.model.model_name, business_id, not decision.refused)
     try:
-        result = await agent.run(prompt, deps=AgentDeps(valid_citation_ids=assembled.citation_ids))
+        result = await agent.run(
+            prompt,
+            deps=AgentDeps(valid_citation_ids=assembled.citation_ids, style_instructions=style_instructions),
+        )
     except (ModelHTTPError, UnexpectedModelBehavior) as exc:
         logger.warning("model call failed model=%s business_id=%s error=%s", agent.model.model_name, business_id, exc)
         if decision.refused:

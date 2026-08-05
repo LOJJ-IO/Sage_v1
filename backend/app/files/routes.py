@@ -79,6 +79,18 @@ async def get_file_text(user: AdminUser, file_id: str) -> dict[str, str]:
     return {"text": text}
 
 
+@router.get("/{file_id}/preview")
+async def get_file_preview(user: AdminUser, file_id: str) -> dict[str, str | None]:
+    """Docling's markdown export (real tables/headings) for a human-readable preview —
+    separate from `/text`, which returns the RAG-chunked (sentence-flattened) text.
+    `markdown` is null for plain-text uploads and for files ingested before this
+    column existed, until they're replaced/re-uploaded."""
+    file_row = await service.get_file(business_id=user.business_id, file_id=file_id)
+    if file_row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="file not found")
+    return {"markdown": file_row.preview_markdown}
+
+
 @router.delete("/{file_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_file(user: AdminUser, file_id: str) -> None:
     file_row = await service.get_file(business_id=user.business_id, file_id=file_id)

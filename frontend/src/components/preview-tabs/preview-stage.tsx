@@ -63,6 +63,10 @@ export function PreviewStage({
   }
 
   return (
-    <FilePreviewRouter localFile={localFile ?? null} tab={activeTab} />
+    // Keyed by tabId (not just resourceKey) so two duplicate tabs of the same
+    // file get fully independent viewer instances — otherwise switching between
+    // them reuses the same mounted PdfViewer/scroll DOM node and one tab's
+    // scroll position silently becomes "shared" with the other.
+    <FilePreviewRouter key={activeTab.tabId} localFile={localFile ?? null} tab={activeTab} />
   );
 }

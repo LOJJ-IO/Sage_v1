@@ -31,7 +31,7 @@ const STEPS = [
   {
     id: "role",
     title: "Role",
-    description: "Most people are staff. Admins can manage the store.",
+    description: "Most people are staff. Admins can manage the workspace.",
   },
 ] as const;
 

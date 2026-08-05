@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from app.agent.answer import answer_question
 from app.auth import CurrentUser
 from app.auth import router as auth_router
+from app.chat_settings.routes import router as chat_settings_router
 from app.config import get_settings
 from app.files.routes import router as files_router
 from app.internal.routes import router as internal_router
@@ -48,6 +49,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(files_router)
+app.include_router(chat_settings_router)
 app.include_router(internal_router)
 
 

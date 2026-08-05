@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Sign in — Sage",
   description:
-    "Sign in to Sage with your username and passcode to access your store workspace.",
+    "Sign in to Sage with your username and passcode to access your workspace.",
 };
 
 export default function SignInLayout({

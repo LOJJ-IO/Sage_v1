@@ -61,3 +61,10 @@ export async function fetchBackendFileText(fileId: string): Promise<string> {
   const body = await apiFetch<{ text: string }>(`/files/${fileId}/text`);
   return body.text;
 }
+
+/** Docling's markdown export (real tables/headings) — null until the file's been
+ * (re)ingested with this field, in which case callers fall back to `/text`. */
+export async function fetchBackendFilePreview(fileId: string): Promise<string | null> {
+  const body = await apiFetch<{ markdown: string | null }>(`/files/${fileId}/preview`);
+  return body.markdown;
+}

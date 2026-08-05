@@ -57,10 +57,10 @@ export function useFileLibrary() {
   const replaceInputRef = useRef<HTMLInputElement>(null);
   const replaceTargetIdRef = useRef<string | null>(null);
   const [files, setFiles] = useState<LibraryFile[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const backendConfigured = isBackendConfigured();
   const filesRef = useRef<LibraryFile[]>([]);
   const notifiedScannedIdsRef = useRef<Set<string>>(new Set());
+  const hasNotifiedLoadErrorRef = useRef(false);
 
   useEffect(() => {
     filesRef.current = files;
@@ -92,10 +92,19 @@ export function useFileLibrary() {
       const merged = mergeRecords(records, filesRef.current);
       notifyScannedFiles(merged);
       setFiles(merged);
+      hasNotifiedLoadErrorRef.current = false;
     } catch (err) {
-      setError(errorMessage(err, "Couldn't load your files. Try refreshing."));
+      // Guarded so a prolonged outage (this runs on a 2s poll) toasts once,
+      // not every tick — it resets as soon as a load succeeds again.
+      if (!hasNotifiedLoadErrorRef.current) {
+        hasNotifiedLoadErrorRef.current = true;
+        toast.error({
+          title: "Couldn't load files",
+          description: errorMessage(err, "Try refreshing."),
+        });
+      }
     }
-  }, [backendConfigured, notifyScannedFiles]);
+  }, [backendConfigured, notifyScannedFiles, toast]);
 
   useEffect(() => {
     void refreshFromBackend();
@@ -121,8 +130,6 @@ export function useFileLibrary() {
 
   const addFiles = useCallback(
     async (selected: File[]) => {
-      setError(null);
-
       const accepted: File[] = [];
       let firstSkipReason: string | null = null;
       let skippedCount = 0;
@@ -141,7 +148,10 @@ export function useFileLibrary() {
       }
 
       if (accepted.length === 0) {
-        setError(firstSkipReason ?? "No supported files selected.");
+        toast.warning({
+          title: "No files uploaded",
+          description: firstSkipReason ?? "No supported files selected.",
+        });
         return;
       }
 
@@ -175,12 +185,18 @@ export function useFileLibrary() {
       }
 
       if (uploadFailures.length > 0) {
-        setError(uploadFailures.join("; "));
+        toast.warning({
+          title: "Some files failed to upload",
+          description: uploadFailures.join("; "),
+        });
       } else if (skippedCount > 0) {
-        setError(`Uploaded ${accepted.length} file(s). ${skippedCount} skipped.`);
+        toast.warning({
+          title: `Uploaded ${accepted.length} file(s)`,
+          description: `${skippedCount} skipped.`,
+        });
       }
     },
-    [backendConfigured],
+    [backendConfigured, toast],
   );
 
   const handleInputChange = useCallback(
@@ -199,10 +215,13 @@ export function useFileLibrary() {
     if (!backendConfigured) return;
 
     void deleteBackendFile(fileId).catch((err) => {
-      setError(errorMessage(err, "Couldn't delete that file. Try again."));
+      toast.error({
+        title: "Couldn't delete file",
+        description: errorMessage(err, "Try again."),
+      });
       setFiles(previous);
     });
-  }, [backendConfigured, files]);
+  }, [backendConfigured, files, toast]);
 
   const updateTags = useCallback((fileId: string, tags: string[]) => {
     setFiles((current) =>
@@ -241,11 +260,9 @@ export function useFileLibrary() {
 
       const result = validateFileForUpload(file);
       if (!result.ok) {
-        setError(result.reason);
+        toast.warning({ title: "Couldn't replace file", description: result.reason });
         return;
       }
-
-      setError(null);
 
       if (!backendConfigured) {
         setFiles((current) =>
@@ -267,15 +284,17 @@ export function useFileLibrary() {
           );
         })
         .catch((err) => {
-          setError(errorMessage(err, "Couldn't replace that file. Try again."));
+          toast.error({
+            title: "Couldn't replace file",
+            description: errorMessage(err, "Try again."),
+          });
         });
     },
-    [backendConfigured],
+    [backendConfigured, toast],
   );
 
   return {
     files,
-    error,
     openFilePicker,
     removeFile,
     updateTags,

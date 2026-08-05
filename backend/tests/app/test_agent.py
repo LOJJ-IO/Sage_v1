@@ -11,10 +11,10 @@ from __future__ import annotations
 import json
 
 from pydantic_ai import Agent, ModelRetry, RunContext
-from pydantic_ai.messages import ModelMessage, ModelResponse, ToolCallPart
+from pydantic_ai.messages import ModelMessage, ModelRequest, ModelResponse, SystemPromptPart, ToolCallPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
-from app.agent.sage_agent import AgentDeps, SageAnswer, find_invalid_citations
+from app.agent.sage_agent import AgentDeps, SageAnswer, SYSTEM_PROMPT, find_invalid_citations, get_agent
 from app.db import new_business
 from app.ingestion import ingest_text
 from app.retrieval import retrieve
@@ -66,3 +66,51 @@ async def test_fabricated_citation_is_rejected_and_retried():
 
     assert result.output.citations == [real_citation_id]
     assert all(cid in assembled.citation_ids for cid in result.output.citations)
+
+
+def _system_prompt_text(messages: list[ModelMessage]) -> str:
+    request = messages[0]
+    assert isinstance(request, ModelRequest)
+    return "\n".join(part.content for part in request.parts if isinstance(part, SystemPromptPart))
+
+
+async def test_style_instructions_are_appended_without_altering_base_prompt():
+    """Configure Chat text must layer onto SYSTEM_PROMPT, never replace or precede it
+    (CLAUDE.md §5 — grounding/citation rules are non-negotiable)."""
+    captured: dict[str, str] = {}
+
+    def capture_and_answer(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        captured["system_prompt"] = _system_prompt_text(messages)
+        args = {"answer": "Refunds are accepted within 14 days.", "citations": []}
+        assert info.output_tools is not None
+        return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, json.dumps(args))])
+
+    agent = get_agent()
+    await agent.run(
+        "What is the refund policy?",
+        deps=AgentDeps(valid_citation_ids=frozenset(), style_instructions="Be blunt."),
+        model=FunctionModel(capture_and_answer),
+    )
+
+    assert SYSTEM_PROMPT.strip() in captured["system_prompt"]
+    assert "Be blunt." in captured["system_prompt"]
+    assert captured["system_prompt"].index(SYSTEM_PROMPT.strip()) < captured["system_prompt"].index("Be blunt.")
+
+
+async def test_no_style_instructions_adds_nothing_to_base_prompt():
+    captured: dict[str, str] = {}
+
+    def capture_and_answer(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        captured["system_prompt"] = _system_prompt_text(messages)
+        args = {"answer": "Refunds are accepted within 14 days.", "citations": []}
+        assert info.output_tools is not None
+        return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, json.dumps(args))])
+
+    agent = get_agent()
+    await agent.run(
+        "What is the refund policy?",
+        deps=AgentDeps(valid_citation_ids=frozenset()),
+        model=FunctionModel(capture_and_answer),
+    )
+
+    assert captured["system_prompt"].strip() == SYSTEM_PROMPT.strip()

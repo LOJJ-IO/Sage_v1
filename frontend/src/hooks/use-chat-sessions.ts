@@ -48,6 +48,9 @@ export function useChatSessions() {
   const [initial] = useState(initialChatState);
   const [sessions, setSessions] = useState<ChatSession[]>(initial.sessions);
   const [activeSessionId, setActiveSessionId] = useState(initial.activeSessionId);
+  const [pendingSessionIds, setPendingSessionIds] = useState<ReadonlySet<string>>(
+    () => new Set()
+  );
 
   useEffect(() => {
     saveChatState({ sessions, activeSessionId });
@@ -129,6 +132,18 @@ export function useChatSessions() {
         return;
       }
 
+      setPendingSessionIds((current) => new Set(current).add(sessionId));
+      const clearPending = () => {
+        setPendingSessionIds((current) => {
+          if (!current.has(sessionId)) {
+            return current;
+          }
+          const next = new Set(current);
+          next.delete(sessionId);
+          return next;
+        });
+      };
+
       void askSage(content)
         .then((result) => {
           appendAssistantMessage({
@@ -148,17 +163,20 @@ export function useChatSessions() {
             role: "assistant",
             content: message,
           });
-        });
+        })
+        .finally(clearPending);
     },
     [activeSessionId]
   );
 
   const activeSession =
     sessions.find((session) => session.id === activeSessionId) ?? sessions[0];
+  const isActiveSessionPending = pendingSessionIds.has(activeSession.id);
 
   return {
     sessions,
     activeSession,
+    isActiveSessionPending,
     newChat,
     closeChat,
     switchChat,

@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+import { IconDotsVertical } from "@tabler/icons-react";
 
 import type { FileIngestStatus, LibraryFile } from "@/lib/file-upload";
 
@@ -10,6 +12,10 @@ import {
   type FileRowMenuAnchor,
 } from "@/components/files/file-row-menu";
 import { FileTypeIcon } from "@/components/files/file-type-icon";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+const REVEAL_HIGHLIGHT_MS = 1500;
 
 type FileListProps = {
   files: LibraryFile[];
@@ -18,6 +24,8 @@ type FileListProps = {
   onOpenFile: (file: LibraryFile) => void;
   onReplace: (file: LibraryFile) => void;
   onToggleBookmark: (fileId: string) => void;
+  /** File to scroll into view and briefly highlight (Auto-reveal current file). */
+  revealFileId?: string | null;
 };
 
 type RowContextMenuState = {
@@ -51,10 +59,26 @@ export function FileList({
   onOpenFile,
   onReplace,
   onToggleBookmark,
+  revealFileId = null,
 }: FileListProps) {
   const [contextMenu, setContextMenu] = useState<RowContextMenuState | null>(
     null,
   );
+  const [highlightedFileId, setHighlightedFileId] = useState<string | null>(
+    null,
+  );
+  const rowRefs = useRef(new Map<string, HTMLLIElement>());
+
+  useEffect(() => {
+    if (!revealFileId) return;
+    const node = rowRefs.current.get(revealFileId);
+    if (!node) return;
+
+    node.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    setHighlightedFileId(revealFileId);
+    const timer = setTimeout(() => setHighlightedFileId(null), REVEAL_HIGHLIGHT_MS);
+    return () => clearTimeout(timer);
+  }, [revealFileId]);
 
   if (files.length === 0) return null;
 
@@ -65,7 +89,18 @@ export function FileList({
         return (
           <li
             key={entry.id}
-            className="rounded-md px-1 py-0.5 hover:bg-muted"
+            ref={(node) => {
+              if (node) {
+                rowRefs.current.set(entry.id, node);
+              } else {
+                rowRefs.current.delete(entry.id);
+              }
+            }}
+            className={cn(
+              "group rounded-md px-1 py-0.5 hover:bg-muted",
+              highlightedFileId === entry.id &&
+                "bg-accent/60 transition-colors duration-500",
+            )}
             onContextMenu={(event) => {
               event.preventDefault();
               setContextMenu({
@@ -103,6 +138,22 @@ export function FileList({
                   filename={entry.file.name}
                   onToggle={() => onToggleBookmark(entry.id)}
                 />
+                <Button
+                  aria-label={`More actions for ${entry.file.name}`}
+                  className="text-muted-foreground opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+                  onClick={(event) => {
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    setContextMenu({
+                      file: entry,
+                      anchor: { x: rect.left, y: rect.bottom },
+                    });
+                  }}
+                  size="icon-sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <IconDotsVertical aria-hidden className="size-4" stroke={2.2} />
+                </Button>
               </div>
             </div>
             {hint ? (

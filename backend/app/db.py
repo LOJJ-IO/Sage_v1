@@ -50,6 +50,7 @@ SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSe
 _TENANT_TABLES = (
     "fallback_events",
     "chat_history",
+    "chat_settings",
     "query_counts",
     "chunks",
     "files",

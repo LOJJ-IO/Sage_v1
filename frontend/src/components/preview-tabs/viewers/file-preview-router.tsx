@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
+import { DocxMarkdownViewer } from "@/components/preview-tabs/viewers/docx-markdown-viewer";
 import { DocxTextViewer } from "@/components/preview-tabs/viewers/docx-text-viewer";
 import { ImageViewer } from "@/components/preview-tabs/viewers/image-viewer";
 import {
@@ -74,6 +75,16 @@ export function FilePreviewRouter({ tab, localFile }: FilePreviewRouterProps) {
     return (
       <BlobTextPreview
         blob={content.blob}
+        onViewStateChange={patchViewState}
+        viewState={viewState}
+      />
+    );
+  }
+
+  if (tab.fileType === "docx" && content.kind === "markdown") {
+    return (
+      <DocxMarkdownViewer
+        markdown={content.markdown}
         onViewStateChange={patchViewState}
         viewState={viewState}
       />

@@ -124,3 +124,83 @@ async def test_upload_rejects_disallowed_content_type(client: AsyncClient):
         files={"upload": ("virus.exe", b"MZ\x90\x00fake-exe-bytes", "application/octet-stream")},
     )
     assert resp.status_code == 415
+
+
+async def test_upload_accepts_txt_file_holding_html_source(client: AsyncClient):
+    """A .txt used to jot down HTML prototypes magic-sniffs as text/html, not
+    text/plain — still just text, not a disguised binary, so it's allowed."""
+    business_id = await new_business(name="Store A")
+    token = await _admin_token(business_id)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    resp = await client.post(
+        "/files",
+        headers=headers,
+        files={
+            "upload": (
+                "prototypes.txt",
+                b"<!DOCTYPE html><html><body><h1>Prototype</h1></body></html>",
+                "text/plain",
+            )
+        },
+    )
+    assert resp.status_code == 201
+
+
+async def test_get_file_preview_defaults_to_null_markdown(client: AsyncClient):
+    """No preview_markdown set yet (e.g. a .txt upload, or ingestion still running)."""
+    business_id = await new_business(name="Store A")
+    token = await _admin_token(business_id)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    resp = await client.post(
+        "/files", headers=headers, files={"upload": ("notes.txt", b"plain text", "text/plain")}
+    )
+    file_id = resp.json()["file_id"]
+
+    preview = await client.get(f"/files/{file_id}/preview", headers=headers)
+    assert preview.status_code == 200
+    assert preview.json() == {"markdown": None}
+
+
+async def test_get_file_preview_returns_stored_markdown(client: AsyncClient):
+    from app.ingestion import set_preview_markdown
+
+    business_id = await new_business(name="Store A")
+    token = await _admin_token(business_id)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    resp = await client.post(
+        "/files", headers=headers, files={"upload": ("proposal.txt", b"stub bytes", "text/plain")}
+    )
+    file_id = resp.json()["file_id"]
+
+    await set_preview_markdown(business_id, file_id, "| A | B |\n| --- | --- |\n| 1 | 2 |")
+
+    preview = await client.get(f"/files/{file_id}/preview", headers=headers)
+    assert preview.status_code == 200
+    assert preview.json() == {"markdown": "| A | B |\n| --- | --- |\n| 1 | 2 |"}
+
+
+async def test_get_file_preview_404_for_missing_file(client: AsyncClient):
+    business_id = await new_business(name="Store A")
+    token = await _admin_token(business_id)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    resp = await client.get("/files/does-not-exist/preview", headers=headers)
+    assert resp.status_code == 404
+
+
+async def test_upload_still_rejects_binary_disguised_as_txt(client: AsyncClient):
+    """The plain-text carve-out is content-sniffed too — it only forgives other
+    *text* flavors, not a real binary payload wearing a .txt extension."""
+    business_id = await new_business(name="Store A")
+    token = await _admin_token(business_id)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    resp = await client.post(
+        "/files",
+        headers=headers,
+        files={"upload": ("not-really-text.txt", b"MZ\x90\x00fake-exe-bytes", "text/plain")},
+    )
+    assert resp.status_code == 415

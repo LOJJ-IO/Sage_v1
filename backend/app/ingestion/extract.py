@@ -35,6 +35,10 @@ class ExtractionResult:
     text: str
     looks_scanned: bool
     page_count: int
+    # Docling's own markdown export (real tables/headings) — human preview
+    # only, never chunked. None for plain text (the raw text already *is*
+    # the preview).
+    preview_markdown: str | None = None
 
 
 def _linearize_table(table_rows: list[list[str]]) -> str:
@@ -94,17 +98,34 @@ def _get_converter():
     return _converter
 
 
-def _extract_with_docling(path: Path) -> tuple[str, int]:
+def _extract_with_docling(path: Path) -> tuple[str, int, str]:
+    from docling_core.types.doc.document import DOCUMENT_TOKENS_EXPORT_LABELS
+    from docling_core.types.doc.labels import DocItemLabel
+
     converter = _get_converter()
     result = converter.convert(str(path))
     doc = result.document
 
-    body_text = doc.export_to_text()
+    # Human preview, kept separate from the RAG text below: real tables,
+    # headings, resolved rich cells (doc=self is implicit here, unlike
+    # export_to_dataframe() further down) — never chunked/embedded.
+    preview_markdown = doc.export_to_markdown()
+
+    # Tables are excluded from the body export and re-added below via
+    # `_linearize_table` instead — export_to_text()'s own `|`-delimited table
+    # serialization would otherwise duplicate every table (once natively,
+    # once as our sentence-facts) in the extracted text.
+    body_labels = DOCUMENT_TOKENS_EXPORT_LABELS - {DocItemLabel.TABLE}
+    body_text = doc.export_to_text(labels=body_labels)
 
     table_sentences: list[str] = []
     for table in getattr(doc, "tables", []):
         try:
-            df = table.export_to_dataframe()
+            # doc=doc is required, not cosmetic: without it, any cell Docling
+            # treats as "rich" (a hyperlink, merged cell, formatted run — common
+            # in a docx pricing table) resolves to the literal placeholder
+            # string "<!-- rich cell -->" instead of its real text.
+            df = table.export_to_dataframe(doc=doc)
             rows = [list(df.columns)] + df.astype(str).values.tolist()
             linearized = _linearize_table(rows)
             if linearized:
@@ -117,7 +138,7 @@ def _extract_with_docling(path: Path) -> tuple[str, int]:
         text = text + "\n\n" + "\n".join(table_sentences)
 
     page_count = len(getattr(doc, "pages", []) or [1])
-    return text, page_count
+    return text, page_count, preview_markdown
 
 
 def extract_text(filename: str, content: bytes) -> ExtractionResult:
@@ -138,7 +159,7 @@ def extract_text(filename: str, content: bytes) -> ExtractionResult:
         tmp_path = Path(tmp.name)
 
     try:
-        text, page_count = _extract_with_docling(tmp_path)
+        text, page_count, preview_markdown = _extract_with_docling(tmp_path)
     finally:
         tmp_path.unlink(missing_ok=True)
 
@@ -151,4 +172,6 @@ def extract_text(filename: str, content: bytes) -> ExtractionResult:
             chars_per_page,
         )
 
-    return ExtractionResult(text=text, looks_scanned=looks_scanned, page_count=page_count)
+    return ExtractionResult(
+        text=text, looks_scanned=looks_scanned, page_count=page_count, preview_markdown=preview_markdown
+    )

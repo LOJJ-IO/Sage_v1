@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { FieldTextArea } from "@/components/ui/field";
 import { FormDialog } from "@/components/ui/form-dialog";
@@ -14,6 +14,11 @@ import {
   useDialogOpenSync,
 } from "@/hooks/use-dialog-draft";
 import { useToast } from "@/components/providers/toast-provider";
+import {
+  fetchChatSettings,
+  isBackendConfigured,
+  saveChatSettings,
+} from "@/lib/chat/settings-api";
 
 type ConversationalGoal = "default" | "learning" | "custom";
 type ResponseLength = "default" | "shorter";
@@ -48,7 +53,7 @@ const GOAL_DESCRIPTIONS: Record<ConversationalGoal, string> = {
 };
 
 const LENGTH_DESCRIPTIONS: Record<ResponseLength, string> = {
-  default: "Balanced detail for most store questions.",
+  default: "Balanced detail for most questions.",
   shorter: "Brief, direct answers when you need a quick reply.",
 };
 
@@ -62,14 +67,49 @@ export function ConfigureChatDialog({
   onOpenChange,
 }: ConfigureChatDialogProps) {
   const toast = useToast();
-  const { draft, setDraft, resetDraft, syncOnOpen, isSaving, save } =
+  const { draft, setDraft, resetDraft, commitDraft, syncOnOpen, isSaving, save } =
     useDialogDraft(INITIAL_DRAFT);
+  const [isLoading, setIsLoading] = useState(false);
 
   useDialogOpenSync(open, syncOnOpen);
 
+  useEffect(() => {
+    if (!open || !isBackendConfigured()) {
+      return;
+    }
+    let cancelled = false;
+    Promise.resolve()
+      .then(() => {
+        if (!cancelled) {
+          setIsLoading(true);
+        }
+        return fetchChatSettings();
+      })
+      .then((settings) => {
+        if (!cancelled) {
+          commitDraft(settings);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          toast.error({ title: "Couldn't load chat settings" });
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, commitDraft, toast]);
+
   const handleSave = useCallback(async () => {
-    await save(async () => {
-      // Local-only until chat config API exists.
+    await save(async (value) => {
+      if (isBackendConfigured()) {
+        await saveChatSettings(value);
+      }
     });
     toast.success({ title: "Chat settings saved" });
   }, [save, toast]);
@@ -108,7 +148,7 @@ export function ConfigureChatDialog({
   return (
     <FormDialog
       description="Customize your assistance"
-      isSaving={isSaving}
+      isSaving={isSaving || isLoading}
       onDiscard={resetDraft}
       onOpenChange={onOpenChange}
       onSave={handleSave}
@@ -127,7 +167,7 @@ export function ConfigureChatDialog({
             {draft.goal === "custom" ? (
               <FieldTextArea
                 onChange={setCustomInstructions}
-                placeholder="e.g. act as a patient trainer for new floor associates"
+                placeholder="e.g. act as a patient trainer for new team members"
                 value={draft.customInstructions}
               />
             ) : (

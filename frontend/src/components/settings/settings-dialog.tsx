@@ -188,7 +188,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           ))}
         </nav>
 
-        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto rounded-2xl border border-border bg-background px-6 py-5 shadow-sm">
+        <div className="scrollbar-thin min-h-0 min-w-0 flex-1 overflow-y-auto rounded-2xl border border-border bg-background px-6 py-5 shadow-sm">
           {section === "general" ? (
             <div>
               <h2 className="mb-1 font-heading text-lg font-semibold text-foreground">
@@ -220,7 +220,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               <SettingsRow label="Work description">
                 <FieldInput
                   onChange={(value) => updateDraft("workDescription", value)}
-                  placeholder="e.g. Floor associate"
+                  placeholder="e.g. Team lead"
                   value={draft.workDescription}
                 />
               </SettingsRow>

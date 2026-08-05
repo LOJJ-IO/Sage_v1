@@ -1,8 +1,9 @@
 "use client";
 
-import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
+import { IconChevronLeft, IconChevronRight, IconMaximize } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
+import type { PageCallback } from "react-pdf/dist/shared/types.js";
 
 import {
   PdfScrollModePill,
@@ -26,6 +27,8 @@ const DEFAULT_SCROLL_MODE: PdfScrollMode = "single";
 const ZOOM_STEP = 0.25;
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 3;
+/** Matches the scroll container's `p-4` (1rem = 16px per side). */
+const VIEWPORT_PADDING_PX = 32;
 
 type PdfViewerProps = {
   /** Blob URL or Blob — react-pdf accepts both. */
@@ -42,6 +45,17 @@ export function PdfViewer({ file, viewState, onViewStateChange }: PdfViewerProps
   const scrollRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const restoredScroll = useRef(false);
+  const scrollRafId = useRef<number | null>(null);
+  /** Natural (scale-1) size of the current page — populated once it loads, used by "Fit to page". */
+  const [currentPageSize, setCurrentPageSize] = useState<{ width: number; height: number } | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (scrollRafId.current !== null) {
+        cancelAnimationFrame(scrollRafId.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -57,6 +71,33 @@ export function PdfViewer({ file, viewState, onViewStateChange }: PdfViewerProps
   function setZoom(next: number) {
     const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, next));
     onViewStateChange({ zoom: clamped });
+  }
+
+  function handlePageLoadSuccess(pageNumber: number, loaded: PageCallback) {
+    if (pageNumber !== page) {
+      return;
+    }
+    setCurrentPageSize((current) => {
+      const next = { width: loaded.originalWidth, height: loaded.originalHeight };
+      if (current && current.width === next.width && current.height === next.height) {
+        return current;
+      }
+      return next;
+    });
+  }
+
+  function fitToPage() {
+    const container = scrollRef.current;
+    if (!container || !currentPageSize) {
+      return;
+    }
+    const availableWidth = container.clientWidth - VIEWPORT_PADDING_PX;
+    const availableHeight = container.clientHeight - VIEWPORT_PADDING_PX;
+    const fitted = Math.min(
+      availableWidth / currentPageSize.width,
+      availableHeight / currentPageSize.height,
+    );
+    setZoom(fitted);
   }
 
   function setPage(next: number) {
@@ -138,6 +179,16 @@ export function PdfViewer({ file, viewState, onViewStateChange }: PdfViewerProps
         >
           +
         </Button>
+        <Button
+          aria-label="Fit to page"
+          disabled={!currentPageSize}
+          onClick={fitToPage}
+          size="icon-xs"
+          type="button"
+          variant="ghost"
+        >
+          <IconMaximize aria-hidden className="size-3.5" stroke={2.2} />
+        </Button>
         <div className="mx-1 h-4 w-px bg-border" />
         <PdfScrollModePill onChange={setScrollMode} value={scrollMode} />
       </div>
@@ -147,7 +198,18 @@ export function PdfViewer({ file, viewState, onViewStateChange }: PdfViewerProps
           scrollMode === "continuous" ? "flex-col items-center gap-4" : "justify-center",
         )}
         onScroll={(event) => {
-          onViewStateChange({ scrollTop: event.currentTarget.scrollTop });
+          // Native scroll fires far faster than React should re-render this
+          // subtree (every stacked <Page> canvas in continuous mode) — batching
+          // to one commit per animation frame is what stops the visible
+          // twitching/white-edge flicker during a fast continuous-mode scroll.
+          const latestScrollTop = event.currentTarget.scrollTop;
+          if (scrollRafId.current !== null) {
+            return;
+          }
+          scrollRafId.current = requestAnimationFrame(() => {
+            scrollRafId.current = null;
+            onViewStateChange({ scrollTop: scrollRef.current?.scrollTop ?? latestScrollTop });
+          });
         }}
         ref={scrollRef}
       >
@@ -184,12 +246,19 @@ export function PdfViewer({ file, viewState, onViewStateChange }: PdfViewerProps
                       }
                     }}
                   >
-                    <Page pageNumber={pageNumber} scale={zoom} />
+                    <Page
+                      onLoadSuccess={(loaded) => handlePageLoadSuccess(pageNumber, loaded)}
+                      pageNumber={pageNumber}
+                      scale={zoom}
+                    />
                   </div>
                 );
               })
             : (
               <Page
+                onLoadSuccess={(loaded) =>
+                  handlePageLoadSuccess(Math.min(page, Math.max(1, numPages || 1)), loaded)
+                }
                 pageNumber={Math.min(page, Math.max(1, numPages || 1))}
                 scale={zoom}
               />

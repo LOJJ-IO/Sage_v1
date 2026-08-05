@@ -36,9 +36,15 @@ const DIALOG_SIZE_CLASS: Record<DialogSize, string> = {
   xl: "max-w-5xl",
 };
 
-/** Shell frame — uses `--dialog-shell-*` tokens from globals.css */
+/** Shell frame — uses `--dialog-shell-*` tokens from globals.css.
+ * The min-height is form-only: form dialogs have a growing/loading body that
+ * benefits from a stable minimum so content doesn't jump around. Confirm
+ * dialogs are header+footer only (no `DialogBody`) — forcing the same
+ * min-height on them just strands the footer far below the description with
+ * nothing filling the gap. */
 const DIALOG_SHELL_CLASS =
-  "flex max-h-[var(--dialog-shell-max-h)] min-h-[var(--dialog-shell-min-h)] flex-col gap-0 overflow-hidden p-0";
+  "flex max-h-[var(--dialog-shell-max-h)] flex-col gap-0 overflow-hidden p-0";
+const DIALOG_SHELL_FORM_MIN_H_CLASS = "min-h-[var(--dialog-shell-min-h)]";
 
 const DIALOG_SHELL_HEADER_CLASS =
   "min-w-0 shrink-0 space-y-1 overflow-hidden border-b border-border px-dialog-shell-x py-dialog-shell-header-y pr-14";
@@ -117,6 +123,7 @@ function DialogContent({
         className={cn(
           "fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-card shadow-lg outline-none transition-all duration-150 data-[ending-style]:scale-95 data-[starting-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
           DIALOG_SHELL_CLASS,
+          kind === "form" && DIALOG_SHELL_FORM_MIN_H_CLASS,
           DIALOG_SIZE_CLASS[size],
           className
         )}

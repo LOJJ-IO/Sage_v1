@@ -45,7 +45,7 @@ function AccountsEmptyState({ onAddAccount }: { onAddAccount?: () => void }) {
         ) : undefined
       }
       className="px-4 py-10"
-      description="Add your first team member to give them access to Sage on the store floor."
+      description="Add your first team member to give them access to Sage."
       icon={
         <IconUsers
           aria-hidden="true"

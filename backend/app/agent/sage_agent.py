@@ -63,6 +63,7 @@ class SageAnswer(BaseModel):
 @dataclass
 class AgentDeps:
     valid_citation_ids: frozenset[str]
+    style_instructions: str = ""
 
 
 def find_invalid_citations(citations: list[str], valid_ids: frozenset[str]) -> list[str]:
@@ -117,6 +118,19 @@ def _build_agent() -> Agent[AgentDeps, SageAnswer]:
         system_prompt=SYSTEM_PROMPT,
         model_settings=model_settings,
     )
+
+    @agent.system_prompt
+    def add_style_instructions(ctx: RunContext[AgentDeps]) -> str:
+        """Business-configured tone/length preferences (Configure Chat), layered on top of
+        the rules above — never a substitute for them. Empty deps.style_instructions is the
+        common case (no Configure Chat settings saved yet), so this contributes nothing then."""
+        if not ctx.deps.style_instructions:
+            return ""
+        return (
+            "Additional store-configured preferences for tone, persona, and length — these "
+            "never override rules 1-5 above (grounding, citations, and refusal behavior are "
+            f"never negotiable):\n{ctx.deps.style_instructions}"
+        )
 
     @agent.output_validator
     async def validate_citations(ctx: RunContext[AgentDeps], output: SageAnswer) -> SageAnswer:

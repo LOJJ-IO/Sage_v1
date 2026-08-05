@@ -14,6 +14,8 @@ type FileLibraryPanelProps = {
   onOpenFile: (file: LibraryFile) => void;
   onReplaceFile: (fileId: string) => void;
   onToggleBookmark: (fileId: string) => void;
+  /** When set (Auto-reveal current file), scrolls this file's row into view and briefly highlights it. */
+  revealFileId?: string | null;
 };
 
 export function FileLibraryPanel({
@@ -23,6 +25,7 @@ export function FileLibraryPanel({
   onOpenFile,
   onReplaceFile,
   onToggleBookmark,
+  revealFileId = null,
 }: FileLibraryPanelProps) {
   const [deleteTarget, setDeleteTarget] = useState<LibraryFile | null>(null);
   const [editTagsTarget, setEditTagsTarget] = useState<LibraryFile | null>(
@@ -38,6 +41,7 @@ export function FileLibraryPanel({
         onOpenFile={onOpenFile}
         onReplace={(file) => onReplaceFile(file.id)}
         onToggleBookmark={onToggleBookmark}
+        revealFileId={revealFileId}
       />
 
       <DeleteFileDialog
