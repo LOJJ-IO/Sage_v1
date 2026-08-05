@@ -72,7 +72,18 @@ def _build_converter():
 
     from docling.datamodel.base_models import InputFormat
     from docling.datamodel.pipeline_options import PdfPipelineOptions
+    from docling.datamodel.settings import settings as docling_settings
     from docling.document_converter import DocumentConverter, PdfFormatOption
+
+    # docling's layout/table-structure models default to torch.compile()-ing
+    # themselves on first use (InferenceSettings.compile_torch_models=True) for
+    # a speed win — but that needs a working C++ toolchain (TorchInductor JITs
+    # via g++) that neither this dev machine nor (unconfirmed) the deploy image
+    # has. Without this, every PDF whose layout pass hits that code path fails
+    # ingestion outright with "InvalidCxxCompiler: No working C++ compiler
+    # found", not just a slower cold start. Eager execution is functionally
+    # identical, just without the JIT speedup.
+    docling_settings.inference.compile_torch_models = False
 
     # OCR is explicitly deferred (module docstring) — do_ocr defaults to True
     # in docling's PdfPipelineOptions, which silently ran full OCR on every
