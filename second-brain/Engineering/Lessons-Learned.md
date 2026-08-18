@@ -21,6 +21,12 @@ What to do differently.
 
 ## Entries
 
+### 2026-07-30 — Dark tab strip must not reuse `--muted` when the shell is also `--muted`
+**Symptom:** Light mode shows a clear gray well behind preview tabs; dark mode looked like the strip was missing — flat black blending into the page chrome.
+**Cause:** Light sets `--preview-tab-strip: oklch(0.93)` (stronger recess than `--muted` 0.97). Dark used `var(--muted)`, and the app shell is also `bg-muted`, so strip === page chrome and the well dissolves.
+**Fix:** Give dark its own strip token (~0.04 below muted), same relative step as light — never alias strip to muted when the shell already uses muted.
+**Related:** [[FEAT-preview-tabs]]
+
 ### 2026-07-30 — Tag suggestion menu should track the caret, not the field shell
 **Symptom:** Autocomplete always opened at the left edge of the tag box, far from where you were typing once chips filled the row.
 **Cause:** Position used `shellRef.getBoundingClientRect()` — fixed to the control, not the draft caret.

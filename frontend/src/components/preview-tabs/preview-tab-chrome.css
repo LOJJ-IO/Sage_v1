@@ -7,6 +7,8 @@
 
 :root {
   --preview-tab-curve: 0.625rem;
+  /* Stronger recess than --muted so the tab well reads against the page chrome
+   * (light muted is 0.97; dark muted matches the shell and would dissolve the strip). */
   --preview-tab-strip: oklch(0.93 0 0);
   --preview-tab-hover: color-mix(
     in oklab,
@@ -16,7 +18,8 @@
 }
 
 :root.dark {
-  --preview-tab-strip: var(--muted);
+  /* Mirror light: ~0.04 below --muted (0.145), still well below --background (0.205). */
+  --preview-tab-strip: oklch(0.11 0 0);
 }
 
 .preview-tab-strip {
