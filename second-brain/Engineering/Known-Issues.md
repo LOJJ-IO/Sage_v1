@@ -3,8 +3,8 @@ type: known-issues
 status: active
 tags: []
 created: 2026-07-01
-updated: 2026-07-30
-related: ["[[Engineering/Bugs]]", "[[BUG-0001-narrow-query-refusal-single-chunk]]", "[[BUG-0002-inline-citation-leak-in-answer-text]]"]
+updated: 2026-08-23
+related: ["[[Engineering/Bugs]]", "[[BUG-0001-narrow-query-refusal-single-chunk]]", "[[BUG-0002-inline-citation-leak-in-answer-text]]", "[[FEAT-personal-folders]]"]
 ---
 
 # Known Issues
@@ -22,6 +22,7 @@ Things that are broken/limited *and known about*, but not worth (or not yet read
 - **[backend]** No `/accounts` router exists yet (list/create/reset-pin/deactivate/reactivate/grant-admin) even though `frontend/src/lib/accounts/api.ts` and the `/organization` page already call those routes — currently only works in the frontend's demo-mode fallback (`isDemoMode()`), not against the real backend. The only way to create a business + first admin user right now is `backend/scripts/seed_dev_business.py`. (since 2026-07-19)
 - **[frontend/files]** File tags and bookmarks (`LibraryFile.tags` / `.isBookmarked`) are client-side-only decorations — the backend `File` model has no tags or bookmark columns, so edits don't persist across a page reload once wired to the real backend. (since 2026-07-19)
 - **[frontend/auth]** PIN-change flow (`must_change_pin`) isn't built on the backend — `LoginResponse.must_change_pin` is hardcoded `false`. Route guards for protected pages also aren't built yet (carried over from earlier — see [[Current-Context]]).
+- **[backend/files]** Every `/files` route (including `GET /files`) is gated behind `AdminUser`, not `CurrentUser`, even though the product spec says browsing the shared file list is for every staff member, not just admins ([[Sage-MVP-Functional-Spec#3.3 Roles]]). Non-admin users currently can't reach the file list at all. Noticed while building [[FEAT-personal-folders]] (which correctly uses `CurrentUser` since organizing your own view is for everyone) — not fixed there, since it's a pre-existing, separate gap. (since 2026-08-23)
 
 ## Recently resolved
 <!-- Move here briefly before deleting, or link to the closed BUG-NNNN file instead -->

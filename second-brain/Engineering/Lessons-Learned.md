@@ -3,8 +3,8 @@ type: lessons
 status: active
 tags: [area/frontend]
 created: 2026-07-01
-updated: 2026-08-04
-related: ["[[Engineering/Bugs]]", "[[Troubleshooting]]", "[[UI-UX-Guidelines]]", "[[Stacking-Contexts-and-Portals]]", "[[Current-Context]]", "[[FEAT-sign-in]]", "[[FEAT-preview-tabs]]"]
+updated: 2026-08-23
+related: ["[[Engineering/Bugs]]", "[[Troubleshooting]]", "[[UI-UX-Guidelines]]", "[[Stacking-Contexts-and-Portals]]", "[[Current-Context]]", "[[FEAT-sign-in]]", "[[FEAT-preview-tabs]]", "[[FEAT-personal-folders]]"]
 ---
 
 # Lessons Learned
@@ -20,6 +20,12 @@ What to do differently.
 ```
 
 ## Entries
+
+### 2026-08-23 — HTML5 drag-and-drop read from React state instead of a ref, so drops silently no-opped
+Built a drag-and-drop file/folder tree ([[FEAT-personal-folders]]). Every automated check passed — pytest, vitest, `tsc`, `next build` — while the actual drag-and-drop did **nothing** in a real browser: dragging a file onto a folder had zero effect, no console error, no failed request. Caught only by an actual Playwright pass driving the running app, not by any test suite.
+**Root cause:** `onDragOver`/`onDrop` handlers read a `useState`-held "currently dragged item" value, set in the `onDragStart` handler via `setState`. Native HTML5 drag events (`dragstart` → `dragover` → `drop`) can fire faster than React's re-render cycle — the `dragover` handler's closure still saw the pre-`dragstart` `null`, so `event.preventDefault()` never ran in `dragover`, which means the browser refuses the drop outright (per the HTML5 DnD spec, a drop is only permitted on a target whose `dragover` called `preventDefault()`).
+**Fix:** track the dragged item in a `useRef` (updated synchronously in the same tick as `dragstart`/`dragend`) and read *that* in every drag-over/drop handler for the correctness-critical decision (is this a valid target, what actually gets moved). Keep `useState` only for values that only affect rendering (the visual drag-over highlight) — a render or two of lag there is invisible to the user, unlike a functionally-broken drop.
+**Rule:** for any handler pair that must agree within a single fast native-event sequence (HTML5 DnD, but also e.g. rapid-fire pointer/touch gesture handlers), don't thread the shared value through React state — use a ref. State is for what render needs; a ref is for what the *next event in the same gesture* needs to read synchronously. And: **a green build proves the code compiles and the pure logic is right — it proves nothing about whether the browser-level event wiring actually fires.** Any feature whose correctness depends on real DOM event timing (drag-and-drop, focus/blur races, IME composition) needs an actual driven-browser pass before being called done, not just `tsc`/tests.
 
 ### 2026-08-02 — Logfire FastAPI instrumentation 500s every browser CORS OPTIONS (sign-in "doesn't work")
 Local sign-in looked broken ("Unable to sign in" / network error). Backend logs showed `OPTIONS /auth/login` → 500 with `AttributeError: '_IncludedRouter' object has no attribute 'path'` inside `opentelemetry.instrumentation.fastapi`. FastAPI ≥0.137 stores `include_router()` children as `_IncludedRouter` nodes; OTel's route walker reads `.path` on CORS preflight partial matches and crashes before `CORSMiddleware` can answer. Browser never sends `POST /auth/login`.
