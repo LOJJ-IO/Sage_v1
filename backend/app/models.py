@@ -165,6 +165,60 @@ class ChatSettings(Base):
     )
 
 
+class UserPersonalFolder(Base):
+    """A folder in one user's *personal* view of the shared file list — purely
+    visual reorganization (Sage-MVP-Functional-Spec §4.4), never consulted by
+    retrieval. `business_id` is kept as a required, indexed column per
+    CLAUDE.md §2.4, same reasoning as ChatSettings above."""
+
+    __tablename__ = "user_personal_folders"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    business_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    folder_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    parent_folder_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("user_personal_folders.id", ondelete="CASCADE"), nullable=True
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class UserPersonalFolderItem(Base):
+    """Where one file sits in one user's personal tree. No row for a given
+    (user_id, file_id) means "unplaced" — renders at root, alphabetically.
+    `file_id` is a bare string, not an FK, matching `Chunk.file_id`'s existing
+    convention: `File.file_id` isn't the table's UUID primary key, so it can't
+    be a real foreign key; cleanup on file delete is service-code
+    (`remove_file_from_all_placements`), not a DB cascade."""
+
+    __tablename__ = "user_personal_folder_items"
+    __table_args__ = (UniqueConstraint("user_id", "file_id", name="uq_personal_folder_items_user_file"),)
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    business_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    folder_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("user_personal_folders.id", ondelete="CASCADE"), nullable=True
+    )
+    file_id: Mapped[str] = mapped_column(String(512), nullable=False)
+    position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
 class QueryCount(Base):
     __tablename__ = "query_counts"
 

@@ -20,6 +20,7 @@ from app.chat_settings.routes import router as chat_settings_router
 from app.config import get_settings
 from app.files.routes import router as files_router
 from app.internal.routes import router as internal_router
+from app.personal_folders.routes import router as personal_folders_router
 
 logging.basicConfig(level=logging.INFO)
 
@@ -50,6 +51,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(files_router)
 app.include_router(chat_settings_router)
+app.include_router(personal_folders_router)
 app.include_router(internal_router)
 
 

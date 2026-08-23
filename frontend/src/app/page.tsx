@@ -38,11 +38,13 @@ import {
 } from "@/components/ui/popover";
 import { useChatSessions } from "@/hooks/use-chat-sessions";
 import { useFileLibrary } from "@/hooks/use-file-library";
+import { usePersonalFolders } from "@/hooks/use-personal-folders";
 import { useSyncRemovedPreviewTabs } from "@/hooks/use-sync-removed-preview-tabs";
 import { getUserRole } from "@/lib/auth/session";
 import type { ChatMessage, ChatSession } from "@/lib/chat/types";
 import type { LibraryFile } from "@/lib/file-upload";
 import { fileTypeFromFilename } from "@/lib/file-upload";
+import { getAncestorFolderIdsForFile } from "@/lib/personal-folders";
 import { getActiveTab } from "@/lib/preview-tabs/selectors";
 import { usePreviewTabsStore } from "@/lib/preview-tabs/store";
 import {
@@ -366,6 +368,8 @@ function HomeWorkspace() {
     replaceInputProps,
   } = useFileLibrary();
 
+  const personalFolders = usePersonalFolders();
+
   useSyncRemovedPreviewTabs(files);
 
   const openTab = usePreviewTabsStore((state) => state.openTab);
@@ -426,6 +430,17 @@ function HomeWorkspace() {
     );
     return sortOrder === "name-desc" ? sorted.reverse() : sorted;
   }, [files, bookmarkedOnly, fileSearchQuery, sortOrder]);
+
+  // Personal folders aren't search/bookmark-aware in v1 — an active filter
+  // falls back to the flat, filtered list instead of the tree.
+  const showFolderTree = fileSearchQuery.trim() === "" && !bookmarkedOnly;
+
+  const { items: personalFolderItems, folders: personalFolderList, expandFolders } = personalFolders;
+  useEffect(() => {
+    if (!autoRevealEnabled || !activeResourceKey) return;
+    const ancestorIds = getAncestorFolderIdsForFile(personalFolderItems, personalFolderList, activeResourceKey);
+    expandFolders(ancestorIds);
+  }, [autoRevealEnabled, activeResourceKey, personalFolderItems, personalFolderList, expandFolders]);
 
   const {
     sessions: chatSessions,
@@ -609,6 +624,7 @@ function HomeWorkspace() {
               <HeaderIconButton
                 iconClass="codicon-new-folder"
                 label="New folder"
+                onClick={() => void personalFolders.createFolder()}
               />
               <HeaderIconButton
                 icon={<TablerIcon icon={IconWand} />}
@@ -623,6 +639,7 @@ function HomeWorkspace() {
               <HeaderIconButton
                 iconClass="codicon-collapse-all"
                 label="Collapse all"
+                onClick={personalFolders.collapseAll}
               />
             </HeaderIconGroup>
           </header>
@@ -639,15 +656,17 @@ function HomeWorkspace() {
               />
             ) : null}
             {files.length > 0 ? (
-              visibleFiles.length > 0 ? (
+              showFolderTree || visibleFiles.length > 0 ? (
                 <FileLibraryPanel
-                  files={visibleFiles}
+                  files={showFolderTree ? files : visibleFiles}
                   onDeleteFile={removeFile}
                   onEditTags={updateTags}
                   onOpenFile={handleOpenFile}
                   onReplaceFile={openReplacePicker}
                   onToggleBookmark={toggleBookmark}
+                  personalFolders={personalFolders}
                   revealFileId={autoRevealEnabled ? activeResourceKey : null}
+                  showTree={showFolderTree}
                 />
               ) : (
                 <p className="px-1 py-2 text-sm text-muted-foreground">

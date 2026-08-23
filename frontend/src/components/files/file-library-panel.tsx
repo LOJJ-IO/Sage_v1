@@ -3,12 +3,21 @@
 import { useState } from "react";
 
 import { DeleteFileDialog } from "@/components/files/delete-file-dialog";
+import { DeletePersonalFolderDialog } from "@/components/files/delete-personal-folder-dialog";
 import { EditFileTagsDialog } from "@/components/files/edit-file-tags-dialog";
 import { FileList } from "@/components/files/file-list";
+import { PersonalFolderTree } from "@/components/files/personal-folder-tree";
+import type { PersonalFoldersController } from "@/hooks/use-personal-folders";
 import type { LibraryFile } from "@/lib/file-upload";
+import type { PersonalFolder } from "@/lib/personal-folders";
 
 type FileLibraryPanelProps = {
   files: LibraryFile[];
+  /** Personal-folder tree view (default) vs. the flat list — flat is used
+   * while a file search or bookmarks-only filter is active, since the tree
+   * isn't search-aware in v1. */
+  showTree: boolean;
+  personalFolders: PersonalFoldersController;
   onDeleteFile: (fileId: string) => void;
   onEditTags: (fileId: string, tags: string[]) => void;
   onOpenFile: (file: LibraryFile) => void;
@@ -20,6 +29,8 @@ type FileLibraryPanelProps = {
 
 export function FileLibraryPanel({
   files,
+  showTree,
+  personalFolders,
   onDeleteFile,
   onEditTags,
   onOpenFile,
@@ -31,18 +42,42 @@ export function FileLibraryPanel({
   const [editTagsTarget, setEditTagsTarget] = useState<LibraryFile | null>(
     null,
   );
+  const [deleteFolderTarget, setDeleteFolderTarget] = useState<PersonalFolder | null>(null);
 
   return (
     <>
-      <FileList
-        files={files}
-        onDelete={setDeleteTarget}
-        onEditTags={setEditTagsTarget}
-        onOpenFile={onOpenFile}
-        onReplace={(file) => onReplaceFile(file.id)}
-        onToggleBookmark={onToggleBookmark}
-        revealFileId={revealFileId}
-      />
+      {showTree ? (
+        <PersonalFolderTree
+          editingFolderId={personalFolders.editingFolderId}
+          expandedFolderIds={personalFolders.expandedFolderIds}
+          files={files}
+          folders={personalFolders.folders}
+          items={personalFolders.items}
+          onCancelEditing={personalFolders.cancelEditing}
+          onDelete={setDeleteTarget}
+          onEditTags={setEditTagsTarget}
+          onMoveFile={personalFolders.moveFile}
+          onMoveFolder={personalFolders.moveFolder}
+          onOpenFile={onOpenFile}
+          onRenameFolder={personalFolders.renameFolder}
+          onReplace={(file) => onReplaceFile(file.id)}
+          onRequestDeleteFolder={setDeleteFolderTarget}
+          onStartRenaming={personalFolders.startRenaming}
+          onToggleBookmark={onToggleBookmark}
+          onToggleExpand={personalFolders.toggleExpand}
+          revealFileId={revealFileId}
+        />
+      ) : (
+        <FileList
+          files={files}
+          onDelete={setDeleteTarget}
+          onEditTags={setEditTagsTarget}
+          onOpenFile={onOpenFile}
+          onReplace={(file) => onReplaceFile(file.id)}
+          onToggleBookmark={onToggleBookmark}
+          revealFileId={revealFileId}
+        />
+      )}
 
       <DeleteFileDialog
         file={deleteTarget}
@@ -65,6 +100,17 @@ export function FileLibraryPanel({
         }}
         onSubmit={onEditTags}
         open={editTagsTarget !== null}
+      />
+
+      <DeletePersonalFolderDialog
+        folder={deleteFolderTarget}
+        onConfirm={personalFolders.deleteFolder}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteFolderTarget(null);
+          }
+        }}
+        open={deleteFolderTarget !== null}
       />
     </>
   );

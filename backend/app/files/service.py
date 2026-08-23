@@ -18,6 +18,7 @@ from app.files.storage import get_storage
 from app.ingestion import delete_file as ingestion_delete_file
 from app.ingestion.extract import extract_text
 from app.models import Chunk, File
+from app.personal_folders import remove_file_from_all_placements
 
 ALLOWED_MIME_TYPES = {
     "application/pdf",
@@ -109,9 +110,16 @@ async def get_extracted_text(*, business_id: uuid.UUID, file_id: str) -> str:
 
 
 async def delete_file_and_storage(*, business_id: uuid.UUID, file_id: str) -> None:
-    """Delete chunks + files row (app.ingestion.delete_file), then the storage object."""
+    """Delete chunks + files row (app.ingestion.delete_file), then the storage object.
+
+    Also clears every user's personal-folder placement of this file (Sage-MVP-
+    Functional-Spec §4.7: delete removes "personal-folder placements of it") —
+    otherwise a deleted file would leave an orphaned, unresolvable row in
+    someone's tree.
+    """
     file_row = await get_file(business_id=business_id, file_id=file_id)
     await ingestion_delete_file(business_id=business_id, file_id=file_id)
+    await remove_file_from_all_placements(business_id=business_id, file_id=file_id)
     if file_row and file_row.storage_path:
         await get_storage().delete(file_row.storage_path)
 

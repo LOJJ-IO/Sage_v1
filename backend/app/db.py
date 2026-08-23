@@ -51,6 +51,8 @@ _TENANT_TABLES = (
     "fallback_events",
     "chat_history",
     "chat_settings",
+    "user_personal_folder_items",
+    "user_personal_folders",
     "query_counts",
     "chunks",
     "files",
