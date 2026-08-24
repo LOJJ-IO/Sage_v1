@@ -87,13 +87,21 @@ describe("getRootFileIds", () => {
       "unplaced-2": "Zeta unplaced",
     };
 
-    const result = getRootFileIds(items, allFileIds, (id) => names[id]);
+    const byName = (a: string, b: string) => names[a].localeCompare(names[b]);
+    const result = getRootFileIds(items, allFileIds, byName);
     expect(result).toEqual(["explicit-a", "explicit-b", "unplaced-1", "unplaced-2"]);
   });
 
-  it("returns everything alphabetically when nothing is explicitly placed", () => {
+  it("returns everything in comparator order when nothing is explicitly placed", () => {
     const names: Record<string, string> = { b: "Bravo", a: "Alpha" };
-    expect(getRootFileIds([], ["b", "a"], (id) => names[id])).toEqual(["a", "b"]);
+    const byName = (x: string, y: string) => names[x].localeCompare(names[y]);
+    expect(getRootFileIds([], ["b", "a"], byName)).toEqual(["a", "b"]);
+  });
+
+  it("reverses the comparator's order for direction=desc, placed items unaffected", () => {
+    const items = [item({ fileId: "explicit", folderId: null, position: 0 })];
+    const byId = (a: string, b: string) => a.localeCompare(b);
+    expect(getRootFileIds(items, ["explicit", "a", "b"], byId, "desc")).toEqual(["explicit", "b", "a"]);
   });
 });
 

@@ -10,11 +10,7 @@ import {
   type ContextMenuAnchor,
 } from "@/components/preview-tabs/preview-tab-menu";
 import { TruncatedFilenameText } from "@/components/preview-tabs/truncated-filename";
-import {
-  isIconOnlyWidth,
-  TAB_MAX_WIDTH_PX,
-  useElementWidth,
-} from "@/components/preview-tabs/use-tab-lane-compression";
+import { TAB_MAX_WIDTH_PX } from "@/components/ui/tab-chrome";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -45,25 +41,21 @@ export function PreviewTab({
   onClose,
 }: PreviewTabProps) {
   const [menuAnchor, setMenuAnchor] = useState<ContextMenuAnchor | null>(null);
-  const { ref: tabRef, width: tabWidth } = useElementWidth<HTMLDivElement>();
   const isRemoved = tab.lifecycle === "removed";
-  const isIconOnly = isIconOnlyWidth(tabWidth);
-  const showTitle = !isIconOnly;
   const closable = canCloseTab(tab);
   const showTrailingAction = closable || tab.pinned;
   const tooltipLabel = isRemoved ? `${tab.title} (removed)` : tab.title;
 
   return (
     <div
-      ref={tabRef}
       className={cn(
-        "preview-tab-chrome group relative w-full min-w-8 text-sm",
+        "preview-tab-chrome group relative w-full min-w-8 shrink-0 text-sm",
         isActive
           ? "preview-tab-shaped"
           : "preview-tab-inactive h-9 bg-transparent text-muted-foreground",
         isRemoved && "opacity-70",
       )}
-      style={{ maxWidth: TAB_MAX_WIDTH_PX }}
+      style={{ width: TAB_MAX_WIDTH_PX }}
       onContextMenu={(event) => {
         event.preventDefault();
         setMenuAnchor({ x: event.clientX, y: event.clientY });
@@ -77,7 +69,6 @@ export function PreviewTab({
               className={cn(
                 "absolute inset-y-0 left-0 z-0 flex min-w-0 cursor-pointer items-center gap-1 overflow-hidden px-2 text-left",
                 showTrailingAction ? "right-7" : "right-2",
-                isIconOnly && "px-1",
               )}
               onClick={onSelect}
               role="tab"
@@ -96,12 +87,7 @@ export function PreviewTab({
             fileType={tab.fileType}
             title={tab.title}
           />
-          {showTitle ? (
-            <TruncatedFilenameText
-              className="min-w-0 flex-1"
-              title={tab.title}
-            />
-          ) : null}
+          <TruncatedFilenameText className="min-w-0 flex-1" title={tab.title} />
         </TooltipTrigger>
         <TooltipContent side="bottom" sideOffset={6} variant="compact">
           {tooltipLabel}
@@ -112,16 +98,11 @@ export function PreviewTab({
         <div
           className={cn(
             "absolute inset-y-0 right-0 z-10 flex w-7 items-center justify-center",
-            // Close: hover-reveal on inactive. Pin stays visible (status).
-            !isActive &&
-              closable &&
-              "opacity-0 focus-within:opacity-100 group-hover:opacity-100",
+            !isActive && closable && "opacity-0 focus-within:opacity-100 group-hover:opacity-100",
           )}
         >
           <Button
-            aria-label={
-              tab.pinned ? `Unpin ${tab.title}` : `Close ${tab.title}`
-            }
+            aria-label={tab.pinned ? `Unpin ${tab.title}` : `Close ${tab.title}`}
             onClick={tab.pinned ? onUnpin : onClose}
             size="icon-xs"
             type="button"

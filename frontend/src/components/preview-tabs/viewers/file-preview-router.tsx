@@ -3,9 +3,9 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
-import { DocxMarkdownViewer } from "@/components/preview-tabs/viewers/docx-markdown-viewer";
-import { DocxTextViewer } from "@/components/preview-tabs/viewers/docx-text-viewer";
+import { DocxViewer } from "@/components/preview-tabs/viewers/docx-viewer";
 import { ImageViewer } from "@/components/preview-tabs/viewers/image-viewer";
+import { MdViewer } from "@/components/preview-tabs/viewers/md-viewer";
 import {
   PreviewFetchError,
   PreviewLoadingSkeleton,
@@ -47,7 +47,7 @@ export function FilePreviewRouter({ tab, localFile }: FilePreviewRouterProps) {
     return <PreviewFetchError message={content.message} />;
   }
 
-  if (tab.fileType === "pdf" && content.kind === "blob") {
+  if (tab.fileType === "pdf") {
     return (
       <PdfViewer
         file={content.blob}
@@ -57,7 +57,7 @@ export function FilePreviewRouter({ tab, localFile }: FilePreviewRouterProps) {
     );
   }
 
-  if (tab.fileType === "image" && content.kind === "blob") {
+  if (tab.fileType === "image") {
     return (
       <ImageViewer
         blobUrl={content.blobUrl}
@@ -68,34 +68,29 @@ export function FilePreviewRouter({ tab, localFile }: FilePreviewRouterProps) {
     );
   }
 
-  if (
-    (tab.fileType === "txt" || tab.fileType === "md") &&
-    content.kind === "blob"
-  ) {
+  if (tab.fileType === "docx") {
+    return (
+      <DocxViewer
+        blob={content.blob}
+        onViewStateChange={patchViewState}
+        resourceKey={tab.resourceKey}
+        viewState={viewState}
+      />
+    );
+  }
+
+  if (tab.fileType === "txt") {
+    return (
+      <BlobTextPreview blob={content.blob} onViewStateChange={patchViewState} viewState={viewState} />
+    );
+  }
+
+  if (tab.fileType === "md") {
     return (
       <BlobTextPreview
         blob={content.blob}
         onViewStateChange={patchViewState}
-        viewState={viewState}
-      />
-    );
-  }
-
-  if (tab.fileType === "docx" && content.kind === "markdown") {
-    return (
-      <DocxMarkdownViewer
-        markdown={content.markdown}
-        onViewStateChange={patchViewState}
-        viewState={viewState}
-      />
-    );
-  }
-
-  if (tab.fileType === "docx" && content.kind === "text") {
-    return (
-      <DocxTextViewer
-        onViewStateChange={patchViewState}
-        text={content.text}
+        renderer="md"
         viewState={viewState}
       />
     );
@@ -106,15 +101,18 @@ export function FilePreviewRouter({ tab, localFile }: FilePreviewRouterProps) {
   );
 }
 
-/** Decode a text blob once for txt/md viewers. */
+/** Decode a text blob once, then hand off to either the plain `TextViewer`
+ * (.txt) or `MdViewer` (.md, adds the raw/rendered toggle). */
 function BlobTextPreview({
   blob,
   viewState,
   onViewStateChange,
+  renderer = "txt",
 }: {
   blob: Blob;
   viewState: PreviewTab["viewState"];
   onViewStateChange: (partial: Partial<PreviewTab["viewState"]>) => void;
+  renderer?: "txt" | "md";
 }) {
   const [text, setText] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -143,6 +141,9 @@ function BlobTextPreview({
   }
   if (text === null) {
     return <PreviewLoadingSkeleton />;
+  }
+  if (renderer === "md") {
+    return <MdViewer onViewStateChange={onViewStateChange} text={text} viewState={viewState} />;
   }
   return (
     <TextViewer

@@ -15,6 +15,8 @@ export type LibraryFile = {
   status: FileIngestStatus;
   looksScanned: boolean;
   error: string | null;
+  /** ISO 8601 string — used for "date added" sorting. */
+  createdAt: string;
 };
 
 export const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
@@ -146,5 +148,27 @@ export function fileTypeLabel(fileType: SageFileType): string {
       return "Markdown";
     case "image":
       return "Image";
+  }
+}
+
+export type FileSortCriteria = "name" | "type" | "date";
+export type FileSortOrder = { criteria: FileSortCriteria; direction: "asc" | "desc" };
+
+export const DEFAULT_FILE_SORT_ORDER: FileSortOrder = { criteria: "name", direction: "asc" };
+
+/** Ascending comparator for the given criteria — callers reverse for desc.
+ * "type" ties break by name so same-type files still group predictably. */
+export function compareLibraryFiles(a: LibraryFile, b: LibraryFile, criteria: FileSortCriteria): number {
+  switch (criteria) {
+    case "name":
+      return a.file.name.localeCompare(b.file.name);
+    case "type":
+      return (
+        fileTypeLabel(a.fileType).localeCompare(fileTypeLabel(b.fileType)) ||
+        a.file.name.localeCompare(b.file.name)
+      );
+    case "date":
+      // ISO 8601 strings compare correctly as plain strings.
+      return a.createdAt.localeCompare(b.createdAt);
   }
 }

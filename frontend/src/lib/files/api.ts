@@ -7,6 +7,7 @@ export type FileRecord = {
   status: FileIngestStatus;
   looks_scanned: boolean;
   error: string | null;
+  created_at: string;
 };
 
 export function isBackendConfigured() {

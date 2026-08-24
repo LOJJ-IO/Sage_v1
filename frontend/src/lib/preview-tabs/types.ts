@@ -25,6 +25,11 @@ export type ViewState = {
   highlight?: CitationHighlight | null;
   /** PDF only: one page at a time vs all pages stacked. */
   scrollMode?: "single" | "continuous";
+  /** Docx/md only. "rendered" (default) = formatted view (mammoth HTML for
+   * docx, react-markdown for md). "raw" = plain extracted/source text — the
+   * only mode that supports citation-highlight char offsets, so a citation
+   * click forces this even if the tab was last left in "rendered". */
+  sourceMode?: "raw" | "rendered";
 };
 
 export type PreviewTab = {

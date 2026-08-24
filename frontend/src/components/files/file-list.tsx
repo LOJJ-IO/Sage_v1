@@ -15,17 +15,34 @@ import { FileTypeIcon } from "@/components/files/file-type-icon";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const REVEAL_HIGHLIGHT_MS = 1500;
+const REVEAL_HIGHLIGHT_MS = 3000;
+const INDEXING_DOT_INTERVAL_MS = 500;
 
-export function statusLabel(status: FileIngestStatus): string {
+/** Cycling "Indexing." / "Indexing.." / "Indexing..." — an indexed file shows
+ * no status text at all (nothing to say), so only pending/processing files
+ * ever render this. */
+function IndexingLabel() {
+  const [dotCount, setDotCount] = useState(1);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setDotCount((current) => (current % 3) + 1);
+    }, INDEXING_DOT_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, []);
+
+  return <>{`Indexing${".".repeat(dotCount)}`}</>;
+}
+
+function StatusLabel({ status }: { status: FileIngestStatus }) {
   switch (status) {
     case "pending":
     case "processing":
-      return "Indexing…";
+      return <IndexingLabel />;
     case "indexed":
-      return "Ready";
+      return null;
     case "failed":
-      return "Failed";
+      return <>Failed</>;
   }
 }
 
@@ -91,15 +108,17 @@ export function FileRow({
           <span className="min-w-0 flex-1 truncate font-medium">
             {entry.file.name}
           </span>
-          <span
-            className={
-              entry.status === "failed"
-                ? "shrink-0 text-xs text-destructive"
-                : "shrink-0 text-xs text-muted-foreground"
-            }
-          >
-            {statusLabel(entry.status)}
-          </span>
+          {entry.status === "indexed" ? null : (
+            <span
+              className={
+                entry.status === "failed"
+                  ? "shrink-0 text-xs text-destructive"
+                  : "shrink-0 text-xs text-muted-foreground"
+              }
+            >
+              <StatusLabel status={entry.status} />
+            </span>
+          )}
         </button>
 
         <div className="flex shrink-0 items-center">

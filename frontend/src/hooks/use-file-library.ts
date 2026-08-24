@@ -34,6 +34,7 @@ function toLibraryFile(record: FileRecord, prior?: PriorFileInfo): LibraryFile {
     status: record.status,
     looksScanned: record.looks_scanned,
     error: record.error,
+    createdAt: record.created_at,
   };
 }
 
@@ -171,6 +172,7 @@ export function useFileLibrary() {
               status: "indexed",
               looksScanned: false,
               error: null,
+              createdAt: new Date().toISOString(),
             },
           ]);
           continue;

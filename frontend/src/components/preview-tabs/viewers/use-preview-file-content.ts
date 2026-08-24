@@ -2,32 +2,18 @@
 
 import { useEffect, useState } from "react";
 
-import {
-  downloadBackendFile,
-  fetchBackendFilePreview,
-  fetchBackendFileText,
-  isBackendConfigured,
-} from "@/lib/files/api";
+import { downloadBackendFile } from "@/lib/files/api";
 import type { SageFileType } from "@/lib/file-upload";
 
 type CachedBlob = { kind: "blob"; blob: Blob };
-type CachedText = { kind: "text"; text: string };
-type CachedMarkdown = { kind: "markdown"; markdown: string };
-type Cached = CachedBlob | CachedText | CachedMarkdown;
 
 /** Survives remounts within the session so focusing the same file skips a re-download. */
-const contentCache = new Map<string, Cached>();
+const contentCache = new Map<string, CachedBlob>();
 
 export type PreviewFileContent =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "ready"; kind: "blob"; blob: Blob; blobUrl: string }
-  | { status: "ready"; kind: "text"; text: string }
-  | { status: "ready"; kind: "markdown"; markdown: string };
-
-function usesExtractedText(fileType: SageFileType): boolean {
-  return fileType === "docx";
-}
+  | { status: "ready"; kind: "blob"; blob: Blob; blobUrl: string };
 
 function errorMessage(err: unknown): string {
   if (err instanceof Error && err.message) {
@@ -41,13 +27,15 @@ function hasLocalBytes(localFile: File | Blob | null | undefined): localFile is 
 }
 
 /**
- * Resolve preview bytes/text for a tab.
- * Prefers an in-memory `File` from the library (standalone / just-uploaded),
- * otherwise hits the backend. Docx always needs `/text` when no local path exists.
+ * Resolve raw preview bytes for a tab. Every previewable file type is a blob
+ * now — docx used to need server-extracted text/markdown here, but mammoth.js
+ * (see `DocxViewer`) converts raw bytes client-side, so docx is exactly like
+ * pdf/image: prefer an in-memory `File` from the library when present
+ * (standalone / just-uploaded), otherwise download from the backend.
  */
 export function usePreviewFileContent(
   resourceKey: string,
-  fileType: SageFileType,
+  _fileType: SageFileType,
   localFile?: File | Blob | null,
 ): PreviewFileContent {
   const [content, setContent] = useState<PreviewFileContent>({ status: "loading" });
@@ -61,32 +49,14 @@ export function usePreviewFileContent(
       setContent({ status: "loading" });
 
       try {
-        // Standalone / just-uploaded: use the browser File we already have.
-        if (hasLocalBytes(localFile) && !usesExtractedText(fileType)) {
+        if (hasLocalBytes(localFile)) {
           const blob: Blob = localFile;
           if (cancelled) {
             return;
           }
           contentCache.set(resourceKey, { kind: "blob", blob });
           objectUrl = URL.createObjectURL(blob);
-          setContent({
-            status: "ready",
-            kind: "blob",
-            blob,
-            blobUrl: objectUrl,
-          });
-          return;
-        }
-
-        if (usesExtractedText(fileType) && hasLocalBytes(localFile) && !isBackendConfigured()) {
-          if (cancelled) {
-            return;
-          }
-          setContent({
-            status: "error",
-            message:
-              "Word (.docx) preview needs the backend’s extracted text. Set NEXT_PUBLIC_API_URL and upload while connected.",
-          });
+          setContent({ status: "ready", kind: "blob", blob, blobUrl: objectUrl });
           return;
         }
 
@@ -95,43 +65,8 @@ export function usePreviewFileContent(
           if (cancelled) {
             return;
           }
-          if (cached.kind === "markdown") {
-            setContent({ status: "ready", kind: "markdown", markdown: cached.markdown });
-            return;
-          }
-          if (cached.kind === "text") {
-            setContent({ status: "ready", kind: "text", text: cached.text });
-            return;
-          }
           objectUrl = URL.createObjectURL(cached.blob);
-          setContent({
-            status: "ready",
-            kind: "blob",
-            blob: cached.blob,
-            blobUrl: objectUrl,
-          });
-          return;
-        }
-
-        if (usesExtractedText(fileType)) {
-          // Prefer Docling's markdown export (real tables) when the file's been
-          // (re)ingested with it; older files fall back to the flat RAG text.
-          const markdown = await fetchBackendFilePreview(resourceKey);
-          if (cancelled) {
-            return;
-          }
-          if (markdown) {
-            contentCache.set(resourceKey, { kind: "markdown", markdown });
-            setContent({ status: "ready", kind: "markdown", markdown });
-            return;
-          }
-
-          const text = await fetchBackendFileText(resourceKey);
-          if (cancelled) {
-            return;
-          }
-          contentCache.set(resourceKey, { kind: "text", text });
-          setContent({ status: "ready", kind: "text", text });
+          setContent({ status: "ready", kind: "blob", blob: cached.blob, blobUrl: objectUrl });
           return;
         }
 
@@ -141,12 +76,7 @@ export function usePreviewFileContent(
         }
         contentCache.set(resourceKey, { kind: "blob", blob });
         objectUrl = URL.createObjectURL(blob);
-        setContent({
-          status: "ready",
-          kind: "blob",
-          blob,
-          blobUrl: objectUrl,
-        });
+        setContent({ status: "ready", kind: "blob", blob, blobUrl: objectUrl });
       } catch (err) {
         if (cancelled) {
           return;
@@ -163,7 +93,7 @@ export function usePreviewFileContent(
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [resourceKey, fileType, localFile, localSize]);
+  }, [resourceKey, localFile, localSize]);
 
   return content;
 }

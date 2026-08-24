@@ -37,21 +37,25 @@ export function getFolderChildFileIds(items: PersonalFolderItem[], folderId: Per
     .map((item) => item.fileId);
 }
 
-/** Root file ids: explicitly root-placed items first (by `position`), then
- * every file with no placement row at all — anywhere — sorted alphabetically. */
+/** Root file ids: explicitly root-placed items first (by `position` — drag
+ * order always wins, the sort toggle never reorders something the user
+ * deliberately placed), then every file with no placement row at all —
+ * anywhere — ordered by `compareFileIds` in the given `direction`. Criteria
+ * (name/type/date/...) lives entirely in the caller's comparator — this
+ * function only knows about placement and direction. */
 export function getRootFileIds(
   items: PersonalFolderItem[],
   allFileIds: string[],
-  getFileName: (fileId: string) => string,
+  compareFileIds: (a: string, b: string) => number,
+  direction: "asc" | "desc" = "asc",
 ): string[] {
   const placedFileIds = new Set(items.map((item) => item.fileId));
   const rootPlaced = items
     .filter((item) => item.folderId === null)
     .sort((a, b) => a.position - b.position)
     .map((item) => item.fileId);
-  const unplaced = allFileIds
-    .filter((fileId) => !placedFileIds.has(fileId))
-    .sort((a, b) => getFileName(a).localeCompare(getFileName(b)));
+  const unplaced = allFileIds.filter((fileId) => !placedFileIds.has(fileId)).sort(compareFileIds);
+  if (direction === "desc") unplaced.reverse();
 
   return [...rootPlaced, ...unplaced];
 }

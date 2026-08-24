@@ -4,6 +4,8 @@ import {
   IconArrowsSort,
   IconArrowUp,
   IconBookmark,
+  IconChevronDown,
+  IconChevronUp,
   IconEyeQuestion,
   IconFile,
   IconMessageCircle,
@@ -15,6 +17,9 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { FileLibraryPanel } from "@/components/files/file-library-panel";
+import { LeftPanelContextMenu } from "@/components/files/left-panel-context-menu";
+import { ChatPanelContextMenu } from "@/components/chat/chat-panel-context-menu";
+import type { ContextMenuAnchor } from "@/components/ui/context-menu";
 import { OrganizationDialog } from "@/components/accounts/organization-dialog";
 import { ProfileMenu } from "@/components/auth/profile-menu";
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -42,8 +47,8 @@ import { usePersonalFolders } from "@/hooks/use-personal-folders";
 import { useSyncRemovedPreviewTabs } from "@/hooks/use-sync-removed-preview-tabs";
 import { getUserRole } from "@/lib/auth/session";
 import type { ChatMessage, ChatSession } from "@/lib/chat/types";
-import type { LibraryFile } from "@/lib/file-upload";
-import { fileTypeFromFilename } from "@/lib/file-upload";
+import type { FileSortOrder, LibraryFile } from "@/lib/file-upload";
+import { compareLibraryFiles, DEFAULT_FILE_SORT_ORDER, fileTypeFromFilename } from "@/lib/file-upload";
 import { getAncestorFolderIdsForFile } from "@/lib/personal-folders";
 import { getActiveTab } from "@/lib/preview-tabs/selectors";
 import { usePreviewTabsStore } from "@/lib/preview-tabs/store";
@@ -53,6 +58,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+/** How long a "Reveal current file" click keeps the file's row highlighted —
+ * matches the highlight duration in `file-list.tsx`/`personal-folder-tree.tsx`. */
+const REVEAL_ACTION_MS = 3000;
 const MIN_SIDE_WIDTH = 16;
 const MIN_MIDDLE_WIDTH = 16;
 const DEFAULT_SIDE_WIDTH = 30;
@@ -291,6 +299,56 @@ function ChatHistoryMenu({
   );
 }
 
+const SORT_CRITERIA_LABELS: Record<FileSortOrder["criteria"], string> = {
+  name: "Name",
+  type: "Type",
+  date: "Date added",
+};
+
+function SortMenu({
+  sortOrder,
+  onChange,
+}: {
+  sortOrder: FileSortOrder;
+  onChange: (sortOrder: FileSortOrder) => void;
+}) {
+  return (
+    <ul className="flex flex-col gap-0.5">
+      {(Object.keys(SORT_CRITERIA_LABELS) as FileSortOrder["criteria"][]).map((criteria) => {
+        const isActive = sortOrder.criteria === criteria;
+        return (
+          <li key={criteria}>
+            <button
+              className={
+                isActive
+                  ? "flex w-full items-center justify-between gap-2 rounded-md bg-muted px-2 py-1.5 text-left text-sm font-medium text-foreground"
+                  : "flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm text-foreground hover:bg-muted"
+              }
+              onClick={() =>
+                onChange(
+                  isActive
+                    ? { criteria, direction: sortOrder.direction === "asc" ? "desc" : "asc" }
+                    : { criteria, direction: "asc" },
+                )
+              }
+              type="button"
+            >
+              {SORT_CRITERIA_LABELS[criteria]}
+              {isActive ? (
+                sortOrder.direction === "asc" ? (
+                  <IconChevronUp aria-hidden className="size-3.5 shrink-0" stroke={2.2} />
+                ) : (
+                  <IconChevronDown aria-hidden className="size-3.5 shrink-0" stroke={2.2} />
+                )
+              ) : null}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 function HeaderIconGroup({ children }: { children: ReactNode }) {
   return (
     <div className="inline-flex w-fit items-center gap-0.5 rounded-full border border-border bg-background p-0.5 shadow-sm">
@@ -406,11 +464,18 @@ function HomeWorkspace() {
   const [rightWidth, setRightWidth] = useState(DEFAULT_SIDE_WIDTH);
   const [isLeftVisible, setIsLeftVisible] = useState(true);
   const [isRightVisible, setIsRightVisible] = useState(true);
-  const [sortOrder, setSortOrder] = useState<"name-asc" | "name-desc">("name-asc");
+  const [sortOrder, setSortOrder] = useState<FileSortOrder>(DEFAULT_FILE_SORT_ORDER);
+  const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+  const [leftPanelContextMenuAnchor, setLeftPanelContextMenuAnchor] = useState<ContextMenuAnchor | null>(null);
+  const [chatPanelContextMenuAnchor, setChatPanelContextMenuAnchor] = useState<ContextMenuAnchor | null>(null);
   const [bookmarkedOnly, setBookmarkedOnly] = useState(false);
   const [isFileSearchOpen, setIsFileSearchOpen] = useState(false);
   const [fileSearchQuery, setFileSearchQuery] = useState("");
-  const [autoRevealEnabled, setAutoRevealEnabled] = useState(false);
+  /** "Reveal current file" is a one-shot locate-and-flash action, not a mode
+   * — no persistent on/off state, so the button never carries an active
+   * ring. Clearing itself after REVEAL_ACTION_MS both ends the highlight and
+   * lets the same file be re-revealed by clicking again. */
+  const [revealFileId, setRevealFileId] = useState<string | null>(null);
   const [isChatSearchOpen, setIsChatSearchOpen] = useState(false);
   const [chatSearchQuery, setChatSearchQuery] = useState("");
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -425,10 +490,8 @@ function HomeWorkspace() {
       if (query && !entry.file.name.toLowerCase().includes(query)) return false;
       return true;
     });
-    const sorted = [...filtered].sort((a, b) =>
-      a.file.name.localeCompare(b.file.name),
-    );
-    return sortOrder === "name-desc" ? sorted.reverse() : sorted;
+    const sorted = [...filtered].sort((a, b) => compareLibraryFiles(a, b, sortOrder.criteria));
+    return sortOrder.direction === "desc" ? sorted.reverse() : sorted;
   }, [files, bookmarkedOnly, fileSearchQuery, sortOrder]);
 
   // Personal folders aren't search/bookmark-aware in v1 — an active filter
@@ -436,11 +499,24 @@ function HomeWorkspace() {
   const showFolderTree = fileSearchQuery.trim() === "" && !bookmarkedOnly;
 
   const { items: personalFolderItems, folders: personalFolderList, expandFolders } = personalFolders;
-  useEffect(() => {
-    if (!autoRevealEnabled || !activeResourceKey) return;
+
+  const revealCurrentFile = useCallback(() => {
+    if (!activeResourceKey) return;
     const ancestorIds = getAncestorFolderIdsForFile(personalFolderItems, personalFolderList, activeResourceKey);
+    // Expanding ancestors and setting the reveal target in the same handler
+    // means React batches them into one render — the file's row exists in
+    // the DOM (freshly mounted by the now-expanded folder) by the time the
+    // scroll/highlight effect runs, instead of racing a still-collapsing
+    // folder and finding nothing to scroll to.
     expandFolders(ancestorIds);
-  }, [autoRevealEnabled, activeResourceKey, personalFolderItems, personalFolderList, expandFolders]);
+    setRevealFileId(activeResourceKey);
+  }, [activeResourceKey, personalFolderItems, personalFolderList, expandFolders]);
+
+  useEffect(() => {
+    if (!revealFileId) return;
+    const timer = setTimeout(() => setRevealFileId(null), REVEAL_ACTION_MS);
+    return () => clearTimeout(timer);
+  }, [revealFileId]);
 
   const {
     sessions: chatSessions,
@@ -545,7 +621,15 @@ function HomeWorkspace() {
             />
           </HeaderIconGroup>
           <HeaderIconGroup>
-            <HeaderIconButton iconClass="codicon-folder-library" label="Files" />
+            <HeaderIconButton
+              iconClass="codicon-folder-library"
+              label="Files"
+              onClick={() => {
+                setIsFileSearchOpen(false);
+                setFileSearchQuery("");
+                setBookmarkedOnly(false);
+              }}
+            />
             <HeaderIconButton
               active={isFileSearchOpen}
               iconClass="codicon-search"
@@ -607,20 +691,24 @@ function HomeWorkspace() {
         <section className={PANEL_SURFACE}>
           <header className="flex h-14 w-full shrink-0 items-center justify-center border-b border-border">
             <HeaderIconGroup>
-              <HeaderIconButton
-                active={sortOrder === "name-desc"}
-                icon={<TablerIcon icon={IconArrowsSort} />}
-                label={
-                  sortOrder === "name-asc"
-                    ? "Sort: Name (A–Z)"
-                    : "Sort: Name (Z–A)"
-                }
-                onClick={() =>
-                  setSortOrder((order) =>
-                    order === "name-asc" ? "name-desc" : "name-asc",
-                  )
-                }
-              />
+              <Popover onOpenChange={setIsSortMenuOpen} open={isSortMenuOpen}>
+                <PopoverTrigger
+                  aria-label="Sort"
+                  aria-pressed={isSortMenuOpen}
+                  className={
+                    isSortMenuOpen ||
+                    sortOrder.criteria !== DEFAULT_FILE_SORT_ORDER.criteria ||
+                    sortOrder.direction !== DEFAULT_FILE_SORT_ORDER.direction
+                      ? "flex size-8 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                      : "flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                  }
+                >
+                  <TablerIcon icon={IconArrowsSort} />
+                </PopoverTrigger>
+                <PopoverContent align="start">
+                  <SortMenu onChange={setSortOrder} sortOrder={sortOrder} />
+                </PopoverContent>
+              </Popover>
               <HeaderIconButton
                 iconClass="codicon-new-folder"
                 label="New folder"
@@ -631,19 +719,32 @@ function HomeWorkspace() {
                 label="Auto-Sort"
               />
               <HeaderIconButton
-                active={autoRevealEnabled}
                 icon={<TablerIcon icon={IconEyeQuestion} />}
-                label="Auto-reveal current file"
-                onClick={() => setAutoRevealEnabled((value) => !value)}
+                label="Reveal current file"
+                onClick={revealCurrentFile}
               />
-              <HeaderIconButton
-                iconClass="codicon-collapse-all"
-                label="Collapse all"
-                onClick={personalFolders.collapseAll}
-              />
+              {personalFolders.expandedFolderIds.size === 0 ? (
+                <HeaderIconButton
+                  iconClass="codicon-expand-all"
+                  label="Expand all"
+                  onClick={personalFolders.expandAll}
+                />
+              ) : (
+                <HeaderIconButton
+                  iconClass="codicon-collapse-all"
+                  label="Collapse all"
+                  onClick={personalFolders.collapseAll}
+                />
+              )}
             </HeaderIconGroup>
           </header>
-          <div className="min-h-0 flex-1 overflow-auto p-2">
+          <div
+            className="min-h-0 flex-1 overflow-auto p-2"
+            onContextMenu={(event) => {
+              event.preventDefault();
+              setLeftPanelContextMenuAnchor({ x: event.clientX, y: event.clientY });
+            }}
+          >
             {isFileSearchOpen ? (
               <Input
                 aria-label="Search files"
@@ -665,8 +766,9 @@ function HomeWorkspace() {
                   onReplaceFile={openReplacePicker}
                   onToggleBookmark={toggleBookmark}
                   personalFolders={personalFolders}
-                  revealFileId={autoRevealEnabled ? activeResourceKey : null}
+                  revealFileId={revealFileId}
                   showTree={showFolderTree}
+                  sortOrder={sortOrder}
                 />
               ) : (
                 <p className="px-1 py-2 text-sm text-muted-foreground">
@@ -678,6 +780,17 @@ function HomeWorkspace() {
               <FilesEmptyState onUpload={openFilePicker} />
             )}
           </div>
+
+          {leftPanelContextMenuAnchor ? (
+            <LeftPanelContextMenu
+              anchor={leftPanelContextMenuAnchor}
+              bookmarkedOnly={bookmarkedOnly}
+              onDismiss={() => setLeftPanelContextMenuAnchor(null)}
+              onNewFolder={() => void personalFolders.createFolder()}
+              onToggleBookmarks={() => setBookmarkedOnly((value) => !value)}
+              onUpload={openFilePicker}
+            />
+          ) : null}
         </section>
         <div className="relative h-full">
           {isLeftVisible ? (
@@ -692,7 +805,12 @@ function HomeWorkspace() {
             />
           ) : null}
         </div>
-        <PreviewCenterPanel files={files} filesEmpty={files.length === 0} />
+        <PreviewCenterPanel
+          files={files}
+          filesEmpty={files.length === 0}
+          onAskAboutDoc={(title) => void sendMessage(`What can you tell me about "${title}"?`)}
+          onUpload={openFilePicker}
+        />
         <div className="relative h-full">
           {isRightVisible ? (
             <button
@@ -711,17 +829,10 @@ function HomeWorkspace() {
           <ChatTabStrip
             activeSessionId={activeSession.id}
             onClose={closeChat}
+            onRename={renameChat}
             onSelect={switchChat}
             sessions={chatSessions}
-          />
-          <header className="flex min-w-0 h-14 w-full shrink-0 items-center gap-2 border-b border-border px-2">
-            <input
-              aria-label="Chat title"
-              className="h-8 w-64 min-w-0 max-w-[calc(100%-7.5rem)] shrink truncate rounded-md border border-border bg-transparent px-2 text-sm font-semibold text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
-              onChange={(event) => renameChat(activeSession.id, event.target.value)}
-              value={activeSession.title}
-            />
-            <div className="ml-auto shrink-0">
+            trailing={
               <HeaderIconGroup>
                 <HeaderIconButton
                   iconClass="codicon-add"
@@ -769,8 +880,8 @@ function HomeWorkspace() {
                   onClick={openConfigureChat}
                 />
               </HeaderIconGroup>
-            </div>
-          </header>
+            }
+          />
           {isChatSearchOpen ? (
             <div className="shrink-0 border-b border-border p-2">
               <Input
@@ -783,7 +894,13 @@ function HomeWorkspace() {
               />
             </div>
           ) : null}
-          <div className="min-h-0 flex-1 overflow-auto p-2">
+          <div
+            className="min-h-0 flex-1 overflow-auto p-2"
+            onContextMenu={(event) => {
+              event.preventDefault();
+              setChatPanelContextMenuAnchor({ x: event.clientX, y: event.clientY });
+            }}
+          >
             {activeSession.messages.length > 0 ? (
               visibleMessages.length > 0 || isActiveSessionPending ? (
                 <AskAiMessageList
@@ -807,6 +924,15 @@ function HomeWorkspace() {
             hasFiles={files.length > 0}
             onSend={sendMessage}
           />
+
+          {chatPanelContextMenuAnchor ? (
+            <ChatPanelContextMenu
+              anchor={chatPanelContextMenuAnchor}
+              onDismiss={() => setChatPanelContextMenuAnchor(null)}
+              onNewChat={newChat}
+              onSearchChats={() => setIsChatSearchOpen(true)}
+            />
+          ) : null}
         </section>
         </div>
       </div>

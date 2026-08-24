@@ -8,7 +8,7 @@ import { EditFileTagsDialog } from "@/components/files/edit-file-tags-dialog";
 import { FileList } from "@/components/files/file-list";
 import { PersonalFolderTree } from "@/components/files/personal-folder-tree";
 import type { PersonalFoldersController } from "@/hooks/use-personal-folders";
-import type { LibraryFile } from "@/lib/file-upload";
+import { DEFAULT_FILE_SORT_ORDER, type FileSortOrder, type LibraryFile } from "@/lib/file-upload";
 import type { PersonalFolder } from "@/lib/personal-folders";
 
 type FileLibraryPanelProps = {
@@ -23,8 +23,9 @@ type FileLibraryPanelProps = {
   onOpenFile: (file: LibraryFile) => void;
   onReplaceFile: (fileId: string) => void;
   onToggleBookmark: (fileId: string) => void;
-  /** When set (Auto-reveal current file), scrolls this file's row into view and briefly highlights it. */
+  /** When set (Reveal current file), scrolls this file's row into view and briefly highlights it. */
   revealFileId?: string | null;
+  sortOrder?: FileSortOrder;
 };
 
 export function FileLibraryPanel({
@@ -37,6 +38,7 @@ export function FileLibraryPanel({
   onReplaceFile,
   onToggleBookmark,
   revealFileId = null,
+  sortOrder = DEFAULT_FILE_SORT_ORDER,
 }: FileLibraryPanelProps) {
   const [deleteTarget, setDeleteTarget] = useState<LibraryFile | null>(null);
   const [editTagsTarget, setEditTagsTarget] = useState<LibraryFile | null>(
@@ -66,6 +68,7 @@ export function FileLibraryPanel({
           onToggleBookmark={onToggleBookmark}
           onToggleExpand={personalFolders.toggleExpand}
           revealFileId={revealFileId}
+          sortOrder={sortOrder}
         />
       ) : (
         <FileList

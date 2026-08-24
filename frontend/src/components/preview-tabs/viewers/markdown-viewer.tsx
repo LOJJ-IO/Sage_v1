@@ -6,7 +6,9 @@ import remarkGfm from "remark-gfm";
 
 import type { ViewState } from "@/lib/preview-tabs/types";
 
-/** No rehype-raw: raw HTML in a doc renders as literal text, never executes. */
+/** No rehype-raw: raw HTML in a doc renders as literal text, never executes.
+ * Shared by .md "rendered" mode — previously docx-only, generalized once
+ * docx moved to mammoth HTML instead of a markdown export. */
 const MARKDOWN_COMPONENTS: Components = {
   h1: ({ children }) => (
     <h1 className="mt-6 mb-3 font-heading text-xl font-semibold text-foreground first:mt-0">
@@ -69,17 +71,13 @@ const MARKDOWN_COMPONENTS: Components = {
   ),
 };
 
-type DocxMarkdownViewerProps = {
+type MarkdownViewerProps = {
   markdown: string;
   viewState: ViewState;
   onViewStateChange: (partial: Partial<ViewState>) => void;
 };
 
-export function DocxMarkdownViewer({
-  markdown,
-  viewState,
-  onViewStateChange,
-}: DocxMarkdownViewerProps) {
+export function MarkdownViewer({ markdown, viewState, onViewStateChange }: MarkdownViewerProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const restoredScroll = useRef(false);
 

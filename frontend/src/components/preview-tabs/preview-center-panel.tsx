@@ -1,7 +1,11 @@
 "use client";
 
+import { useState } from "react";
+
+import { PreviewPanelContextMenu } from "@/components/preview-tabs/preview-panel-context-menu";
 import { PreviewStage } from "@/components/preview-tabs/preview-stage";
 import { PreviewTabStrip } from "@/components/preview-tabs/preview-tab-strip";
+import type { ContextMenuAnchor } from "@/components/ui/context-menu";
 import type { LibraryFile } from "@/lib/file-upload";
 import { getActiveTab } from "@/lib/preview-tabs/selectors";
 import { usePreviewTabsStore } from "@/lib/preview-tabs/store";
@@ -16,20 +20,29 @@ type PreviewCenterPanelProps = {
   filesEmpty?: boolean;
   /** Library entries — used to resolve in-memory File blobs for standalone preview. */
   files?: LibraryFile[];
+  onUpload?: () => void;
+  onAskAboutDoc?: (fileTitle: string) => void;
 };
 
-export function PreviewCenterPanel({ filesEmpty, files = [] }: PreviewCenterPanelProps) {
+export function PreviewCenterPanel({ filesEmpty, files = [], onUpload, onAskAboutDoc }: PreviewCenterPanelProps) {
   const tabs = usePreviewTabsStore((state) => state.tabs);
   const activeTab = usePreviewTabsStore((state) => getActiveTab(state));
   const localFile =
     activeTab != null
       ? (files.find((entry) => entry.id === activeTab.resourceKey)?.file ?? null)
       : null;
+  const [contextMenuAnchor, setContextMenuAnchor] = useState<ContextMenuAnchor | null>(null);
 
   return (
     <section className={PANEL_SURFACE}>
       <PreviewTabStrip />
-      <div className="min-h-0 flex-1 overflow-hidden">
+      <div
+        className="min-h-0 flex-1 overflow-hidden"
+        onContextMenu={(event) => {
+          event.preventDefault();
+          setContextMenuAnchor({ x: event.clientX, y: event.clientY });
+        }}
+      >
         <PreviewStage
           activeTab={activeTab}
           filesEmpty={filesEmpty}
@@ -37,6 +50,18 @@ export function PreviewCenterPanel({ filesEmpty, files = [] }: PreviewCenterPane
           localFile={localFile}
         />
       </div>
+
+      {contextMenuAnchor ? (
+        <PreviewPanelContextMenu
+          activeFileTitle={activeTab?.title ?? null}
+          anchor={contextMenuAnchor}
+          onAskAboutDoc={() => {
+            if (activeTab) onAskAboutDoc?.(activeTab.title);
+          }}
+          onDismiss={() => setContextMenuAnchor(null)}
+          onUpload={() => onUpload?.()}
+        />
+      ) : null}
     </section>
   );
 }

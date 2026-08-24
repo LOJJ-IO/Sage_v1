@@ -13,7 +13,7 @@ import {
   type FolderRowMenuAnchor,
 } from "@/components/files/folder-row-menu";
 import { cn } from "@/lib/utils";
-import type { LibraryFile } from "@/lib/file-upload";
+import { compareLibraryFiles, DEFAULT_FILE_SORT_ORDER, type FileSortOrder, type LibraryFile } from "@/lib/file-upload";
 import {
   buildFolderTree,
   getFolderChildFileIds,
@@ -25,7 +25,7 @@ import {
   type TreeFolderNode,
 } from "@/lib/personal-folders";
 
-const REVEAL_HIGHLIGHT_MS = 1500;
+const REVEAL_HIGHLIGHT_MS = 3000;
 const ROOT_DROP_TARGET = "__root__";
 const INDENT_PX = 16;
 
@@ -265,6 +265,10 @@ export type PersonalFolderTreeProps = {
   onReplace: (file: LibraryFile) => void;
   onToggleBookmark: (fileId: string) => void;
   revealFileId?: string | null;
+  /** Only affects the fallback ordering of never-touched root files — files/
+   * folders the user has explicitly positioned (by dragging) keep their
+   * drag order regardless of criteria or direction. */
+  sortOrder?: FileSortOrder;
 };
 
 /** Recursive personal-folder tree — purely a per-user visual overlay on the
@@ -288,6 +292,7 @@ export function PersonalFolderTree({
   onReplace,
   onToggleBookmark,
   revealFileId = null,
+  sortOrder = DEFAULT_FILE_SORT_ORDER,
 }: PersonalFolderTreeProps) {
   const [draggedItem, setDraggedItem] = useState<DraggedItem | null>(null);
   // HTML5 drag events (dragstart -> dragover -> drop) can fire faster than
@@ -325,7 +330,13 @@ export function PersonalFolderTree({
   const rootFileIds = getRootFileIds(
     items,
     files.map((f) => f.id),
-    (fileId) => filesById.get(fileId)?.file.name ?? fileId,
+    (a, b) => {
+      const fileA = filesById.get(a);
+      const fileB = filesById.get(b);
+      if (!fileA || !fileB) return 0;
+      return compareLibraryFiles(fileA, fileB, sortOrder.criteria);
+    },
+    sortOrder.direction,
   ).filter((id) => filesById.has(id));
 
   const handleContainerDragOver = (event: DragEvent, targetFolderId: PersonalFolderId | null) => {

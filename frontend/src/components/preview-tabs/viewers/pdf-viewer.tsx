@@ -1,6 +1,5 @@
 "use client";
 
-import { IconChevronLeft, IconChevronRight, IconMaximize } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import type { PageCallback } from "react-pdf/dist/shared/types.js";
@@ -9,7 +8,7 @@ import {
   PdfScrollModePill,
   type PdfScrollMode,
 } from "@/components/preview-tabs/viewers/pdf-scroll-mode-pill";
-import { Button } from "@/components/ui/button";
+import { ViewerControlsBar } from "@/components/preview-tabs/viewers/viewer-controls-bar";
 import type { ViewState } from "@/lib/preview-tabs/types";
 import { cn } from "@/lib/utils";
 
@@ -130,68 +129,17 @@ export function PdfViewer({ file, viewState, onViewStateChange }: PdfViewerProps
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex shrink-0 items-center gap-1 border-b border-border px-2 py-1">
-        <Button
-          aria-label="Previous page"
-          disabled={page <= 1}
-          onClick={() => setPage(page - 1)}
-          size="icon-xs"
-          type="button"
-          variant="ghost"
-        >
-          <IconChevronLeft aria-hidden className="size-3.5" stroke={2.2} />
-        </Button>
-        <span className="min-w-16 text-center text-xs text-muted-foreground">
-          {page}
-          {numPages > 0 ? ` / ${numPages}` : ""}
-        </span>
-        <Button
-          aria-label="Next page"
-          disabled={numPages === 0 || page >= numPages}
-          onClick={() => setPage(page + 1)}
-          size="icon-xs"
-          type="button"
-          variant="ghost"
-        >
-          <IconChevronRight aria-hidden className="size-3.5" stroke={2.2} />
-        </Button>
-        <div className="mx-1 h-4 w-px bg-border" />
-        <Button
-          aria-label="Zoom out"
-          disabled={zoom <= MIN_ZOOM}
-          onClick={() => setZoom(zoom - ZOOM_STEP)}
-          size="xs"
-          type="button"
-          variant="ghost"
-        >
-          −
-        </Button>
-        <span className="min-w-12 text-center text-xs text-muted-foreground">
-          {Math.round(zoom * 100)}%
-        </span>
-        <Button
-          aria-label="Zoom in"
-          disabled={zoom >= MAX_ZOOM}
-          onClick={() => setZoom(zoom + ZOOM_STEP)}
-          size="xs"
-          type="button"
-          variant="ghost"
-        >
-          +
-        </Button>
-        <Button
-          aria-label="Fit to page"
-          disabled={!currentPageSize}
-          onClick={fitToPage}
-          size="icon-xs"
-          type="button"
-          variant="ghost"
-        >
-          <IconMaximize aria-hidden className="size-3.5" stroke={2.2} />
-        </Button>
-        <div className="mx-1 h-4 w-px bg-border" />
-        <PdfScrollModePill onChange={setScrollMode} value={scrollMode} />
-      </div>
+      <ViewerControlsBar
+        canFitToPage={!!currentPageSize}
+        maxZoom={MAX_ZOOM}
+        minZoom={MIN_ZOOM}
+        onFitToPage={fitToPage}
+        onZoomChange={setZoom}
+        pageNav={{ page, numPages, onPageChange: setPage }}
+        trailing={<PdfScrollModePill onChange={setScrollMode} value={scrollMode} />}
+        zoom={zoom}
+        zoomStep={ZOOM_STEP}
+      />
       <div
         className={cn(
           "flex min-h-0 flex-1 overflow-auto bg-muted/30 p-4",

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Response, UploadFile, status
 from pydantic import BaseModel
@@ -21,6 +22,7 @@ class FileResponse(BaseModel):
     status: str
     looks_scanned: bool
     error: str | None
+    created_at: datetime
 
 
 def _to_response(file_row) -> FileResponse:
@@ -30,6 +32,7 @@ def _to_response(file_row) -> FileResponse:
         status=file_row.status,
         looks_scanned=file_row.looks_scanned,
         error=file_row.error,
+        created_at=file_row.created_at,
     )
 
 

@@ -7,7 +7,7 @@ import {
   PANEL_HEADER_ROW_WITH_TABS_CLASS,
   PANEL_HEADER_SETTINGS_CLASS,
   PANEL_HEADER_TABLIST_CLASS,
-} from "@/components/preview-tabs/panel-header";
+} from "@/components/ui/panel-header";
 import { TabStripSettingsMenu } from "@/components/preview-tabs/tab-strip-settings-menu";
 import { getOrderedTabs, getUnpinnedTabs } from "@/lib/preview-tabs/selectors";
 import { usePreviewTabsStore } from "@/lib/preview-tabs/store";
