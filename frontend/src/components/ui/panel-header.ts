@@ -11,10 +11,21 @@ export const PANEL_HEADER_ROW_CLASS =
 export const PANEL_HEADER_ROW_WITH_TABS_CLASS =
   "preview-tab-strip flex h-14 w-full shrink-0 overflow-visible rounded-t-2xl border-b border-border";
 
-/** Tab gutter — left panel corner. `overflow-x-auto` (not `-hidden`): tabs no
- * longer compress to fit, they scroll once they overflow. */
+/** No left gutter (`pl-2.5` removed): with fixed-width tabs that don't
+ * stretch to fill the strip, that padding read as a stray rounded shape
+ * floating to the left of the first tab — most visible in dark mode, where
+ * the strip's own `rounded-t-2xl` corner (muted background) contrasts
+ * against the page well enough to look like a separate element rather than
+ * a subtle gap. First tab now sits flush with the panel's rounded corner.
+ * `overflow-x-auto` (not `-hidden`): tabs no longer compress to fit, they
+ * scroll once they overflow. `overflow-y-hidden`, not `-visible`: per the
+ * CSS spec, when overflow-x is non-`visible` and overflow-y is `visible`,
+ * the UA silently forces overflow-y to `auto` too — which turned the tab
+ * chrome's -1px active-tab margin trick into a real (if 1px-tall) vertical
+ * scrollbar. `hidden` avoids the quirk outright; nothing here needs
+ * vertical scroll. */
 export const PANEL_HEADER_TABLIST_CLASS =
-  "scrollbar-thin flex min-w-0 flex-1 items-stretch overflow-x-auto overflow-y-visible rounded-tl-2xl pl-2.5";
+  "scrollbar-thin flex min-w-0 flex-1 items-stretch overflow-x-auto overflow-y-hidden rounded-tl-2xl";
 
 /** Strip settings — same short chrome as active tabs (height/align from CSS). */
 export const PANEL_HEADER_SETTINGS_CLASS =

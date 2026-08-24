@@ -84,22 +84,17 @@ export function DocxViewer({ resourceKey, blob, viewState, onViewStateChange }: 
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {sourceMode === "rendered" ? (
-        <ViewerControlsBar
-          maxZoom={MAX_ZOOM}
-          minZoom={MIN_ZOOM}
-          onZoomChange={(next) => onViewStateChange({ zoom: next })}
-          trailing={
-            <SourceModeToggle onChange={(mode) => onViewStateChange({ sourceMode: mode })} value={sourceMode} />
-          }
-          zoom={zoom}
-          zoomStep={ZOOM_STEP}
-        />
-      ) : (
-        <div className="flex shrink-0 items-center justify-end gap-1 border-b border-border px-2 py-1">
-          <SourceModeToggle onChange={(mode) => onViewStateChange({ sourceMode: mode })} value={sourceMode} />
-        </div>
-      )}
+      {/* Same bar in both modes — only its enabled-ness changes — so the
+          source-mode toggle never shifts position when switching modes. */}
+      <ViewerControlsBar
+        disabled={sourceMode !== "rendered"}
+        maxZoom={MAX_ZOOM}
+        minZoom={MIN_ZOOM}
+        onZoomChange={(next) => onViewStateChange({ zoom: next })}
+        trailing={<SourceModeToggle onChange={(mode) => onViewStateChange({ sourceMode: mode })} value={sourceMode} />}
+        zoom={zoom}
+        zoomStep={ZOOM_STEP}
+      />
 
       <div className="min-h-0 flex-1 overflow-hidden">
         {sourceMode === "rendered" ? (

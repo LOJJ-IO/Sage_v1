@@ -27,6 +27,10 @@ type ViewerControlsBarProps = {
   pageNav?: PageNav;
   /** Viewer-specific extras (scroll-mode pill, raw/rendered toggle, ...) at the trailing edge. */
   trailing?: ReactNode;
+  /** Greys out zoom/fit/page-nav without removing them — keeps `trailing`
+   * (e.g. a raw/rendered toggle) at a fixed position regardless of which
+   * mode is active, instead of the bar's shape changing between modes. */
+  disabled?: boolean;
 };
 
 /** Shared zoom/fit-to-page/page-nav toolbar, extracted from what used to be
@@ -42,6 +46,7 @@ export function ViewerControlsBar({
   canFitToPage = false,
   pageNav,
   trailing,
+  disabled = false,
 }: ViewerControlsBarProps) {
   return (
     <div className="flex shrink-0 items-center gap-1 border-b border-border px-2 py-1">
@@ -49,7 +54,7 @@ export function ViewerControlsBar({
         <>
           <Button
             aria-label="Previous page"
-            disabled={pageNav.page <= 1}
+            disabled={disabled || pageNav.page <= 1}
             onClick={() => pageNav.onPageChange(pageNav.page - 1)}
             size="icon-xs"
             type="button"
@@ -63,7 +68,7 @@ export function ViewerControlsBar({
           </span>
           <Button
             aria-label="Next page"
-            disabled={pageNav.numPages === 0 || pageNav.page >= pageNav.numPages}
+            disabled={disabled || pageNav.numPages === 0 || pageNav.page >= pageNav.numPages}
             onClick={() => pageNav.onPageChange(pageNav.page + 1)}
             size="icon-xs"
             type="button"
@@ -77,7 +82,7 @@ export function ViewerControlsBar({
 
       <Button
         aria-label="Zoom out"
-        disabled={zoom <= minZoom}
+        disabled={disabled || zoom <= minZoom}
         onClick={() => onZoomChange(Math.max(minZoom, zoom - zoomStep))}
         size="xs"
         type="button"
@@ -88,7 +93,7 @@ export function ViewerControlsBar({
       <span className="min-w-12 text-center text-xs text-muted-foreground">{Math.round(zoom * 100)}%</span>
       <Button
         aria-label="Zoom in"
-        disabled={zoom >= maxZoom}
+        disabled={disabled || zoom >= maxZoom}
         onClick={() => onZoomChange(Math.min(maxZoom, zoom + zoomStep))}
         size="xs"
         type="button"
@@ -100,7 +105,7 @@ export function ViewerControlsBar({
       {onFitToPage ? (
         <Button
           aria-label="Fit to page"
-          disabled={!canFitToPage}
+          disabled={disabled || !canFitToPage}
           onClick={onFitToPage}
           size="icon-xs"
           type="button"

@@ -3,7 +3,7 @@
 import type { DragEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { IconChevronRight } from "@tabler/icons-react";
+import { IconChevronRight, IconDotsVertical, IconTrash } from "@tabler/icons-react";
 
 import { FileRow } from "@/components/files/file-list";
 import type { FileRowMenuAnchor } from "@/components/files/file-row-menu";
@@ -12,6 +12,7 @@ import {
   FolderRowContextMenu,
   type FolderRowMenuAnchor,
 } from "@/components/files/folder-row-menu";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { compareLibraryFiles, DEFAULT_FILE_SORT_ORDER, type FileSortOrder, type LibraryFile } from "@/lib/file-upload";
 import {
@@ -28,6 +29,12 @@ import {
 const REVEAL_HIGHLIGHT_MS = 3000;
 const ROOT_DROP_TARGET = "__root__";
 const INDENT_PX = 16;
+/** A folder row's chevron button (18px: 14px icon + 2px padding each side)
+ * plus the row's gap-1 (4px) before the folder icon. Root-level files have
+ * no chevron of their own, so without this they'd start flush with where a
+ * sibling folder's *chevron* sits instead of where its *icon* sits — making
+ * a file row look like it's nested inside the folder above it. */
+const ROOT_FILE_INDENT_PX = 22;
 
 type DraggedItem = { type: "file" | "folder"; id: string };
 
@@ -140,6 +147,7 @@ function FolderNode(props: FolderNodeProps) {
         draggable={!isEditing}
         onContextMenu={(event) => {
           event.preventDefault();
+          event.stopPropagation();
           setFolderContextMenu({ folder, anchor: { x: event.clientX, y: event.clientY } });
         }}
         onDragEnd={onRowDragEnd}
@@ -198,6 +206,21 @@ function FolderNode(props: FolderNodeProps) {
             {folder.folderName}
           </button>
         )}
+        {!isEditing ? (
+          <Button
+            aria-label={`More actions for ${folder.folderName}`}
+            className="shrink-0 text-muted-foreground opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+            onClick={(event) => {
+              const rect = event.currentTarget.getBoundingClientRect();
+              setFolderContextMenu({ folder, anchor: { x: rect.left, y: rect.bottom } });
+            }}
+            size="icon-sm"
+            type="button"
+            variant="ghost"
+          >
+            <IconDotsVertical aria-hidden className="size-4" stroke={2.2} />
+          </Button>
+        ) : null}
       </div>
 
       <AnimatePresence initial={false}>
@@ -304,6 +327,7 @@ export function PersonalFolderTree({
   // `draggedItem` state stays only for the (non-critical) visual feedback.
   const draggedItemRef = useRef<DraggedItem | null>(null);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
+  const [isTrashDropTarget, setIsTrashDropTarget] = useState(false);
   const [fileContextMenu, setFileContextMenu] = useState<{
     file: LibraryFile;
     anchor: FileRowMenuAnchor;
@@ -401,7 +425,11 @@ export function PersonalFolderTree({
     <>
       <ul
         className={cn(
-          "flex min-h-8 flex-col gap-0.5 rounded-md",
+          // min-h-full (not min-h-8): the root "un-nest here" drop target
+          // must cover the whole panel's blank space below the rows, not
+          // just the rows' own height, or dragging to an empty area below a
+          // short tree has nowhere to land.
+          "flex min-h-full flex-col gap-0.5 rounded-md",
           isRootDropTarget && "bg-accent/30 ring-1 ring-inset ring-accent",
         )}
         onDragLeave={() => handleContainerDragLeave(null)}
@@ -433,25 +461,26 @@ export function PersonalFolderTree({
           const entry = filesById.get(fileId);
           if (!entry) return null;
           return (
-            <FileRow
-              draggable
-              entry={entry}
-              highlighted={highlightedFileId === fileId}
-              key={fileId}
-              onContextMenu={(file, anchor) => setFileContextMenu({ file, anchor })}
-              onDragEnd={sharedProps.onRowDragEnd}
-              onDragStart={(event) => {
-                event.dataTransfer.setData("text/plain", fileId);
-                handleRowDragStart({ type: "file", id: fileId });
-              }}
-              onKebabClick={(file, anchor) => setFileContextMenu({ file, anchor })}
-              onOpenFile={onOpenFile}
-              onToggleBookmark={onToggleBookmark}
-              rowRef={(node) => {
-                if (node) rowRefs.current.set(fileId, node);
-                else rowRefs.current.delete(fileId);
-              }}
-            />
+            <div key={fileId} style={{ paddingLeft: ROOT_FILE_INDENT_PX }}>
+              <FileRow
+                draggable
+                entry={entry}
+                highlighted={highlightedFileId === fileId}
+                onContextMenu={(file, anchor) => setFileContextMenu({ file, anchor })}
+                onDragEnd={sharedProps.onRowDragEnd}
+                onDragStart={(event) => {
+                  event.dataTransfer.setData("text/plain", fileId);
+                  handleRowDragStart({ type: "file", id: fileId });
+                }}
+                onKebabClick={(file, anchor) => setFileContextMenu({ file, anchor })}
+                onOpenFile={onOpenFile}
+                onToggleBookmark={onToggleBookmark}
+                rowRef={(node) => {
+                  if (node) rowRefs.current.set(fileId, node);
+                  else rowRefs.current.delete(fileId);
+                }}
+              />
+            </div>
           );
         })}
       </ul>
@@ -475,6 +504,46 @@ export function PersonalFolderTree({
           onDismiss={() => setFolderContextMenu(null)}
           onRename={(folder) => onStartRenaming(folder.id)}
         />
+      ) : null}
+
+      {/* Direct-manipulation delete: appears only while dragging. Routes
+          through the same confirm dialogs a kebab-menu delete would (file
+          deletion is genuinely destructive to the shared knowledge base —
+          the drag gesture initiates delete, it doesn't skip confirming it;
+          folder delete already never touches real files either way). */}
+      {draggedItem ? (
+        <div
+          className={cn(
+            "fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border px-4 py-2 text-sm shadow-lg transition-colors",
+            isTrashDropTarget
+              ? "border-destructive bg-destructive text-destructive-foreground"
+              : "border-border bg-popover text-muted-foreground",
+          )}
+          onDragLeave={() => setIsTrashDropTarget(false)}
+          onDragOver={(event) => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "move";
+            setIsTrashDropTarget(true);
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            setIsTrashDropTarget(false);
+            const dragged = draggedItemRef.current;
+            draggedItemRef.current = null;
+            setDraggedItem(null);
+            if (!dragged) return;
+            if (dragged.type === "folder") {
+              const target = folders.find((f) => f.id === dragged.id);
+              if (target) onRequestDeleteFolder(target);
+            } else {
+              const target = filesById.get(dragged.id);
+              if (target) onDelete(target);
+            }
+          }}
+        >
+          <IconTrash aria-hidden className="size-4" stroke={2.2} />
+          Drop to delete
+        </div>
       ) : null}
     </>
   );

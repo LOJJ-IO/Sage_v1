@@ -92,6 +92,7 @@ export function FileRow({
       draggable={draggable}
       onContextMenu={(event) => {
         event.preventDefault();
+        event.stopPropagation();
         onContextMenu(entry, { x: event.clientX, y: event.clientY });
       }}
       onDragEnd={onDragEnd}
