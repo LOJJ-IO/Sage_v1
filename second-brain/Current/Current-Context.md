@@ -9,6 +9,18 @@ related: ["[[Deployment-Notes]]", "[[Known-Issues]]", "[[Lessons-Learned]]", "[[
 
 # Current Context
 
+## Open — MVP beachhead reconsideration (2026-08-23)
+[[0007-boutique-retail-mvp-beachhead]] is `under-reconsideration`, not superseded. User, when asked directly whether to lock in NGO (2-50 people) vs. manufacturing scaleup vs. keep exploring: **"Try to keep all of those in mind tbh"** — i.e. stay genuinely open across multiple verticals (not just those two), don't narrow yet. Don't assume "boutique retail" framing (device assumptions, persona copy, etc.) reflects current direction until a real decision lands. See [[Customer-Feedback]] for the discovery-call notes that prompted it.
+
+## Open — queued implementation work (2026-08-23, confirmed scope, not yet built)
+User confirmed direction on four sizeable follow-ups after the personal-folders ship, via clarifying questions:
+1. **Docx preview fidelity** → mammoth.js-based semantic-HTML upgrade (real headings/lists/bold/images/tables in-browser), not a Google/Office viewer embed and not a heavier pixel-perfect renderer. Also wants: PDF-style controls bar (zoom/fit/page-nav) extended to docx preview, and a raw/processed toggle for .md preview.
+2. **Right-click context menus**, four distinct surfaces: left file panel blank area (New folder / Upload / Bookmarks), right chat panel blank area (New chat / Search chats), center preview panel blank area (Upload / "Ask about this doc"-style), **and** right-clicking *on open file content itself* (not blank space) → "Ask about this doc."
+3. **Full sort menu** (name / type / date-added, popover, active-ring on trigger when non-default) — chosen over the minimal already-shipped A–Z/Z–A fix. Needs a backend change first: `GET /files` doesn't currently return `created_at` (`FileResponse` in `backend/app/files/routes.py` — file_id/filename/status/looks_scanned/error only).
+4. **Preview tab-strip redesign**: adopt `ChatTabStrip`'s existing fixed-width + `overflow-x-auto` pattern (no more flex-shrink/compression via `use-tab-lane-compression.ts`) so tabs stop becoming unreadable once many are open — mirrors how chat tabs already behave. Plus a vertical/horizontal alignment fix so preview tabs sit flush with the panel edge and align with the chat panel's header position. **Also: redesign `ChatTabStrip` to visually look like preview tabs** (tab chrome/shape), while keeping the chat panel's own current vertical spacing — these are two different, slightly contradictory-sounding asks (chat tabs adopt preview-tab *sizing behavior* AND preview tabs should visually influence chat tab *appearance*) reconcile carefully before building — worth confirming the exact visual target with a mockup/screenshot pass before implementing blind.
+
+Not yet started — flagged as the next implementation block. See [[FEAT-personal-folders]] for what shipped same-session before this list was scoped.
+
 ## Active priority
 Auth UX: unsigned users must land on `/sign-in` (client `RequireAuth` gate shipped). Still open: false "not enough grounded information" refusals on production — usually sparse/scanned extracts (OCR deferred), not a dead retriever. Files UI now shows status + scanned warning; near-empty scanned uploads fail ingest. User should re-upload text-native files for the store that was refusing.
 

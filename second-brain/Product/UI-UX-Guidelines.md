@@ -260,6 +260,7 @@ Use `accounts === undefined` for first load — not `accounts.length === 0` — 
 - **Variants:** `success`, `error`, `info`, `progress` (+ `update` for progress)
 - **API:** `useToast()` → `.success()`, `.error()`, `.info()`, `.progress()`, `.dismiss()`
 - **Deprecated:** `ToastViewport` is a no-op — do not nest toast hosts in panel columns
+- **Error copy rule (2026-08-23, explicit user directive):** the user must never see an overly technical or long error message, ever — no raw exceptions, stack traces, backend error codes/`detail` strings, or `ApiError.message` passed straight through to a toast/UI. Every user-facing error string needs a short, plain-language, human rewrite (a sentence or less) before it reaches a toast/dialog; the technical detail belongs in `console.error`/server logs, not the UI. Run every such string through the **`humanizer`** skill (`.claude/skills/humanizer/SKILL.md`, see [[Useful-Commands]]) before it ships. Applies retroactively — audit existing `toast.error({ description: errorMessage(err, ...) })` call sites (they currently forward raw `ApiError`/`Error` messages) as part of implementing this, not just new code going forward.
 
 ## Skeletons
 
