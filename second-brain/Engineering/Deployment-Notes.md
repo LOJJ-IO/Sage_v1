@@ -3,7 +3,7 @@ type: deployment
 status: active
 tags: [area/infra]
 created: 2026-07-01
-updated: 2026-07-20
+updated: 2026-10-04
 related: ["[[Architecture-Overview]]", "[[Tech-Stack]]", "[[0003-railway-hosting-all-services]]", "[[0008-fastapi-owned-pgvector-rag-backend]]"]
 ---
 
@@ -52,6 +52,8 @@ Set on the **Sage_v1** service (Variables tab). Names only here — never commit
 | `CORS_ORIGINS` | Must include deployed frontend origin. Dashboard currently has `http://localhost:3000,https://sage-frontend-production.up.railway.app` — **running container may still be stale** until `railway restart` or a successful redeploy |
 | `ENVIRONMENT` | Prefer `production` on Railway |
 | Frontend `NEXT_PUBLIC_API_URL` | `https://sagev1-production.up.railway.app` (baked into JS at build time — confirmed in production bundle) |
+
+**Backend down (checked 2026-10-04):** `https://sagev1-production.up.railway.app/health` → Railway 404 `Application not found`. Frontend still serves and still points at that URL.
 
 ## Known gotchas (2026-07-20)
 

@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { useFileLibrary } from "@/hooks/use-file-library";
 import { useSyncRemovedPreviewTabs } from "@/hooks/use-sync-removed-preview-tabs";
 import { getUserRole } from "@/lib/auth/session";
+import { isDemoRoute } from "@/lib/demo/mode";
 import type { AskCitation } from "@/lib/ask/api";
 import { askSage, isBackendConfigured } from "@/lib/ask/api";
 import type { LibraryFile } from "@/lib/file-upload";
@@ -426,6 +427,35 @@ export default function Home() {
   useEffect(() => {
     const role = getUserRole();
     setIsAdmin(role === "admin" || role === null);
+  }, []);
+
+  // `/demo`: open on a conversation already in progress so the app looks in use.
+  useEffect(() => {
+    if (!isDemoRoute()) return;
+    let cancelled = false;
+    void Promise.all([import("@/lib/demo/seed"), import("@/lib/demo/mock-api")]).then(
+      ([{ DEMO_CHAT_TITLE, DEMO_CONVERSATION }, { answerDemoQuestion }]) => {
+        if (cancelled) return;
+        setChatTitle(DEMO_CHAT_TITLE);
+        setMessages(
+          DEMO_CONVERSATION.flatMap((question) => {
+            const result = answerDemoQuestion(question);
+            return [
+              { id: createMessageId(), role: "user" as const, content: question },
+              {
+                id: createMessageId(),
+                role: "assistant" as const,
+                content: result.answer,
+                citations: result.citations,
+              },
+            ];
+          }),
+        );
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const startResize = useCallback(

@@ -90,8 +90,7 @@
               "title": "Bookmarks"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "horizontal",
@@ -186,7 +185,7 @@
       "bases:Create new base": false
     }
   },
-  "active": "b2649c847a6770ea",
+  "active": "15ccd3bdb348224b",
   "lastOpenFiles": [
     "Product/UI-UX-Guidelines.md",
     "Engineering/Lessons-Learned.md",

@@ -7,15 +7,24 @@ import type {
   ResetPinRequest,
   ResetPinResponse,
 } from "@/lib/accounts/types";
+import { isDemoRoute } from "@/lib/demo/mode";
+import { DEMO_ACCOUNTS_SEED } from "@/lib/demo/seed";
 
 export const DEMO_ACCOUNTS: Account[] = [];
 
+let demoAccountsSeeded = false;
+
+/** No backend, or the `/demo` route — accounts live in memory either way. */
 export function isDemoMode() {
-  return !getApiBaseUrl();
+  return !getApiBaseUrl() || isDemoRoute();
 }
 
 export async function listAccounts(): Promise<Account[]> {
   if (isDemoMode()) {
+    if (isDemoRoute() && !demoAccountsSeeded) {
+      demoAccountsSeeded = true;
+      DEMO_ACCOUNTS.push(...structuredClone(DEMO_ACCOUNTS_SEED));
+    }
     return structuredClone(DEMO_ACCOUNTS);
   }
 

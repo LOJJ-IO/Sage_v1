@@ -3,7 +3,7 @@ type: current-context
 status: active
 tags: [priority/high, area/infra, area/frontend]
 created: 2026-07-20
-updated: 2026-07-30
+updated: 2026-10-04
 related: ["[[Deployment-Notes]]", "[[Known-Issues]]", "[[Lessons-Learned]]", "[[UI-UX-Guidelines]]", "[[Workspace-UI-Design-Decisions]]", "[[FEAT-preview-tabs]]", "[[FEAT-citation-sources]]", "[[BUG-0001-narrow-query-refusal-single-chunk]]", "[[BUG-0002-inline-citation-leak-in-answer-text]]"]
 ---
 
@@ -35,6 +35,9 @@ False "not enough grounded information" refusals on production — usually spars
 - **Fixed** the "narrow query refused, broad query answered" false-refusal pattern (2026-07-30, [[BUG-0001-narrow-query-refusal-single-chunk]]): `chunk_text()` now splits short multi-paragraph docs along paragraph boundaries. Re-verified against the LOJJ.io/TurnUp repro. See bug note + eval cases.
 - **Fixed** a raw citation-id leak into user-visible answer text ([[BUG-0002-inline-citation-leak-in-answer-text]]): tightened prompt + defensive `_strip_inline_citations()` in `answer.py`.
 - **Neither BUG-0001 nor BUG-0002 is deployed to production yet.**
+
+- **`/demo` route built (2026-10-04, uncommitted):** real UI + in-browser mock backend with seeded boutique docs, accounts and an in-progress chat; no login. See [[FEAT-demo-route]].
+- **Production backend is down** (2026-10-04): `sagev1-production.up.railway.app` → Railway "Application not found". See [[Deployment-Notes]].
 
 ## Still open
 1. User: re-upload **text-based** policy docs (`.txt` / `.md` / text PDF / `.docx`) for any store still refusing; delete scanned "Ready" files that can't be answered.

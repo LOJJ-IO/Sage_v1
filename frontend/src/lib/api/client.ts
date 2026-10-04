@@ -1,4 +1,12 @@
+import { isDemoRoute } from "@/lib/demo/mode";
+
+/** Placeholder base URL on `/demo`; requests never leave the browser there. */
+const DEMO_BASE_URL = "demo://sage";
+
 export function getApiBaseUrl() {
+  if (isDemoRoute()) {
+    return DEMO_BASE_URL;
+  }
   return process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "";
 }
 
@@ -28,6 +36,11 @@ export async function apiFetch<T>(
   path: string,
   { auth = true, headers, ...init }: ApiFetchOptions = {}
 ): Promise<T> {
+  if (isDemoRoute()) {
+    const { handleDemoRequest } = await import("@/lib/demo/mock-api");
+    return handleDemoRequest<T>(path, init);
+  }
+
   const baseUrl = getApiBaseUrl();
 
   if (!baseUrl) {

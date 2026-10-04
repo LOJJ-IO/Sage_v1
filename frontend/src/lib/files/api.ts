@@ -1,4 +1,5 @@
 import { apiFetch, getApiBaseUrl, getAuthToken } from "@/lib/api/client";
+import { isDemoRoute } from "@/lib/demo/mode";
 import type { FileIngestStatus } from "@/lib/file-upload";
 
 export type FileRecord = {
@@ -38,6 +39,10 @@ export async function deleteBackendFile(fileId: string): Promise<void> {
 
 /** Direct fetch (not apiFetch) because the response is a blob, not JSON. */
 export async function downloadBackendFile(fileId: string): Promise<Blob> {
+  if (isDemoRoute()) {
+    const { downloadDemoFile } = await import("@/lib/demo/mock-api");
+    return downloadDemoFile(fileId);
+  }
   const baseUrl = getApiBaseUrl();
   if (!baseUrl) {
     throw new Error(
