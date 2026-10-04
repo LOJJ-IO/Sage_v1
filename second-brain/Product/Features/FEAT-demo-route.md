@@ -18,6 +18,10 @@ Sharing the link should show Sage looking alive. `/` needs a backend + sign-in; 
 ## Solution
 `/demo` renders the same page component as `/`. On that route the API layer swaps in an in-browser mock backend seeded with a fictional boutique ("Juniper Lane Boutique"): 6 store docs (one finishes "processing" ~4s after load), 4 accounts, and a chat already in progress with Sources badges. Asking questions keyword-matches canned answers whose citations are real char offsets into the seeded docs; no match → the grounded refusal. Uploads/delete/replace work in memory; reload resets.
 
+**Root redirect (2026-10-04):** `frontend/next.config.ts` temporarily redirects `/` → `/demo` (307) so the shared link opens the demo. Remove that `redirects()` entry to restore `/` as the real app — note `/sign-in` success pushes to `/`, so real logins also land in the demo while it's on.
+
+**File list:** a 401 while loading files now shows an empty library instead of the "You must be signed in" banner (`hooks/use-file-library.ts`).
+
 ## Out of scope
 - Real retrieval/LLM in the demo. Persisting demo state. Changing `/` or the sign-in flow.
 

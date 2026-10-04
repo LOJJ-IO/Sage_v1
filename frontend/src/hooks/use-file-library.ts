@@ -64,6 +64,8 @@ export function useFileLibrary() {
       const records = await listBackendFiles();
       setFiles((current) => mergeRecords(records, current));
     } catch (err) {
+      // Not signed in: show an empty library, not a "must be signed in" banner.
+      if (err instanceof ApiError && err.status === 401) return;
       setError(errorMessage(err, "Couldn't load your files. Try refreshing."));
     }
   }, [backendConfigured]);
