@@ -1,3 +1,5 @@
+import { isDemoRoute } from "@/lib/demo/mode";
+
 export type ThemePreference = "light" | "dark" | "system";
 
 const STORAGE_KEY = "sage_theme";
@@ -12,7 +14,8 @@ export function getStoredTheme(): ThemePreference {
     return stored;
   }
 
-  return "system";
+  // `/demo` opens in light mode until the visitor picks a theme.
+  return isDemoRoute() ? "light" : "system";
 }
 
 export function storeTheme(theme: ThemePreference) {

@@ -22,6 +22,10 @@ Sharing the link should show Sage looking alive. `/` needs a backend + sign-in; 
 
 **File list:** a 401 while loading files now shows an empty library instead of the "You must be signed in" banner (`hooks/use-file-library.ts`).
 
+**Theme:** `/demo` defaults to light until the visitor picks a theme (`lib/theme.ts` + the inline script in `app/layout.tsx`).
+
+**Header buttons wired (2026-10-04, applies to `/` too):** Files (reset filters), Search (filename/tag filter), Bookmarks (bookmarked-only toggle), Sort (cycles upload order → A–Z → Z–A), Auto-Sort (group by type), Auto-reveal (highlight + scroll active tab's file), History / Search chats (`components/ask/chat-history-popover.tsx`; New chat archives the current chat; `/demo` seeds 3 past chats), Voice input (Web Speech API, `hooks/use-voice-input.ts`). **New folder** and **Collapse all** only show an explanatory toast — there is no folder model yet. File view state: `hooks/use-file-view.ts`. Verified by driving headless Chrome over CDP (every button clicked, result asserted).
+
 ## Out of scope
 - Real retrieval/LLM in the demo. Persisting demo state. Changing `/` or the sign-in flow.
 

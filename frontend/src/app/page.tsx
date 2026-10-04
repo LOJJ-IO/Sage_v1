@@ -12,8 +12,13 @@ import {
   IconWand,
 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ChatHistoryPopover,
+  type ChatHistoryEntry,
+} from "@/components/ask/chat-history-popover";
 import { FileLibraryPanel } from "@/components/files/file-library-panel";
+import { useToast } from "@/components/providers/toast-provider";
 import { OrganizationDialog } from "@/components/accounts/organization-dialog";
 import { ProfileMenu } from "@/components/auth/profile-menu";
 import {
@@ -26,6 +31,8 @@ import { SettingsDialog } from "@/components/settings/settings-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFileLibrary } from "@/hooks/use-file-library";
+import { FILE_SORT_LABELS, useFileView } from "@/hooks/use-file-view";
+import { useVoiceInput } from "@/hooks/use-voice-input";
 import { useSyncRemovedPreviewTabs } from "@/hooks/use-sync-removed-preview-tabs";
 import { getUserRole } from "@/lib/auth/session";
 import { isDemoRoute } from "@/lib/demo/mode";
@@ -33,6 +40,7 @@ import type { AskCitation } from "@/lib/ask/api";
 import { askSage, isBackendConfigured } from "@/lib/ask/api";
 import type { LibraryFile } from "@/lib/file-upload";
 import { fileTypeFromFilename } from "@/lib/file-upload";
+import { getActiveTab } from "@/lib/preview-tabs/selectors";
 import { usePreviewTabsStore } from "@/lib/preview-tabs/store";
 import { ApiError } from "@/lib/api/client";
 import { EmptyState } from "@/components/ui/empty";
@@ -147,6 +155,23 @@ type ChatMessage = {
   citations?: AskCitation[];
 };
 
+/** A chat moved out of view by New chat / History; restorable from History. */
+type ChatSession = {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  updatedAt: number;
+};
+
+function toHistoryEntry(chat: ChatSession): ChatHistoryEntry {
+  return {
+    id: chat.id,
+    title: chat.title,
+    preview: chat.messages.find((m) => m.role === "user")?.content ?? "",
+    updatedAt: chat.updatedAt,
+  };
+}
+
 function createMessageId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
@@ -200,6 +225,15 @@ function AskAiChatInput({
 }) {
   const [message, setMessage] = useState("");
   const canSend = hasFiles && message.trim().length > 0;
+  const toast = useToast();
+  const draftBeforeVoiceRef = useRef("");
+  const voice = useVoiceInput({
+    onTranscript: (text) => {
+      const prefix = draftBeforeVoiceRef.current;
+      setMessage(prefix ? `${prefix} ${text}` : text);
+    },
+    onUnavailable: (reason) => toast.info({ title: "Voice input unavailable", description: reason }),
+  });
 
   const send = () => {
     if (!canSend) {
@@ -228,9 +262,18 @@ function AskAiChatInput({
         trailing={
           <>
             <button
-              aria-label="Voice input"
-              className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+              aria-label={voice.listening ? "Stop voice input" : "Voice input"}
+              aria-pressed={voice.listening}
+              className={
+                voice.listening
+                  ? "flex size-8 shrink-0 animate-pulse items-center justify-center rounded-md bg-destructive/10 text-destructive transition-colors"
+                  : "flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+              }
               disabled={!hasFiles}
+              onClick={() => {
+                if (!voice.listening) draftBeforeVoiceRef.current = message.trim();
+                voice.toggle();
+              }}
               type="button"
             >
               <TablerIcon icon={IconMicrophone} />
@@ -270,12 +313,15 @@ function HeaderIconButton({
   iconClass,
   icon,
   onClick,
+  active = false,
   tooltipPlacement = "bottom",
 }: {
   label: string;
   iconClass?: string;
   icon?: ReactNode;
   onClick?: () => void;
+  /** Toggle buttons (filters, auto-reveal): shows the pressed state. */
+  active?: boolean;
   tooltipPlacement?: "bottom" | "left" | "right";
 }) {
   const sideOffset = tooltipPlacement === "bottom" ? 6 : 8;
@@ -286,7 +332,12 @@ function HeaderIconButton({
         render={
           <button
             aria-label={label}
-            className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            aria-pressed={active || undefined}
+            className={
+              active
+                ? "flex size-8 items-center justify-center rounded-full bg-muted text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                : "flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            }
             onClick={onClick}
             type="button"
           />
@@ -321,6 +372,10 @@ export default function Home() {
   } = useFileLibrary();
 
   useSyncRemovedPreviewTabs(files);
+
+  const toast = useToast();
+  const fileView = useFileView(files);
+  const activeFileId = usePreviewTabsStore((state) => getActiveTab(state)?.resourceKey ?? null);
 
   const openTab = usePreviewTabsStore((state) => state.openTab);
   const handleOpenFile = useCallback(
@@ -358,6 +413,9 @@ export default function Home() {
   const [isRightVisible, setIsRightVisible] = useState(true);
   const [chatTitle, setChatTitle] = useState("Title");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [pastChats, setPastChats] = useState<ChatSession[]>([]);
+  const [chatHistoryMode, setChatHistoryMode] = useState<"search" | "history" | null>(null);
+  const chatHistoryAnchorRef = useRef<HTMLSpanElement>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [organizationOpen, setOrganizationOpen] = useState(false);
@@ -419,10 +477,38 @@ export default function Home() {
       });
   }, []);
 
+  /** Moves the on-screen chat into history (if it has messages). */
+  const archiveCurrentChat = useCallback(() => {
+    if (messages.length === 0) return;
+    setPastChats((current) => [
+      {
+        id: createMessageId(),
+        title: chatTitle.trim() || "Untitled chat",
+        messages,
+        updatedAt: Date.now(),
+      },
+      ...current,
+    ]);
+  }, [chatTitle, messages]);
+
   const handleNewChat = useCallback(() => {
+    archiveCurrentChat();
     setMessages([]);
     setChatTitle("Title");
-  }, []);
+  }, [archiveCurrentChat]);
+
+  const handleSelectChat = useCallback(
+    (chatId: string) => {
+      const chat = pastChats.find((entry) => entry.id === chatId);
+      setChatHistoryMode(null);
+      if (!chat) return;
+      archiveCurrentChat();
+      setPastChats((current) => current.filter((entry) => entry.id !== chatId));
+      setMessages(chat.messages);
+      setChatTitle(chat.title);
+    },
+    [archiveCurrentChat, pastChats],
+  );
 
   useEffect(() => {
     const role = getUserRole();
@@ -434,11 +520,10 @@ export default function Home() {
     if (!isDemoRoute()) return;
     let cancelled = false;
     void Promise.all([import("@/lib/demo/seed"), import("@/lib/demo/mock-api")]).then(
-      ([{ DEMO_CHAT_TITLE, DEMO_CONVERSATION }, { answerDemoQuestion }]) => {
+      ([{ DEMO_CHAT_TITLE, DEMO_CONVERSATION, DEMO_PAST_CHATS }, { answerDemoQuestion }]) => {
         if (cancelled) return;
-        setChatTitle(DEMO_CHAT_TITLE);
-        setMessages(
-          DEMO_CONVERSATION.flatMap((question) => {
+        const toMessages = (questions: string[]): ChatMessage[] =>
+          questions.flatMap((question) => {
             const result = answerDemoQuestion(question);
             return [
               { id: createMessageId(), role: "user" as const, content: question },
@@ -449,7 +534,16 @@ export default function Home() {
                 citations: result.citations,
               },
             ];
-          }),
+          });
+        setChatTitle(DEMO_CHAT_TITLE);
+        setMessages(toMessages(DEMO_CONVERSATION));
+        setPastChats(
+          DEMO_PAST_CHATS.map((chat) => ({
+            id: createMessageId(),
+            title: chat.title,
+            messages: toMessages(chat.questions),
+            updatedAt: Date.now() - chat.daysAgo * 86_400_000,
+          })),
         );
       },
     );
@@ -521,16 +615,36 @@ export default function Home() {
             />
           </HeaderIconGroup>
           <HeaderIconGroup>
-            <HeaderIconButton iconClass="codicon-folder-library" label="Files" />
-            <HeaderIconButton iconClass="codicon-search" label="Search" />
+            <HeaderIconButton
+              iconClass="codicon-folder-library"
+              label="Files"
+              onClick={() => {
+                setIsLeftVisible(true);
+                fileView.showAllFiles();
+              }}
+            />
+            <HeaderIconButton
+              active={fileView.searchOpen}
+              iconClass="codicon-search"
+              label="Search"
+              onClick={() => {
+                setIsLeftVisible(true);
+                fileView.toggleSearch();
+              }}
+            />
             <HeaderIconButton
               icon={<TablerIcon icon={IconUpload} />}
               label="Upload"
               onClick={openFilePicker}
             />
             <HeaderIconButton
+              active={fileView.bookmarkedOnly}
               icon={<TablerIcon icon={IconBookmark} />}
-              label="Bookmarks"
+              label={fileView.bookmarkedOnly ? "Show all files" : "Bookmarks"}
+              onClick={() => {
+                setIsLeftVisible(true);
+                fileView.toggleBookmarkedOnly();
+              }}
             />
           </HeaderIconGroup>
         </div>
@@ -571,24 +685,49 @@ export default function Home() {
           <header className="flex h-14 w-full shrink-0 items-center justify-center border-b border-border">
             <HeaderIconGroup>
               <HeaderIconButton
+                active={fileView.sortMode === "name-asc" || fileView.sortMode === "name-desc"}
                 icon={<TablerIcon icon={IconArrowsSort} />}
-                label="Sort"
+                label={`Sort (${FILE_SORT_LABELS[fileView.sortMode]})`}
+                onClick={() => {
+                  const mode = fileView.cycleSort();
+                  toast.info({ title: `Sorted: ${FILE_SORT_LABELS[mode]}` });
+                }}
               />
               <HeaderIconButton
                 iconClass="codicon-new-folder"
                 label="New folder"
+                onClick={() =>
+                  toast.info({
+                    title: "Folders are coming soon",
+                    description: "For now, use tags (right-click a file → Edit tags) to group files.",
+                  })
+                }
               />
               <HeaderIconButton
+                active={fileView.sortMode === "type"}
                 icon={<TablerIcon icon={IconWand} />}
                 label="Auto-Sort"
+                onClick={() => {
+                  const on = fileView.toggleAutoSort();
+                  toast.info({ title: on ? "Auto-sorted by file type" : "Auto-Sort off" });
+                }}
               />
               <HeaderIconButton
+                active={fileView.autoReveal}
                 icon={<TablerIcon icon={IconEyeQuestion} />}
                 label="Auto-reveal current file"
+                onClick={fileView.toggleAutoReveal}
               />
               <HeaderIconButton
                 iconClass="codicon-collapse-all"
                 label="Collapse all"
+                onClick={() => {
+                  fileView.showAllFiles();
+                  toast.info({
+                    title: "Nothing to collapse yet",
+                    description: "Files aren't in folders yet, so the list is already flat.",
+                  });
+                }}
               />
             </HeaderIconGroup>
           </header>
@@ -601,9 +740,32 @@ export default function Home() {
                 {error}
               </p>
             ) : null}
+            {fileView.searchOpen ? (
+              <input
+                aria-label="Search files"
+                autoFocus
+                className="mb-2 h-8 w-full rounded-md border border-border bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+                onChange={(event) => fileView.setQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") fileView.toggleSearch();
+                }}
+                placeholder="Search files and tags…"
+                value={fileView.query}
+              />
+            ) : null}
+            {files.length > 0 && fileView.visibleFiles.length === 0 ? (
+              <p className="px-2 py-6 text-center text-xs text-muted-foreground">
+                {fileView.bookmarkedOnly && !fileView.query.trim()
+                  ? "No bookmarked files yet — click the bookmark next to a file."
+                  : "No files match that search."}
+              </p>
+            ) : null}
             {files.length > 0 ? (
               <FileLibraryPanel
+                activeFileId={activeFileId}
                 files={files}
+                revealActive={fileView.autoReveal}
+                visibleFiles={fileView.visibleFiles}
                 onDeleteFile={removeFile}
                 onEditTags={updateTags}
                 onOpenFile={handleOpenFile}
@@ -658,14 +820,20 @@ export default function Home() {
                   label="New chat"
                   onClick={handleNewChat}
                 />
-                <HeaderIconButton
-                  iconClass="codicon-search"
-                  label="Search chats"
-                />
-                <HeaderIconButton
-                  iconClass="codicon-history"
-                  label="History"
-                />
+                <span className="inline-flex items-center gap-0.5" ref={chatHistoryAnchorRef}>
+                  <HeaderIconButton
+                    active={chatHistoryMode === "search"}
+                    iconClass="codicon-search"
+                    label="Search chats"
+                    onClick={() => setChatHistoryMode((mode) => (mode === "search" ? null : "search"))}
+                  />
+                  <HeaderIconButton
+                    active={chatHistoryMode === "history"}
+                    iconClass="codicon-history"
+                    label="History"
+                    onClick={() => setChatHistoryMode((mode) => (mode === "history" ? null : "history"))}
+                  />
+                </span>
                 <HeaderIconButton
                   iconClass="codicon-settings"
                   label="Configure"
@@ -703,6 +871,14 @@ export default function Home() {
       <OrganizationDialog
         onOpenChange={setOrganizationOpen}
         open={organizationOpen}
+      />
+      <ChatHistoryPopover
+        anchor={chatHistoryAnchorRef}
+        chats={pastChats.map(toHistoryEntry)}
+        key={chatHistoryMode ?? "closed"}
+        mode={chatHistoryMode}
+        onClose={() => setChatHistoryMode(null)}
+        onSelect={handleSelectChat}
       />
       <ConfigureChatDialog
         onOpenChange={setConfigureChatOpen}

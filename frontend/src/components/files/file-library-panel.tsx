@@ -9,6 +9,10 @@ import type { LibraryFile } from "@/lib/file-upload";
 
 type FileLibraryPanelProps = {
   files: LibraryFile[];
+  /** Filtered/sorted subset to list; dialogs still see every file. */
+  visibleFiles?: LibraryFile[];
+  activeFileId?: string | null;
+  revealActive?: boolean;
   onDeleteFile: (fileId: string) => void;
   onEditTags: (fileId: string, tags: string[]) => void;
   onOpenFile: (file: LibraryFile) => void;
@@ -18,6 +22,9 @@ type FileLibraryPanelProps = {
 
 export function FileLibraryPanel({
   files,
+  visibleFiles,
+  activeFileId,
+  revealActive,
   onDeleteFile,
   onEditTags,
   onOpenFile,
@@ -32,7 +39,9 @@ export function FileLibraryPanel({
   return (
     <>
       <FileList
-        files={files}
+        activeFileId={activeFileId}
+        files={visibleFiles ?? files}
+        revealActive={revealActive}
         onDelete={setDeleteTarget}
         onEditTags={setEditTagsTarget}
         onOpenFile={onOpenFile}

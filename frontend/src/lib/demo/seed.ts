@@ -321,3 +321,22 @@ export const DEMO_CONVERSATION: string[] = [
   "Can a customer return something without a receipt?",
   "What's the opening float for the till?",
 ];
+
+/** Earlier chats listed under History / Search chats on `/demo`. */
+export const DEMO_PAST_CHATS: { title: string; daysAgo: number; questions: string[] }[] = [
+  {
+    title: "Holiday schedule",
+    daysAgo: 1,
+    questions: ["What are our Christmas Eve hours?", "Do we get extra pay on Boxing Day?"],
+  },
+  {
+    title: "Staff discount",
+    daysAgo: 3,
+    questions: ["How much is the employee discount?"],
+  },
+  {
+    title: "Card reader offline",
+    daysAgo: 6,
+    questions: ["The card reader says offline, what do I do?"],
+  },
+];

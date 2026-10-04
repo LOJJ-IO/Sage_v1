@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { FileIngestStatus, LibraryFile } from "@/lib/file-upload";
 
@@ -13,6 +13,10 @@ import { FileTypeIcon } from "@/components/files/file-type-icon";
 
 type FileListProps = {
   files: LibraryFile[];
+  /** File shown in the active preview tab; highlighted when `revealActive`. */
+  activeFileId?: string | null;
+  /** Auto-reveal: highlight the active file and scroll it into view. */
+  revealActive?: boolean;
   onDelete: (file: LibraryFile) => void;
   onEditTags: (file: LibraryFile) => void;
   onOpenFile: (file: LibraryFile) => void;
@@ -49,6 +53,8 @@ function fileHint(entry: LibraryFile): string | null {
 
 export function FileList({
   files,
+  activeFileId = null,
+  revealActive = false,
   onDelete,
   onEditTags,
   onOpenFile,
@@ -59,16 +65,31 @@ export function FileList({
     null,
   );
 
+  const listRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    if (!revealActive || !activeFileId) return;
+    const row = listRef.current?.querySelector<HTMLElement>(
+      `[data-file-id="${CSS.escape(activeFileId)}"]`,
+    );
+    row?.scrollIntoView({ block: "nearest" });
+  }, [activeFileId, revealActive]);
+
   if (files.length === 0) return null;
 
   return (
-    <ul className="flex flex-col gap-1">
+    <ul className="flex flex-col gap-1" ref={listRef}>
       {files.map((entry) => {
         const hint = fileHint(entry);
         return (
           <li
             key={entry.id}
-            className="rounded-md px-1 py-0.5 hover:bg-muted"
+            className={
+              revealActive && entry.id === activeFileId
+                ? "rounded-md bg-muted px-1 py-0.5"
+                : "rounded-md px-1 py-0.5 hover:bg-muted"
+            }
+            data-file-id={entry.id}
             onContextMenu={(event) => {
               event.preventDefault();
               setContextMenu({
