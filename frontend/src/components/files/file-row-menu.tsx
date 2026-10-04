@@ -1,6 +1,6 @@
 "use client";
 
-import { IconReplace, IconTag, IconTrash } from "@tabler/icons-react";
+import { IconFolder, IconFolderUp, IconReplace, IconTag, IconTrash } from "@tabler/icons-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -43,7 +43,15 @@ type FileRowContextMenuProps = {
   onDelete: (file: LibraryFile) => void;
   onEditTags: (file: LibraryFile) => void;
   onReplace: (file: LibraryFile) => void;
+  /** Folders the file can move to; omit to hide "Move to". */
+  folders?: { id: string; name: string }[];
+  /** Folder the file is in now (null = root). */
+  currentFolderId?: string | null;
+  onMove?: (file: LibraryFile, folderId: string | null) => void;
 };
+
+const MENU_ITEM =
+  "flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted";
 
 /** Right-click menu for a file row, anchored at the pointer (rows carry no kebab button). */
 export function FileRowContextMenu({
@@ -53,7 +61,11 @@ export function FileRowContextMenu({
   onDelete,
   onEditTags,
   onReplace,
+  folders = [],
+  currentFolderId = null,
+  onMove,
 }: FileRowContextMenuProps) {
+  const moveTargets = folders.filter((folder) => folder.id !== currentFolderId);
   const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -133,6 +145,43 @@ export function FileRowContextMenu({
         <IconReplace aria-hidden className="size-4" stroke={2.2} />
         Replace
       </button>
+
+      {onMove && (moveTargets.length > 0 || currentFolderId) ? (
+        <>
+          <div className="my-1 h-px bg-border" />
+          <p className="px-2.5 pb-1 pt-1.5 text-xs font-medium text-muted-foreground">Move to</p>
+          {moveTargets.map((folder) => (
+            <button
+              className={MENU_ITEM}
+              key={folder.id}
+              onClick={() => {
+                onDismiss();
+                onMove(file, folder.id);
+              }}
+              role="menuitem"
+              type="button"
+            >
+              <IconFolder aria-hidden className="size-4" stroke={2.2} />
+              <span className="min-w-0 truncate">{folder.name}</span>
+            </button>
+          ))}
+          {currentFolderId ? (
+            <button
+              className={MENU_ITEM}
+              onClick={() => {
+                onDismiss();
+                onMove(file, null);
+              }}
+              role="menuitem"
+              type="button"
+            >
+              <IconFolderUp aria-hidden className="size-4" stroke={2.2} />
+              Remove from folder
+            </button>
+          ) : null}
+          <div className="my-1 h-px bg-border" />
+        </>
+      ) : null}
 
       <button
         className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-destructive transition-colors hover:bg-destructive/10"

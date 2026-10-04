@@ -30,6 +30,7 @@ import { ConfigureChatDialog } from "@/components/settings/configure-chat-dialog
 import { SettingsDialog } from "@/components/settings/settings-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useFileFolders } from "@/hooks/use-file-folders";
 import { useFileLibrary } from "@/hooks/use-file-library";
 import { FILE_SORT_LABELS, useFileView } from "@/hooks/use-file-view";
 import { useVoiceInput } from "@/hooks/use-voice-input";
@@ -375,6 +376,7 @@ export default function Home() {
 
   const toast = useToast();
   const fileView = useFileView(files);
+  const folderApi = useFileFolders();
   const activeFileId = usePreviewTabsStore((state) => getActiveTab(state)?.resourceKey ?? null);
 
   const openTab = usePreviewTabsStore((state) => state.openTab);
@@ -696,12 +698,11 @@ export default function Home() {
               <HeaderIconButton
                 iconClass="codicon-new-folder"
                 label="New folder"
-                onClick={() =>
-                  toast.info({
-                    title: "Folders are coming soon",
-                    description: "For now, use tags (right-click a file → Edit tags) to group files.",
-                  })
-                }
+                onClick={() => {
+                  setIsLeftVisible(true);
+                  fileView.showAllFiles();
+                  folderApi.createFolder();
+                }}
               />
               <HeaderIconButton
                 active={fileView.sortMode === "type"}
@@ -721,13 +722,7 @@ export default function Home() {
               <HeaderIconButton
                 iconClass="codicon-collapse-all"
                 label="Collapse all"
-                onClick={() => {
-                  fileView.showAllFiles();
-                  toast.info({
-                    title: "Nothing to collapse yet",
-                    description: "Files aren't in folders yet, so the list is already flat.",
-                  });
-                }}
+                onClick={folderApi.collapseAll}
               />
             </HeaderIconGroup>
           </header>
@@ -764,6 +759,8 @@ export default function Home() {
               <FileLibraryPanel
                 activeFileId={activeFileId}
                 files={files}
+                filtering={fileView.isFiltered}
+                folderApi={folderApi}
                 revealActive={fileView.autoReveal}
                 visibleFiles={fileView.visibleFiles}
                 onDeleteFile={removeFile}

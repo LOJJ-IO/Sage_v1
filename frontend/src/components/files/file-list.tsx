@@ -11,12 +11,19 @@ import {
 } from "@/components/files/file-row-menu";
 import { FileTypeIcon } from "@/components/files/file-type-icon";
 
+/** DataTransfer type carrying a dragged file's id (dropped onto folders). */
+export const FILE_DRAG_TYPE = "application/x-sage-file-id";
+
 type FileListProps = {
   files: LibraryFile[];
   /** File shown in the active preview tab; highlighted when `revealActive`. */
   activeFileId?: string | null;
   /** Auto-reveal: highlight the active file and scroll it into view. */
   revealActive?: boolean;
+  /** Folder support: "Move to" menu entries and drag source. */
+  folders?: { id: string; name: string }[];
+  folderIdOf?: (fileId: string) => string | null;
+  onMove?: (file: LibraryFile, folderId: string | null) => void;
   onDelete: (file: LibraryFile) => void;
   onEditTags: (file: LibraryFile) => void;
   onOpenFile: (file: LibraryFile) => void;
@@ -55,6 +62,9 @@ export function FileList({
   files,
   activeFileId = null,
   revealActive = false,
+  folders,
+  folderIdOf,
+  onMove,
   onDelete,
   onEditTags,
   onOpenFile,
@@ -90,6 +100,11 @@ export function FileList({
                 : "rounded-md px-1 py-0.5 hover:bg-muted"
             }
             data-file-id={entry.id}
+            draggable={Boolean(onMove)}
+            onDragStart={(event) => {
+              event.dataTransfer.setData(FILE_DRAG_TYPE, entry.id);
+              event.dataTransfer.effectAllowed = "move";
+            }}
             onContextMenu={(event) => {
               event.preventDefault();
               setContextMenu({
@@ -146,6 +161,9 @@ export function FileList({
           onDismiss={() => setContextMenu(null)}
           onEditTags={onEditTags}
           onReplace={onReplace}
+          currentFolderId={folderIdOf?.(contextMenu.file.id) ?? null}
+          folders={folders}
+          onMove={onMove}
         />
       ) : null}
     </ul>

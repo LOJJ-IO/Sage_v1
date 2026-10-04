@@ -157,3 +157,15 @@ html {
     @apply font-sans;
   }
 }
+
+/* docx-preview (Word viewer): sit pages on the app surface instead of its grey wrapper. */
+.docx-preview-host .docx-wrapper {
+  background: transparent;
+  padding: 24px 16px;
+  align-items: center;
+}
+.docx-preview-host .docx-wrapper > section.docx {
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.12), 0 8px 24px rgb(0 0 0 / 0.08);
+  border-radius: 4px;
+  margin-bottom: 24px;
+}

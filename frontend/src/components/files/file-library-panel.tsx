@@ -4,7 +4,9 @@ import { useState } from "react";
 
 import { DeleteFileDialog } from "@/components/files/delete-file-dialog";
 import { EditFileTagsDialog } from "@/components/files/edit-file-tags-dialog";
-import { FileList } from "@/components/files/file-list";
+import { FileTree } from "@/components/files/file-tree";
+import { useToast } from "@/components/providers/toast-provider";
+import type { FileFoldersApi } from "@/hooks/use-file-folders";
 import type { LibraryFile } from "@/lib/file-upload";
 
 type FileLibraryPanelProps = {
@@ -13,6 +15,9 @@ type FileLibraryPanelProps = {
   visibleFiles?: LibraryFile[];
   activeFileId?: string | null;
   revealActive?: boolean;
+  folderApi: FileFoldersApi;
+  /** A search/bookmark filter is narrowing `visibleFiles`. */
+  filtering?: boolean;
   onDeleteFile: (fileId: string) => void;
   onEditTags: (fileId: string, tags: string[]) => void;
   onOpenFile: (file: LibraryFile) => void;
@@ -25,12 +30,15 @@ export function FileLibraryPanel({
   visibleFiles,
   activeFileId,
   revealActive,
+  folderApi,
+  filtering = false,
   onDeleteFile,
   onEditTags,
   onOpenFile,
   onReplaceFile,
   onToggleBookmark,
 }: FileLibraryPanelProps) {
+  const toast = useToast();
   const [deleteTarget, setDeleteTarget] = useState<LibraryFile | null>(null);
   const [editTagsTarget, setEditTagsTarget] = useState<LibraryFile | null>(
     null,
@@ -38,15 +46,31 @@ export function FileLibraryPanel({
 
   return (
     <>
-      <FileList
+      <FileTree
         activeFileId={activeFileId}
+        assignments={folderApi.assignments}
+        collapsed={folderApi.collapsed}
+        editingFolderId={folderApi.editingFolderId}
         files={visibleFiles ?? files}
-        revealActive={revealActive}
+        filtering={filtering}
+        folders={folderApi.folders}
         onDelete={setDeleteTarget}
+        onDeleteFolder={(folder) => {
+          folderApi.deleteFolder(folder.id);
+          toast.success({
+            title: `Deleted "${folder.name}"`,
+            description: "Its files moved back to the top level.",
+          });
+        }}
         onEditTags={setEditTagsTarget}
+        onMoveFile={folderApi.moveFile}
         onOpenFile={onOpenFile}
+        onRenameFolder={folderApi.renameFolder}
         onReplace={(file) => onReplaceFile(file.id)}
+        onStartRename={folderApi.setEditingFolderId}
         onToggleBookmark={onToggleBookmark}
+        onToggleFolder={folderApi.toggleCollapsed}
+        revealActive={revealActive}
       />
 
       <DeleteFileDialog

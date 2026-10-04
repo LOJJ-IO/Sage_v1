@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
-import { DocxTextViewer } from "@/components/preview-tabs/viewers/docx-text-viewer";
+import { DocxViewer } from "@/components/preview-tabs/viewers/docx-viewer";
 import { ImageViewer } from "@/components/preview-tabs/viewers/image-viewer";
 import {
   PreviewFetchError,
@@ -80,11 +80,12 @@ export function FilePreviewRouter({ tab, localFile }: FilePreviewRouterProps) {
     );
   }
 
-  if (tab.fileType === "docx" && content.kind === "text") {
+  if (tab.fileType === "docx" && content.kind === "blob") {
     return (
-      <DocxTextViewer
+      <DocxViewer
+        blob={content.blob}
         onViewStateChange={patchViewState}
-        text={content.text}
+        resourceKey={tab.resourceKey}
         viewState={viewState}
       />
     );

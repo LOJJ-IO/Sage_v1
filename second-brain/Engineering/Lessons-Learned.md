@@ -3,7 +3,7 @@ type: lessons
 status: active
 tags: [area/frontend]
 created: 2026-07-01
-updated: 2026-07-30
+updated: 2026-10-04
 related: ["[[Engineering/Bugs]]", "[[Troubleshooting]]", "[[UI-UX-Guidelines]]", "[[Stacking-Contexts-and-Portals]]", "[[Current-Context]]", "[[FEAT-preview-tabs]]"]
 ---
 
@@ -254,3 +254,8 @@ Even with margins and overflow fixed (entry above), the active tab's bottom corn
 The classic "mount portal only on client" pattern (`useState(false)` + `useEffect` → `setMounted(true)`) now trips `react-hooks/set-state-in-effect` in React 19 / eslint-config-next: synchronous setState in an effect causes an extra render cascade.
 **Fix:** `useSyncExternalStore(() => () => {}, () => true, () => false)` — server snapshot `false`, client snapshot `true`, no effect, no setState. Applied in `toast-provider.tsx`.
 **Related:** [[UI-UX-Guidelines#Toasts (application-owned)]]
+
+### 2026-10-04 — python-docx files render with Times + blue headings in docx-preview
+Word's default template (what python-docx starts from) uses **theme fonts** in `docDefaults` and **theme colours** on `Heading N` *and its linked `Heading N Char` style*. Word resolves them; docx-preview (browser) doesn't have Calibri/Cambria and falls back to Times, and keeps the theme blue even after you set an RGB on the paragraph style. Word's `List Bullet` uses a Symbol-font glyph that browsers draw as an empty box.
+**Fix:** pin explicit fonts on docDefaults + Normal + headings + linked char styles (strip `w:*Theme` attrs), strip `w:themeColor` from headings and their `… Char` styles, and write bullets as text with a hanging indent. See `frontend/scripts/demo-docs/build_demo_docs.py`.
+**Related:** [[FEAT-demo-route]]

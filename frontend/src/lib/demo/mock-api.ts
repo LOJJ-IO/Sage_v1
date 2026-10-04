@@ -19,7 +19,10 @@ const ASK_DELAY_MS = 900;
 
 type DemoFile = {
   record: FileRecord;
+  /** Plain text (seeded docs) or the uploaded bytes. */
   content: string | Blob;
+  /** Seeded PDF/DOCX served from `public/demo/`. */
+  assetUrl?: string;
 };
 
 let files: Map<string, DemoFile> | null = null;
@@ -51,6 +54,7 @@ function getFiles(): Map<string, DemoFile> {
           error: null,
         },
         content: doc.content,
+        assetUrl: doc.assetUrl,
       };
       if (doc.startsProcessing) {
         finishIngestingLater(file);
@@ -172,8 +176,8 @@ export async function handleDemoRequest<T>(path: string, init: RequestInit = {})
     }
     if (fileId && action === "text" && method === "GET") {
       const { content, record } = requireFile(fileId);
-      if (typeof content !== "string" && record.filename.toLowerCase().endsWith(".docx")) {
-        return { text: "Word previews of files uploaded in the demo aren't available — try one of the store's seeded documents." } as T;
+      if (typeof content !== "string" && /\.(docx|pdf)$/i.test(record.filename)) {
+        return { text: "Text extraction isn't available for files uploaded in the demo." } as T;
       }
       const text = typeof content === "string" ? content : await content.text();
       return { text } as T;
@@ -183,8 +187,15 @@ export async function handleDemoRequest<T>(path: string, init: RequestInit = {})
   throw new ApiError(404, "Not available in the demo.");
 }
 
-/** Blob download for `/files/{id}/content` (txt/md/image/pdf previews). */
+/** Blob download for `/files/{id}/content` — the real PDF/DOCX for seeded docs. */
 export async function downloadDemoFile(fileId: string): Promise<Blob> {
-  const { content } = requireFile(fileId);
+  const { content, assetUrl } = requireFile(fileId);
+  if (assetUrl) {
+    const response = await fetch(assetUrl);
+    if (!response.ok) {
+      throw new ApiError(response.status, "Couldn't load that demo file.");
+    }
+    return response.blob();
+  }
   return typeof content === "string" ? new Blob([content], { type: "text/plain" }) : content;
 }

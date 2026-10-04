@@ -1,4 +1,5 @@
 import type { Account } from "@/lib/accounts/types";
+import { GENERATED_DEMO_DOCUMENTS } from "@/lib/demo/documents.generated";
 
 /** Fictional store used by `/demo`. Any resemblance to a real business is accidental. */
 export const DEMO_STORE_NAME = "Juniper Lane Boutique";
@@ -6,16 +7,36 @@ export const DEMO_STORE_NAME = "Juniper Lane Boutique";
 export type DemoDocument = {
   file_id: string;
   filename: string;
-  /** Plain text served for preview (`/content` for txt/md, `/text` for docx). */
+  /** Plain text: served as `/content` for md, as `/text`, and used for citation offsets. */
   content: string;
+  /** Real PDF/DOCX under `public/` (built by `scripts/demo-docs/build_demo_docs.py`). */
+  assetUrl?: string;
+  /** Folder the file starts in on `/demo`. */
+  folder?: string;
   /** Seeded as still ingesting so the library visibly finishes indexing on load. */
   startsProcessing?: boolean;
 };
+
+/** Folders shown on `/demo`, in display order. */
+export const DEMO_FOLDERS = ["Policies", "Operations", "Training"];
+
+function generated(fileId: string, folder: string, extra: Partial<DemoDocument> = {}): DemoDocument {
+  const doc = GENERATED_DEMO_DOCUMENTS[fileId];
+  return {
+    file_id: fileId,
+    filename: doc.filename,
+    content: doc.text,
+    assetUrl: `/demo/${doc.filename}`,
+    folder,
+    ...extra,
+  };
+}
 
 export const DEMO_DOCUMENTS: DemoDocument[] = [
   {
     file_id: "demo-returns-policy",
     filename: "Returns-and-Exchanges-Policy.md",
+    folder: "Policies",
     content: `# Returns & Exchanges Policy
 
 _Juniper Lane Boutique — effective March 1, 2026_
@@ -37,26 +58,9 @@ If a customer reports a defect, accept the return at any time within 90 days and
 `,
   },
   {
-    file_id: "demo-open-close",
-    filename: "Opening-and-Closing-Checklist.txt",
-    content: `OPENING (arrive 30 min before doors)
-1. Disarm alarm — code is on the key fob card in the manager's lockbox.
-2. Lights on: front panel first, then fitting rooms.
-3. Count the float: $200 in the till — $100 in fives and tens, $100 in coins and ones.
-4. Steam any new arrivals on the "to floor" rack.
-5. Check the shared inbox for online pickup orders and pull them to the hold shelf.
-
-CLOSING (start 15 min before doors close)
-1. Last call in fitting rooms at 10 minutes to close.
-2. Run the end-of-day report on the POS and print two copies.
-3. Count the till down to the $200 float; the rest goes in the deposit bag.
-4. Deposit bag goes in the back safe — never leave cash in the till overnight.
-5. Return fitting room items to the floor, lights off, set the alarm.
-`,
-  },
-  {
     file_id: "demo-holiday-hours",
     filename: "Holiday-Hours-2026.md",
+    folder: "Operations",
     content: `# Holiday Hours 2026
 
 | Date | Hours |
@@ -74,22 +78,9 @@ Staff working Boxing Day get time-and-a-half. Holiday shift swaps must be approv
 `,
   },
   {
-    file_id: "demo-employee-discount",
-    filename: "Employee-Discount-Policy.docx",
-    content: `Employee Discount Policy
-
-All staff get 30% off full-price items and 10% off sale items after their first 30 days.
-
-The discount is for the employee and one immediate family member only. Ring it up under your own employee number — never another staff member's.
-
-Employee purchases must be rung up by a different staff member, not yourself.
-
-The discount cannot be combined with other promotions or used on gift cards.
-`,
-  },
-  {
     file_id: "demo-gift-cards",
     filename: "Gift-Card-FAQ.md",
+    folder: "Policies",
     content: `# Gift Card FAQ
 
 **Do gift cards expire?** No. Gift cards never expire and have no fees.
@@ -101,22 +92,10 @@ The discount cannot be combined with other promotions or used on gift cards.
 **Checking a balance:** Scan the card on the POS and choose Gift Card > Balance Inquiry.
 `,
   },
-  {
-    file_id: "demo-pos-troubleshooting",
-    filename: "POS-Troubleshooting.txt",
-    content: `POS TROUBLESHOOTING
-
-Card reader not connecting:
-Unplug the reader's USB cable, wait 10 seconds, plug it back in. If it still says "offline", restart the iPad. Still broken? Take cash or e-transfer and call the POS support line on the sticker under the counter.
-
-Receipt printer jammed:
-Open the lid, pull the paper roll out, tear off the crumpled section and reload with the paper feeding from the bottom.
-
-Price won't scan:
-Key in the SKU from the tag manually. If the item isn't in the system, ask a manager before selling it.
-`,
-    startsProcessing: true,
-  },
+  generated("demo-employee-discount", "Policies"),
+  generated("demo-open-close", "Operations"),
+  generated("demo-pos-troubleshooting", "Operations", { startsProcessing: true }),
+  generated("demo-onboarding", "Training"),
 ];
 
 export const DEMO_ACCOUNTS_SEED: Account[] = [
@@ -305,6 +284,22 @@ export const DEMO_ANSWERS: DemoAnswer[] = [
         file_id: "demo-pos-troubleshooting",
         quote:
           "Take cash or e-transfer and call the POS support line on the sticker under the counter.",
+      },
+    ],
+  },
+  {
+    keywords: ["first day", "onboarding", "new hire", "training", "first week", "shadow", "dress code"],
+    answer:
+      "On your first day, arrive at 9:30am and ask for the shift lead on duty — bring two pieces of ID and your banking details. You'll shadow a senior associate for your first three shifts before working the till on your own.",
+    sources: [
+      {
+        file_id: "demo-onboarding",
+        quote: "On your first day, arrive at 9:30am and ask for the shift lead on duty.",
+      },
+      {
+        file_id: "demo-onboarding",
+        quote:
+          "You'll shadow a senior associate for your first three shifts before working the till on your own.",
       },
     ],
   },

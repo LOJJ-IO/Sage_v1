@@ -2,11 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import {
-  downloadBackendFile,
-  fetchBackendFileText,
-  isBackendConfigured,
-} from "@/lib/files/api";
+import { downloadBackendFile } from "@/lib/files/api";
 import type { SageFileType } from "@/lib/file-upload";
 
 type CachedBlob = { kind: "blob"; blob: Blob };
@@ -22,10 +18,6 @@ export type PreviewFileContent =
   | { status: "ready"; kind: "blob"; blob: Blob; blobUrl: string }
   | { status: "ready"; kind: "text"; text: string };
 
-function usesExtractedText(fileType: SageFileType): boolean {
-  return fileType === "docx";
-}
-
 function errorMessage(err: unknown): string {
   if (err instanceof Error && err.message) {
     return err.message;
@@ -38,9 +30,10 @@ function hasLocalBytes(localFile: File | Blob | null | undefined): localFile is 
 }
 
 /**
- * Resolve preview bytes/text for a tab.
+ * Resolve preview bytes for a tab.
  * Prefers an in-memory `File` from the library (standalone / just-uploaded),
- * otherwise hits the backend. Docx always needs `/text` when no local path exists.
+ * otherwise downloads the original from the backend. Docx is rendered from its
+ * bytes; `DocxViewer` falls back to `/text` if that fails.
  */
 export function usePreviewFileContent(
   resourceKey: string,
@@ -59,7 +52,7 @@ export function usePreviewFileContent(
 
       try {
         // Standalone / just-uploaded: use the browser File we already have.
-        if (hasLocalBytes(localFile) && !usesExtractedText(fileType)) {
+        if (hasLocalBytes(localFile)) {
           const blob: Blob = localFile;
           if (cancelled) {
             return;
@@ -71,18 +64,6 @@ export function usePreviewFileContent(
             kind: "blob",
             blob,
             blobUrl: objectUrl,
-          });
-          return;
-        }
-
-        if (usesExtractedText(fileType) && hasLocalBytes(localFile) && !isBackendConfigured()) {
-          if (cancelled) {
-            return;
-          }
-          setContent({
-            status: "error",
-            message:
-              "Word (.docx) preview needs the backend’s extracted text. Set NEXT_PUBLIC_API_URL and upload while connected.",
           });
           return;
         }
@@ -103,16 +84,6 @@ export function usePreviewFileContent(
             blob: cached.blob,
             blobUrl: objectUrl,
           });
-          return;
-        }
-
-        if (usesExtractedText(fileType)) {
-          const text = await fetchBackendFileText(resourceKey);
-          if (cancelled) {
-            return;
-          }
-          contentCache.set(resourceKey, { kind: "text", text });
-          setContent({ status: "ready", kind: "text", text });
           return;
         }
 
